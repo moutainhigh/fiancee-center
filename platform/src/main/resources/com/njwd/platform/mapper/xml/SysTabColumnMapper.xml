@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.SysTabColumnMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.platform.vo.SysTabColumnVo">
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="data_type" jdbcType="TINYINT" property="dataType"/>
+        <result column="menu_code" jdbcType="VARCHAR" property="menuCode"/>
+        <result column="table_name" jdbcType="VARCHAR" property="tableName"/>
+        <result column="table_as_name" jdbcType="VARCHAR" property="tableAsName"/>
+        <result column="table_remark" jdbcType="VARCHAR" property="tableRemark"/>
+        <result column="column_name" jdbcType="VARCHAR" property="columnName"/>
+        <result column="column_remark" jdbcType="VARCHAR" property="columnRemark"/>
+        <result column="convert_type" jdbcType="VARCHAR" property="convertType"/>
+        <result column="is_show" jdbcType="TINYINT" property="isShow"/>
+        <result column="sort_num" jdbcType="TINYINT" property="sortNum"/>
+        <result column="is_sort" jdbcType="TINYINT" property="isSort"/>
+        <result column="is_enable" jdbcType="TINYINT" property="isEnable"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="creator_id" jdbcType="BIGINT" property="creatorId"/>
+        <result column="creator_name" jdbcType="VARCHAR" property="creatorName"/>
+        <result column="is_enterprise_admin" jdbcType="TINYINT" property="isEnterpriseAdmin"/>
+        <result column="column_json_name" jdbcType="VARCHAR" property="columnJsonName"/>
+        <result column="is_edit" jdbcType="TINYINT" property="isEdit"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+    id, data_type, menu_code, `table_name`, table_as_name, table_remark, `column_name`,
+    column_remark,convert_type, is_show, sort_num, is_sort, is_enable, create_time, creator_id,
+    creator_name,is_enterprise_admin,column_json_name,is_edit
+  </sql>
+
+    <select id="findSysTabColumnList" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_sys_tab_column
+        where
+        is_enable=1
+        and menu_code=#{menuCode}
+        and (is_enterprise_admin=#{isEnterpriseAdmin} or is_enterprise_admin=2)
+        order by is_edit,sort_num
+    </select>
+    <select id="findSysTabColumnById" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_sys_tab_column
+        where
+        id=#{id}
+        and is_enable=1
+        order by sort_num
+    </select>
+</mapper>

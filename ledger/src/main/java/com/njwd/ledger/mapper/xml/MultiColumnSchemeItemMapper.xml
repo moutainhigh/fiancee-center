@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.ledger.mapper.MultiColumnSchemeItemMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.ledger.vo.MultiColumnSchemeItemVo">
+        <!--@mbg.generated-->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="scheme_id" jdbcType="BIGINT" property="schemeId"/>
+        <result column="direction" jdbcType="TINYINT" property="direction"/>
+        <result column="item_code" jdbcType="VARCHAR" property="itemCode"/>
+        <result column="item_name" jdbcType="VARCHAR" property="itemName"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        id, scheme_id, direction, item_code, item_name
+    </sql>
+
+    <!--批量新增多栏账明细-->
+    <insert id="insertBatch" >
+        insert into wd_multi_column_scheme_item(scheme_id,direction,item_code,item_name,item_id)
+        values
+        <foreach collection="schemeItems" item="item" index="index" separator=",">
+            (#{schemeId},#{item.direction},#{item.itemCode},#{item.itemName},#{item.itemId} )
+        </foreach>
+    </insert>
+
+</mapper>

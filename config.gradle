@@ -1,0 +1,42 @@
+ext {
+    dependencies = [
+            "junit"                              : 'junit:junit:4.12',
+            "spring-boot-starter-web"            : 'org.springframework.boot:spring-boot-starter-web:2.1.2.RELEASE',
+            "spring-boot-starter-data-redis"     : 'org.springframework.boot:spring-boot-starter-data-redis:2.1.2.RELEASE',
+            "spring-boot-starter-aop"            : 'org.springframework.boot:spring-boot-starter-aop:2.1.2.RELEASE',
+            "spring-boot-starter-amqp"           : 'org.springframework.boot:spring-boot-starter-amqp:2.1.2.RELEASE',
+            "spring-boot-starter-test"           : 'org.springframework.boot:spring-boot-starter-test:2.1.2.RELEASE',
+            "spring-boot-starter-tomcat"         : 'org.springframework.boot:spring-boot-starter-tomcat:2.1.2.RELEASE',
+            "spring-boot-configuration-processor": 'org.springframework.boot:spring-boot-configuration-processor:2.1.2.RELEASE',
+            "spring-cloud-starter-config"        : 'org.springframework.cloud:spring-cloud-starter-config:2.1.2.RELEASE',
+            "spring-cloud-starter-openfeign"     : 'org.springframework.cloud:spring-cloud-starter-openfeign:2.1.1.RELEASE',
+
+            "mysql-connector-java"               : 'mysql:mysql-connector-java:5.1.46',
+            "mybatis-plus-boot-starter"          : 'com.baomidou:mybatis-plus-boot-starter:3.1.1',
+            "shiro-spring-boot-web-starter"      : 'org.apache.shiro:shiro-spring-boot-web-starter:1.4.0',
+            "shiro-redis"                        : 'org.crazycake:shiro-redis:3.1.0',
+            "dozer"                              : 'net.sf.dozer:dozer:5.5.1',
+            "commons-io"                         : 'commons-io:commons-io:2.6',
+            "commons-pool2"                      : 'org.apache.commons:commons-pool2:2.5.0',
+            "okhttp"                             : 'com.squareup.okhttp3:okhttp:3.8.1',
+            "commons-beanutils"                  : 'commons-beanutils:commons-beanutils:1.9.3',
+            "commons-lang3"                      : 'org.apache.commons:commons-lang3:3.7',
+            "poi-ooxml"                          : 'org.apache.poi:poi-ooxml:3.17',
+            "cglib-nodep"                        : 'cglib:cglib-nodep:3.2.11',
+            "lombok"                             : 'org.projectlombok:lombok:1.18.2',
+            "jedis"                              : 'redis.clients:jedis:2.9.0',
+            "alibaba-nacos-discovery"            : 'org.springframework.cloud:spring-cloud-starter-alibaba-nacos-discovery:0.9.0.RELEASE',
+            "httpclient"                         : 'org.apache.httpcomponents:httpclient:4.5.8',
+            "json-lib"                           : 'net.sf.json-lib:json-lib:2.4:jdk15',
+
+            "smack-core"                         : 'org.igniterealtime.smack:smack-core:4.1.8',
+            "smack-tcp"                          : 'org.igniterealtime.smack:smack-tcp:4.1.8',
+            "smack-java"                         : 'org.igniterealtime.smack:smack-java7:4.1.8',
+            "smack-extentions"                   : 'org.igniterealtime.smack:smack-extensions:4.1.8',
+            "smack-sasl-provided"                : 'org.igniterealtime.smack:smack-sasl-provided:4.1.8',
+            "tomcat-embed-jasper"                : 'org.apache.tomcat.embed:tomcat-embed-jasper:9.0.8',
+
+            "typetools"                          :'net.jodah:typetools:0.6.1',
+            
+    ]
+}

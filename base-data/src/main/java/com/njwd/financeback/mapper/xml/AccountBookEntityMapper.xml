@@ -1,0 +1,377 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.financeback.mapper.AccountBookEntityMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.basedata.AccountBookEntity">
+        <!--@mbg.generated-->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="root_enterprise_id" jdbcType="BIGINT" property="rootEnterpriseId"/>
+        <result column="account_book_id" jdbcType="BIGINT" property="accountBookId"/>
+        <result column="form" jdbcType="BIGINT" property="form"/>
+        <result column="entity_id" jdbcType="BIGINT" property="entityId"/>
+        <result column="is_del" jdbcType="TINYINT" property="isDel"/>
+        <result column="creator_id" jdbcType="BIGINT" property="creatorId"/>
+        <result column="creator_name" jdbcType="VARCHAR" property="creatorName"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="updator_id" jdbcType="BIGINT" property="updatorId"/>
+        <result column="updator_name" jdbcType="VARCHAR" property="updatorName"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        e.id,e.root_enterprise_id , e.account_book_id, e.account_book_name, e.form, e.entity_id, e.is_del, e.creator_id,
+        e.creator_name,
+        e.create_time, e.updator_id, updator_name, e.update_time
+    </sql>
+
+    <!-- 查询核算主体列表 不分页-->
+    <select id="findList" parameterType="com.njwd.entity.basedata.dto.AccountBookDto"
+            resultType="com.njwd.entity.basedata.vo.AccountBookEntityVo">
+        <if test="companyHasSubAccount == 0 ">
+            SELECT
+            e.id,
+            e.form,
+            "公司" AS form_name,
+            e.entity_id,
+            e.account_book_id,
+            e.account_book_name,
+            c.`code` AS entity_code,
+            c.`name` AS entity_name,
+            c.name AS company_name,
+            c.id AS company_id
+            FROM
+            wd_account_book_entity AS e
+            JOIN wd_company AS c ON e.entity_id = c.id
+            WHERE
+            e.form = 2
+            AND e.is_del = 0
+            <if test="codeOrName != null">
+                AND (c.code like concat('%',#{codeOrName},'%')
+                OR c.name like concat('%',#{codeOrName},'%'))
+            </if>
+            <if test="companyId != null">
+                AND c.id = #{companyId}
+            </if>
+            <if test="id != null">
+                AND e.account_book_id = #{id}
+            </if>
+            AND e.root_enterprise_id = #{rootEnterpriseId}
+            ORDER BY
+            c.`code` ASC
+        </if>
+        <if test="companyHasSubAccount == 1">
+            SELECT
+            e.id,
+            e.account_book_id,
+            e.account_book_name,
+            e.form,
+            "业务单元" as form_name,
+            e.entity_id,
+            u.`code` AS entity_code,
+            u.`name` AS entity_name,
+            c.name AS company_name,
+            c.id AS company_id
+            FROM
+            wd_business_unit AS u
+            JOIN wd_account_book_entity AS e ON e.entity_id = u.id
+            JOIN wd_company AS c ON c.id = u.company_id
+            WHERE
+            e.form = 3
+            AND e.is_del = 0
+            <if test="codeOrName != null">
+                AND (u.code like concat('%',#{codeOrName},'%')
+                OR u.name like concat('%',#{codeOrName},'%'))
+            </if>
+            <if test="id != null">
+                AND e.account_book_id = #{id}
+            </if>
+            <if test="companyId != null">
+                AND u.company_id = #{companyId}
+            </if>
+            AND e.root_enterprise_id = #{rootEnterpriseId}
+            ORDER BY
+            u.`code` ASC
+        </if>
+    </select>
+
+    <!-- 查询核算主体 分页 -->
+    <select id="findPage" resultType="com.njwd.entity.basedata.vo.AccountBookEntityVo">
+        <if test="AccountBookDto.companyHasSubAccount == 0 ">
+            SELECT
+            e.id,
+            e.form,
+            "公司" AS form_name,
+            e.entity_id,
+            e.account_book_id,
+            e.account_book_name,
+            c.`code` AS code,
+            c.`code` AS entity_code,
+            c.`name` AS entity_name,
+            c.name AS company_name
+            FROM
+            wd_account_book_entity AS e
+            JOIN wd_company AS c ON e.entity_id = c.id
+            WHERE
+            e.form = 2
+            AND e.is_del = 0
+            <if test="AccountBookDto.codeOrName != null">
+                AND (c.code like concat('%',#{AccountBookDto.codeOrName},'%')
+                OR c.name like concat('%',#{AccountBookDto.codeOrName},'%'))
+            </if>
+            <if test="AccountBookDto.companyId != null">
+                AND c.id = #{AccountBookDto.companyId}
+            </if>
+            <if test="AccountBookDto.id != null">
+                AND e.account_book_id = #{AccountBookDto.id}
+            </if>
+            AND e.root_enterprise_id = #{AccountBookDto.rootEnterpriseId}
+            ORDER BY
+            c.`code` ASC
+        </if>
+        <if test="AccountBookDto.companyHasSubAccount == 1">
+            SELECT
+            e.id,
+            e.account_book_id,
+            e.account_book_name,
+            e.form,
+            "业务单元" as form_name,
+            e.entity_id,
+            u.`code` AS code,
+            u.`code` AS entity_code,
+            u.`name` AS entity_name,
+            c.name AS company_name
+            FROM
+            wd_business_unit AS u
+            JOIN wd_account_book_entity AS e ON e.entity_id = u.id
+            JOIN wd_company AS c ON c.id = u.company_id
+            WHERE
+            e.form = 3
+            AND e.is_del = 0
+            <if test="AccountBookDto.codeOrName != null">
+                AND (u.code like concat('%',#{AccountBookDto.codeOrName},'%')
+                OR u.name like concat('%',#{AccountBookDto.codeOrName},'%'))
+            </if>
+            <if test="AccountBookDto.id != null">
+                AND e.account_book_id = #{AccountBookDto.id}
+            </if>
+            <if test="AccountBookDto.companyId != null">
+                AND u.company_id = #{AccountBookDto.companyId}
+            </if>
+            AND e.root_enterprise_id = #{AccountBookDto.rootEnterpriseId}
+            ORDER BY
+            u.`code` ASC
+        </if>
+    </select>
+
+    <!--  根据 账簿ID list 查询核算主体列表 -->
+    <select id="findAccountBookEntityPageByAccBookIdList" parameterType="com.njwd.entity.basedata.dto.AccountBookDto"
+            resultType="com.njwd.entity.basedata.vo.AccountBookEntityVo">
+        SELECT
+        DISTINCT e.id,
+        (
+        CASE WHEN e.form = 3 THEN
+        ( SELECT u.NAME FROM wd_business_unit u WHERE u.id = e.entity_id
+        <if test="accountBookEntityDto.codeOrName != null and accountBookEntityDto.codeOrName != ''">
+            AND (u.code like concat('%',#{accountBookEntityDto.codeOrName},'%')
+            OR u.name like concat('%',#{accountBookEntityDto.codeOrName},'%'))
+        </if>
+        )
+        ELSE
+        ( SELECT c.NAME FROM wd_company c WHERE c.id = e.entity_id
+        <if test="accountBookEntityDto.codeOrName != null and accountBookEntityDto.codeOrName != ''">
+            AND (c.code like concat('%',#{accountBookEntityDto.codeOrName},'%')
+            OR c.name like concat('%',#{accountBookEntityDto.codeOrName},'%'))
+        </if>
+        )
+        END
+        ) entity_name
+        ,(
+        CASE WHEN e.form = 3 THEN
+        ( SELECT u.code FROM wd_business_unit u WHERE u.id = e.entity_id
+        <if test="accountBookEntityDto.codeOrName != null and accountBookEntityDto.codeOrName != ''">
+            AND (u.code like concat('%',#{accountBookEntityDto.codeOrName},'%')
+            OR u.name like concat('%',#{accountBookEntityDto.codeOrName},'%'))
+        </if>
+        )
+        ELSE
+        ( SELECT c.code FROM wd_company c WHERE c.id = e.entity_id
+        <if test="accountBookEntityDto.codeOrName != null and accountBookEntityDto.codeOrName != ''">
+            AND (c.code like concat('%',#{accountBookEntityDto.codeOrName},'%')
+            OR c.name like concat('%',#{accountBookEntityDto.codeOrName},'%'))
+        </if>
+        )
+        END
+        ) code,
+        CASE WHEN e.form = 3 THEN "业务单元" ELSE "公司" END as form_name,
+        e.form,
+        e.account_book_id,
+        e.account_book_name,
+        b.account_book_type_id,
+        b.account_book_type_name,
+        b.company_id
+        FROM
+        wd_account_book_entity AS e
+        JOIN wd_account_book AS b ON e.account_book_id = b.id
+        JOIN wd_user_account_book_entity AS ue ON ue.account_book_entity_id = e.id
+        WHERE
+        e.is_del = 0
+        AND e.root_enterprise_id = #{accountBookEntityDto.rootEnterpriseId}
+        <if test="accountBookEntityDto.userId != null ">
+            AND ue.user_id = #{accountBookEntityDto.userId}
+        </if>
+        <if test="accountBookEntityDto.accountBookIdList != null and accountBookEntityDto.accountBookIdList.size() > 0 ">
+            AND e.account_book_id in
+            <foreach collection="accountBookEntityDto.accountBookIdList" item="accBookId" separator="," open="("
+                     close=")">
+                #{accBookId}
+            </foreach>
+        </if>
+        <if test="accountBookEntityDto.selectedEntityId != null ">
+            AND e.id != #{accountBookEntityDto.selectedEntityId}
+        </if>
+        ORDER BY code
+    </select>
+
+    <!--  查询 用户有操作权限的核算主体列表 分页-->
+    <select id="findAuthOperationalEntityPage" resultType="com.njwd.entity.basedata.vo.AccountBookEntityVo">
+        SELECT
+        e.id
+        ,e.entity_id
+        ,ue.is_default
+        ,(
+        CASE WHEN e.form = 3 THEN
+        ( SELECT u.NAME FROM wd_business_unit u WHERE u.id = e.entity_id
+        <if test="accountBookEntityDto.codeOrName != null and accountBookEntityDto.codeOrName != ''">
+            AND (u.code like concat('%',#{accountBookEntityDto.codeOrName},'%')
+            OR u.name like concat('%',#{accountBookEntityDto.codeOrName},'%'))
+        </if>
+        )
+        ELSE
+        ( SELECT c.NAME FROM wd_company c WHERE c.id = e.entity_id
+        <if test="accountBookEntityDto.codeOrName != null and accountBookEntityDto.codeOrName != ''">
+            AND (c.code like concat('%',#{accountBookEntityDto.codeOrName},'%')
+            OR c.name like concat('%',#{accountBookEntityDto.codeOrName},'%'))
+        </if>
+        )
+
+        END
+        ) entity_name
+        ,(
+        CASE WHEN e.form = 3 THEN
+        ( SELECT u.code FROM wd_business_unit u WHERE u.id = e.entity_id
+        <if test="accountBookEntityDto.codeOrName != null and accountBookEntityDto.codeOrName != ''">
+            AND (u.code like concat('%',#{accountBookEntityDto.codeOrName},'%')
+            OR u.name like concat('%',#{accountBookEntityDto.codeOrName},'%'))
+        </if>
+        )
+        ELSE
+        ( SELECT c.code FROM wd_company c WHERE c.id = e.entity_id
+        <if test="accountBookEntityDto.codeOrName != null and accountBookEntityDto.codeOrName != ''">
+            AND (c.code like concat('%',#{accountBookEntityDto.codeOrName},'%')
+            OR c.name like concat('%',#{accountBookEntityDto.codeOrName},'%'))
+        </if>
+        )
+        END
+        ) code
+        , e.account_book_id
+        , e.account_book_name
+        , b.code account_book_code
+        , c.name company_name
+        from wd_account_book_entity e
+        join wd_account_book b on b.id = e.account_book_id
+        join wd_user_account_book_entity ue on ue.account_book_entity_id = e.id
+        join wd_company c on c.id = ue.company_id
+        where e.is_del = 0
+        and e.root_enterprise_id = #{accountBookEntityDto.rootEnterpriseId}
+        and ue.user_id = #{accountBookEntityDto.userId}
+        <if test="accountBookEntityDto.accountBookIdList != null and accountBookEntityDto.accountBookIdList.size() > 0 ">
+            and e.account_book_id in
+            <foreach collection="accountBookEntityDto.accountBookIdList" item="accBookId" separator="," open="("
+                     close=")">
+                #{accBookId}
+            </foreach>
+        </if>
+        <if test="accountBookEntityDto.companyId != null ">
+            and c.id = #{accountBookEntityDto.companyId}
+        </if>
+        <if test="accountBookEntityDto.selectedIdList != null">
+            and e.id not in
+            <foreach collection="accountBookEntityDto.selectedIdList" item="selectedId" separator="," open="("
+                     close=")">
+                #{selectedId}
+            </foreach>
+        </if>
+        order by code
+    </select>
+
+    <!--  查询 用户有操作权限的核算主体-->
+    <select id="findAuthOperationalEntity" resultType="com.njwd.entity.basedata.vo.AccountBookEntityVo">
+        select
+        e.id
+        ,ue.is_default
+        ,(
+        CASE WHEN e.form = 3 THEN
+        ( SELECT u.NAME FROM wd_business_unit u WHERE u.id = e.entity_id
+        <if test="accountBookEntityDto.codeOrName != null and accountBookEntityDto.codeOrName != ''">
+            AND (u.code like concat('%',#{accountBookEntityDto.codeOrName},'%')
+            OR u.name like concat('%',#{accountBookEntityDto.codeOrName},'%'))
+        </if>
+        )
+        ELSE
+        ( SELECT c.NAME FROM wd_company c WHERE c.id = e.entity_id
+        <if test="accountBookEntityDto.codeOrName != null and accountBookEntityDto.codeOrName != ''">
+            AND (c.code like concat('%',#{accountBookEntityDto.codeOrName},'%')
+            OR c.name like concat('%',#{accountBookEntityDto.codeOrName},'%'))
+        </if>
+        )
+
+        END
+        ) entity_name
+        ,(
+        CASE WHEN e.form = 3 THEN
+        ( SELECT u.code FROM wd_business_unit u WHERE u.id = e.entity_id
+        <if test="accountBookEntityDto.codeOrName != null and accountBookEntityDto.codeOrName != ''">
+            AND (u.code like concat('%',#{accountBookEntityDto.codeOrName},'%')
+            OR u.name like concat('%',#{accountBookEntityDto.codeOrName},'%'))
+        </if>
+        )
+        ELSE
+        ( SELECT c.code FROM wd_company c WHERE c.id = e.entity_id
+        <if test="accountBookEntityDto.codeOrName != null and accountBookEntityDto.codeOrName != ''">
+            AND (c.code like concat('%',#{accountBookEntityDto.codeOrName},'%')
+            OR c.name like concat('%',#{accountBookEntityDto.codeOrName},'%'))
+        </if>
+        )
+        END
+        ) entity_code
+        , e.account_book_id
+        , e.account_book_name
+
+        from wd_account_book_entity e
+        join wd_user_account_book_entity ue on ue.account_book_entity_id = e.id
+        where e.is_del = 0
+        and e.root_enterprise_id = #{accountBookEntityDto.rootEnterpriseId}
+        and ue.user_id = #{accountBookEntityDto.userId}
+        <if test="accountBookEntityDto.isDefault != null">
+            and ue.is_default = #{accountBookEntityDto.isDefault}
+        </if>
+        <if test="accountBookEntityDto.accountBookId != null  ">
+            and e.account_book_id = #{accountBookEntityDto.accountBookId}
+        </if>
+        order by entity_code
+        limit 1
+    </select>
+
+    <select id="findAccountBookEntityById" resultType="com.njwd.entity.basedata.vo.AccountBookEntityVo">
+      select * from wd_account_book_entity where id = #{id}
+    </select>
+
+    <!-- 根据业务单元idList 获取核算主体列表 -->
+    <select id="findIdsByBusinessIdList" resultType="com.njwd.entity.basedata.vo.AccountBookEntityVo">
+        select e.id,e.entity_id from wd_account_book_entity e
+        where e.entity_id in
+        <foreach collection="accountBookEntityDto.notReferencesIdList" item="businessId" open="(" close=")" separator=",">
+            #{businessId}
+        </foreach>
+    </select>
+
+</mapper>

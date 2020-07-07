@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.financeback.mapper.SysRoleMapper">
+    <sql id="Base_Column_List">
+            wsr.`role_id`,
+            wsr.`root_enterprise_id`,
+            wsr.`code`,
+            wsr.`name`,
+            wsr.`sort`,
+            wsr.`is_enable`,
+            wsr.`remark`,
+            wsr.`creator_id`,
+            wsr.`creator_name`,
+            wsr.`create_time`,
+            wsr.`updator_id`,
+            wsr.`updator_name`,
+            wsr.`update_time`,
+            wsr.`is_del`
+    </sql>
+    <resultMap id="BaseResultMap" type="com.njwd.entity.basedata.vo.SysRoleVo">
+    </resultMap>
+    <select id="findList" resultMap="BaseResultMap">
+        select
+        <if test="userId != null">
+            wsur.company_id,
+        </if>
+        <include refid="Base_Column_List"/>
+        from wd_sys_role wsr
+        <if test="userId != null">
+            inner join wd_sys_user_role wsur on wsur.role_id = wsr.role_id
+        </if>
+        <where>
+            <if test="userId != null">
+                and wsur.user_id = #{userId}
+            </if>
+            and wsr.root_enterprise_id = #{rootEnterpriseId}
+            and wsr.is_enable = 1
+            and wsr.is_del = 0
+        </where>
+        order by wsr.sort, wsr.code
+    </select>
+    <!--校验角色名和角色定义是否重复-->
+    <select id="checkDuplication" resultType="int">
+        select count(1)
+        from wd_sys_role wsr
+        <where>
+            <if test="sysRole.roleId != null">
+                and wsr.role_id != #{sysRole.roleId}
+            </if>
+            <if test="sysRole.rootEnterpriseId != null">
+                and wsr.root_enterprise_id = #{sysRole.rootEnterpriseId}
+            </if>
+            and ( 1=2
+            <if test="sysRole.name != null and '' != sysRole.name">
+                or wsr.name = #{sysRole.name}
+            </if>
+            )
+            and wsr.is_del = 0
+        </where>
+    </select>
+    <sql id="FIND_PAGE_WHERE">
+        <if test="commParams.orMatch != null and commParams.orMatch != ''">
+            and
+            <foreach collection="commParams.orColumn" item="columnName" open="(" close=")"
+                     separator="or">
+                wsr.${columnName} like concat('%',#{commParams.orMatch} ,'%')
+            </foreach>
+        </if>
+        <if test="sysRoleDto.code != null and sysRoleDto.code != ''">
+            and wsr.code like concat('%',#{sysRoleDto.code} ,'%')
+        </if>
+        <if test="sysRoleDto.name != null and sysRoleDto.name != ''">
+            and wsr.name like concat('%',#{sysRoleDto.name} ,'%')
+        </if>
+        <if test="sysRoleDto.isEnable != null">
+            and wsr.is_enable = #{sysRoleDto.isEnable}
+        </if>
+        and wsr.root_enterprise_id = #{sysRoleDto.rootEnterpriseId}
+        and wsr.is_del = 0
+    </sql>
+    <select id="findPage" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_sys_role wsr
+        <where>
+            <include refid="FIND_PAGE_WHERE"/>
+        </where>
+        order by wsr.sort, wsr.code
+    </select>
+
+    <!-- 当前企业可选择岗位/权限列表 -->
+    <select id="selectEnableList"  resultType="com.njwd.entity.basedata.vo.SysRoleVo">
+        SELECT
+            r.role_id,
+            r.root_enterprise_id,
+            r.`code`,
+            r.`name`,
+            r.sort,
+            r.is_enable,
+            r.remark,
+            r.is_del
+        FROM
+            wd_sys_role AS r
+        WHERE
+            r.is_enable = 1
+            AND r.is_del = 0
+            AND r.root_enterprise_id = #{SysRoleVo.rootEnterpriseId}
+        <if test = "SysRoleVo.codeOrName != null">
+            AND (r.code like concat('%',#{SysRoleVo.codeOrName},'%')
+            OR r.name like concat('%',#{SysRoleVo.codeOrName},'%'))
+        </if>
+    </select>
+</mapper>

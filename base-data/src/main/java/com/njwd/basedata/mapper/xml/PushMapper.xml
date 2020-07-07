@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.njwd.basedata.mapper.PushMapper">
+    <insert id="addSendMessageInfo" parameterType="com.njwd.entity.pushweb.dto.PushMessageDto">
+              insert into wd_push_message (
+              content,
+              subject,
+              from_user,
+              to_user
+              ) values (
+              #{pushMessageDto.content},
+              #{pushMessageDto.subject},
+              #{pushMessageDto.from_user},
+              #{pushMessageDto.to_user}
+              )
+	</insert>
+
+	<!-- 查询推送服务的信息 -->
+	<select id="findServerListByServerName" resultType="com.njwd.entity.pushweb.vo.PushServerVo">
+	          select id,server_name serverName,domain_url domainUrl,account
+	          from wd_system_push_server
+	</select>
+</mapper>

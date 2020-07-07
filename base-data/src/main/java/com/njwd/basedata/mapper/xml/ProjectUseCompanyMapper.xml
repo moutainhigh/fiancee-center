@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.basedata.mapper.ProjectUseCompanyMapper">
+   <resultMap id="BaseResultMap" type="com.njwd.entity.basedata.ProjectUseCompany">
+       <id column="id" jdbcType="BIGINT" property="id"></id>
+       <result column="project_id" jdbcType="BIGINT" property="projectId"/>
+       <result column="use_company_id" jdbcType="BIGINT" property="useCompanyId"/>
+       <result column="is_del" jdbcType="BIGINT" property="isDel"/>
+       <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+       <result column="creator_id" jdbcType="BIGINT" property="creatorId"/>
+       <result column="creator_name" jdbcType="VARCHAR" property="creatorName"/>
+   </resultMap>
+
+    <resultMap id="BaseResultMapVo" type="com.njwd.entity.basedata.vo.ProjectUseCompanyVo">
+        <id column="id" jdbcType="BIGINT" property="id"></id>
+        <result column="project_id" jdbcType="BIGINT" property="projectId"/>
+        <result column="use_company_id" jdbcType="BIGINT" property="useCompanyId"/>
+        <result column="is_del" jdbcType="BIGINT" property="isDel"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="creator_id" jdbcType="BIGINT" property="creatorId"/>
+        <result column="creator_name" jdbcType="VARCHAR" property="creatorName"/>
+        <result column="useCompanyName" jdbcType="VARCHAR" property="useCompanyName"></result>
+        <result column="useCompanyNameids" jdbcType="VARCHAR" property="useCompanyIdString"></result>
+    </resultMap>
+
+    <!-- 根据项目ids查询项目分配的使用公司列表 -->
+    <select id="findProjectUseCompanysByProjectIds" resultMap="BaseResultMapVo" parameterType="com.njwd.entity.basedata.dto.ProjectUseCompanyDto">
+        select
+            s.id,
+            s.project_id,
+            GROUP_CONCAT(s.use_company_id) as useCompanyNameids,
+            GROUP_CONCAT(d.name) as useCompanyName
+        from
+            wd_project_use_company s
+        left join wd_company d on s.use_company_id = d.id
+        <where>
+            s.is_del = 0
+            <if test="projectIds != null and projectIds.size()>0">
+                and s.project_id in
+                <foreach collection="projectIds" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            group by s.project_id
+        </where>
+    </select>
+
+    <select id="findProjectUseCompanysByProjectId2" resultMap="BaseResultMapVo" parameterType="com.njwd.entity.basedata.dto.ProjectUseCompanyDto">
+        select
+        s.id,
+        s.project_id,
+        s.use_company_id
+        from
+        wd_project_use_company s
+        left join wd_company d on s.use_company_id = d.id
+        <where>
+            s.is_del = 0
+            and s.project_id = #{projectId}
+        </where>
+    </select>
+
+    <!-- 根据项目id查询指定项目分配的使用公司列表 -->
+    <select id="findProjectUseCompanysByProjectId" resultMap="BaseResultMapVo" parameterType="com.njwd.entity.basedata.dto.ProjectUseCompanyDto">
+        select
+        s.id,
+        s.project_id,
+        GROUP_CONCAT(s.use_company_id) as useCompanyNameids,
+        GROUP_CONCAT(d.name) as useCompanyName
+        from
+        wd_project_use_company s
+        left join wd_company d on s.use_company_id = d.id
+        <where>
+            s.is_del = 0
+            and s.use_company_id = d.id
+            and s.project_id = #{projectId}
+        </where>
+    </select>
+
+    <!-- 根据使用公司id查询包含指定使用公司的项目id -->
+    <select id="findProjectIdByUseCompanyId" resultType="Long" parameterType="com.njwd.entity.basedata.dto.ProjectUseCompanyDto">
+        select distinct
+            (project_id) project_id
+        from
+            wd_project_use_company
+        <where>
+            is_del = 0
+            and use_company_id in
+            <foreach collection="useCompanyIds" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+            <if test="userId != null">
+                and use_company_id in
+                ( select distinct wsur.company_id from wd_sys_user_role wsur
+                inner join wd_sys_role_menu wsrm on wsrm.role_id = wsur.role_id
+                inner join wd_sys_menu wsm on wsm.menu_id = wsrm.menu_id
+                where wsur.user_id = #{userId}
+                and wsm.code = #{menuCode}
+                )
+            </if>
+        </where>
+    </select>
+
+    <update id="deleteProjectUserCompany">
+       update wd_project_use_company
+        set is_del = 1
+        where project_id = #{projectId}
+    </update>
+</mapper>

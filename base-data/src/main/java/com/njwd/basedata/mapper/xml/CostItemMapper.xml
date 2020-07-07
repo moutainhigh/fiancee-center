@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.basedata.mapper.CostItemMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.njwd.entity.platform.CostItem">
+        <id column="id" property="id" />
+        <result column="code" property="code" />
+        <result column="name" property="name" />
+        <result column="desc" property="desc" />
+        <result column="is_approved" property="isApproved" />
+        <result column="is_released" property="isReleased" />
+        <result column="is_enable" property="isEnable" />
+        <result column="is_del" property="isDel" />
+        <result column="create_time" property="createTime" />
+        <result column="creator_id" property="creatorId" />
+        <result column="creator_name" property="creatorName" />
+        <result column="update_time" property="updateTime" />
+        <result column="updator_id" property="updatorId" />
+        <result column="updator_name" property="updatorName" />
+        <result column="manage_info" property="manageInfo" />
+        <result column="root_enterprise_id" property="rootEnterpriseId" />
+        <result column="platform_id" property="platformId" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id, code, `name`, `desc`, is_approved, is_released, is_enable, is_del, create_time, creator_id, creator_name, update_time, updator_id, updator_name, manage_info, root_enterprise_id, platform_id
+        ,create_company_id,data_type,platform_name,remark
+    </sql>
+
+    <select id="findCostItemById" resultType="com.njwd.entity.platform.vo.CostItemVo">
+        select <include refid="Base_Column_List" />
+        from wd_cost_item where id = #{id}
+    </select>
+
+    <select id="findCostItemPage" resultType="com.njwd.entity.platform.vo.CostItemVo">
+        select <include refid="Base_Column_List" />
+        from wd_cost_item
+        <where>
+            <if test="costItemDto.codeOrName != null">
+                and (code like concat('%',#{costItemDto.codeOrName},'%') or name like concat('%',#{costItemDto.codeOrName},'%'))
+            </if>
+            <if test="costItemDto.isEnable != null ">
+                and is_enable = #{costItemDto.isEnable}
+            </if>
+            <if test="costItemDto.createCompanyId != null">
+                and create_company_id = #{costItemDto.createCompanyId}
+            </if>
+            and is_del = 0
+        </where>
+    </select>
+
+    <update id="updateBatch">
+        <foreach collection="idList" item="id">
+            update wd_cost_item
+            <set>
+                <if test="isEnable != null">
+                    is_enable = #{isEnable} ,
+                </if>
+            </set>
+            where id = #{id};
+        </foreach>
+    </update>
+    <select id="findCostItemList" resultType="com.njwd.entity.platform.vo.CostItemVo">
+        select <include refid="Base_Column_List" />
+        from wd_cost_item
+        <where>
+            <if test="isReleased!=null ">
+                and is_released = #{isReleased}
+            </if>
+            <if test="isApproved!=null">
+                and is_approved = #{isApproved}
+            </if>
+            <if test="platformIds!=null and platformIds.size()>0" >
+                and id not in
+                <foreach collection="platformIds" item="platformId" open="(" close=")" separator=",">
+                    #{platformId}
+                </foreach>
+            </if>
+            and is_del = 0
+        </where>
+    </select>
+
+    <insert id="addBatch">
+        INSERT INTO `wd_cost_item` (
+        `code`
+        ,`name`
+        ,`desc`
+        ,`is_approved`
+        ,`is_released`
+        ,`creator_id`
+        ,`creator_name`
+        ,`root_enterprise_id`
+        ,`platform_id`
+        )
+        VALUES
+        <foreach collection="list" item="p" separator=",">
+            (
+            #{p.code} ,
+            #{p.name} ,
+            #{p.desc} ,
+            #{p.isApproved} ,
+            #{p.isReleased} ,
+            #{p.creatorId} ,
+            #{p.creatorName} ,
+            #{p.rootEnterpriseId} ,
+            #{p.platformId}
+            )
+        </foreach>
+    </insert>
+
+    <insert id="addCostItemCompany">
+        INSERT INTO `wd_cost_item_company`(`cost_item_id`, `company_id`,  `creator_id`, `creator_name`) VALUES
+        <foreach collection="costItemCompanyList" item="p" separator=",">
+            (#{p.costItemId},#{p.companyId},#{p.creatorId},#{p.creatorName})
+        </foreach>
+    </insert>
+
+    <delete id="deleteCostItemCompany">
+        delete from wd_cost_item_company
+        where cost_item_id = #{id}
+        <if test="companyIds!=null and companyIds.size()>0" >
+            and company_id in
+            <foreach collection="companyIds" open="(" close=")" item="companyId" separator=",">
+                #{companyId}
+            </foreach>
+        </if>
+    </delete>
+
+</mapper>

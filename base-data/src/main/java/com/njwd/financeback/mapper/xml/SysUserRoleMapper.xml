@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.financeback.mapper.SysUserRoleMapper">
+    <insert id="insertBatch">
+        insert into wd_sys_user_role (user_id, company_id, root_enterprise_id, role_id, creator_id,creator_name) values
+        <foreach collection="roleIds" item="roleId" separator=",">
+            (#{sysUserDto.userId} ,#{companyId} ,#{sysUserDto.rootEnterpriseId} ,#{roleId} ,#{operator.userId} ,#{operator.name} )
+        </foreach>
+    </insert>
+    <insert id="assignBatchAdd">
+        insert into wd_sys_user_role (user_id, company_id, root_enterprise_id, role_id, creator_id, creator_name) values
+        <foreach collection="userDto.assignRoleIds" item="roleId" separator=",">
+            <foreach collection="companyIds" item="companyId" separator=",">
+                (#{userDto.userId} ,#{companyId} ,#{operator.rootEnterpriseId} ,#{roleId} ,#{operator.userId}
+                ,#{operator.name} )
+            </foreach>
+        </foreach>
+    </insert>
+    <!-- 查询有无用户权限关联当前公司 -->
+    <select id="selectUserRoleList" parameterType="com.njwd.entity.basedata.dto.CompanyDto"
+            resultType="com.njwd.entity.basedata.vo.UserRoleVo">
+        SELECT
+            ur.user_id,
+            ur.company_id,
+            ur.root_enterprise_id,
+            ur.role_id
+        FROM
+            wd_sys_user_role AS ur
+        JOIN
+            wd_sys_role AS r ON ur.role_id = r.role_id
+        WHERE
+         r.is_del = 0
+        AND r.is_enable = 1
+        AND ur.company_id = #{id}
+        AND ur.root_enterprise_id = #{rootEnterpriseId}
+    </select>
+
+    <!--  -->
+    <select id="selectUserRolePage" parameterType="com.njwd.entity.basedata.dto.UserRoleDto"
+            resultType="com.njwd.entity.basedata.vo.UserRoleVo">
+        SELECT
+        u.user_id AS userId,
+        u.`name` AS userName,
+        u.mobile AS mobile,
+        r.role_id AS roleId,
+        r.`code` AS roleCode,
+        r.`name` AS roleName,
+        m.type_name ,
+        m.menu_id AS menuId,
+        m.`NAME` AS menuName,
+        ur.company_id AS companyId,
+        c.code companyCode,
+        c.name companyName,
+        ur.root_enterprise_id AS rootEnterpriseId
+        FROM
+        wd_sys_user AS u
+        JOIN wd_sys_user_role AS ur ON u.user_id = ur.user_id
+        JOIN wd_sys_role AS r ON r.role_id = ur.role_id
+        JOIN wd_sys_role_menu AS rm ON r.role_id = rm.role_id
+        JOIN wd_sys_menu AS m ON m.menu_id = rm.menu_id
+        JOIN wd_company AS c ON c.id = ur.company_id
+        WHERE
+        r.is_enable = 1
+        AND m.is_del = 0
+        AND m.type = 3 -- 3 菜单
+        AND ur.root_enterprise_id = #{userRoleDto.rootEnterpriseId}
+        <if test = "userRoleDto.companyIdList != null and userRoleDto.companyIdList.size>0">
+            AND c.id IN
+            <foreach collection="userRoleDto.companyIdList" item="companyId" open="(" close=")" separator=",">
+                #{companyId}
+            </foreach>
+        </if>
+        <if test="userRoleDto.roleIdList != null and userRoleDto.roleIdList.size>0 ">
+            AND r.role_id IN
+            <foreach collection="userRoleDto.roleIdList" item="roleId" open="(" close=")" separator=",">
+                #{roleId}
+            </foreach>
+        </if>
+        <if test="userRoleDto.userIdList != null and userRoleDto.userIdList.size>0">
+            AND u.user_id IN
+            <foreach collection="userRoleDto.userIdList" item="userId" open="(" close=")" separator=",">
+                #{userId}
+            </foreach>
+        </if>
+        <if test="userRoleDto.menuIdList != null and userRoleDto.menuIdList.size>0">
+            AND m.menu_id IN
+            <foreach collection="userRoleDto.menuIdList" item="menuId" open="(" close=")" separator=",">
+                #{menuId}
+            </foreach>
+        </if>
+        <if test="userRoleDto.sysNameList != null and userRoleDto.sysNameList.size>0">
+            AND  m.type_name IN
+            <foreach collection="userRoleDto.sysNameList" item="sysName" open="(" close=")" separator=",">
+                #{sysName}
+            </foreach>
+        </if>
+    </select>
+</mapper>

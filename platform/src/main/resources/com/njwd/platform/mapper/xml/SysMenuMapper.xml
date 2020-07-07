@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.SysMenuMapper">
+    <sql id="Base_Column_List">
+            wsm.`menu_id`,
+            wsm.`type`,
+            wsm.`type_name`,
+            wsm.`name`,
+            wsm.`sort`,
+            wsm.`code`,
+            wsm.`parent_id`,
+            wsm.`is_child`,
+            wsm.`permission`,
+            wsm.`remark`,
+            wsm.`is_default_select`,
+            wsm.`is_del`,
+            wsm.`creator_id`,
+            wsm.`creator_name`,
+            wsm.`create_time`,
+            wsm.`updator_id`,
+            wsm.`updator_name`,
+            wsm.`update_time`
+
+    </sql>
+
+    <resultMap id="BaseResultMap" type="com.njwd.entity.platform.vo.SysMenuVo">
+    </resultMap>
+
+    <!--  获取用户所有权限信息-->
+    <select id="findPermissionDefinitionsByUserId" resultType="java.lang.String">
+    select
+    distinct wsm.permission
+    from wd_sys_menu wsm
+    left join wd_sys_user_menu wsum on wsum.menu_id = wsm.menu_id
+    where
+        wsum.user_id = #{userId}
+        and
+        wsm.is_del = 0
+
+  </select>
+
+    <!-- 权限树  -->
+    <select id="findList" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_sys_menu wsm
+        where
+        wsm.is_del = 0
+    </select>
+
+    <!-- 根据类型查询权限 分页 -->
+    <select id="findPage" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_sys_menu wsm
+        left join wd_sys_menu wsm1 on wsm.parent_id = wsm1.menu_id
+        left join wd_sys_menu wsm2 on wsm1.parent_id = wsm2.menu_id
+        where
+        wsm.is_del = 0
+        <if test="sysMenuDto.menuType == 3  ">
+            and wsm2.menu_id in
+            <foreach collection="sysMenuDto.firstLevelMenuIdList" item="id" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
+        </if>
+        and wsm.type = #{sysMenuDto.menuType}
+        <if test="sysMenuDto.codeOrName != null and sysMenuDto.codeOrName != ''">
+            and (wsm.code like CONCAT('%',#{sysMenuDto.codeOrName},'%')
+            OR wsm.name like CONCAT('%',#{sysMenuDto.codeOrName},'%'))
+        </if>
+    </select>
+</mapper>

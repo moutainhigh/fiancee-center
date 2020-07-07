@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.async.server.mapper.SysLogMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.base.vo.SysLogVo">
+        <!--@mbg.generated-->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="root_enterprise_id" jdbcType="BIGINT" property="rootEnterpriseId"/>
+        <result column="creator_id" jdbcType="BIGINT" property="creatorId"/>
+        <result column="creator_account" jdbcType="VARCHAR" property="creatorAccount"/>
+        <result column="creator_name" jdbcType="VARCHAR" property="creatorName"/>
+        <result column="sys_name" jdbcType="VARCHAR" property="sysName"/>
+        <result column="operate_type" jdbcType="VARCHAR" property="operateType"/>
+        <result column="menu_name" jdbcType="VARCHAR" property="menuName"/>
+        <result column="mobile" jdbcType="VARCHAR" property="mobile"/>
+        <result column="status" jdbcType="TINYINT" property="status"/>
+        <result column="open_url" jdbcType="VARCHAR" property="openUrl"/>
+        <result column="operation" jdbcType="VARCHAR" property="operation"/>
+        <result column="ip_address" jdbcType="VARCHAR" property="ipAddress"/>
+        <result column="record_id" jdbcType="VARCHAR" property="recordId"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        id, create_time,root_enterprise_id, creator_id, creator_account, creator_name, sys_name,operate_type,
+        menu_name,operation,
+        mobile, `status`, open_url, ip_address,record_id
+    </sql>
+
+    <!--判断表是否存在-->
+    <select id="isTableExists" parameterType="String" resultType="int">
+        select count(*) from information_schema.TABLES where table_name = #{tableName}
+    </select>
+
+    <!--新增数据到表中-->
+    <insert id="insertDynamic">
+      insert into wd_sys_log_${currentYearMonth}
+      (create_time,root_enterprise_id, creator_id, creator_account, creator_name,
+      sys_name,operate_type, menu_name,operation,mobile,
+       `status`, open_url, ip_address,record_id)
+        values (
+        #{sysLog.createTime} ,#{sysLog.rootEnterpriseId} ,#{sysLog.creatorId} ,#{sysLog.creatorAccount} ,#{sysLog.creatorName} ,
+        #{sysLog.sysName} ,#{sysLog.operateType} ,#{sysLog.menuName} ,#{sysLog.operation} ,#{sysLog.mobile} ,
+        #{sysLog.status} ,#{sysLog.openUrl} ,#{sysLog.ipAddress},#{sysLog.recordId}
+        )
+  </insert>
+
+    <!--生成日志月表-->
+    <update id="generateMonthTable" parameterType="String">
+       CREATE TABLE ${tName} (
+        `id` BIGINT(18) NOT NULL AUTO_INCREMENT COMMENT '主键id',
+        `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+        `root_enterprise_id` BIGINT(18) NULL DEFAULT NULL COMMENT '企业id(租户id)',
+        `creator_id` BIGINT(18) NULL DEFAULT NULL COMMENT '操作人id',
+        `creator_account` VARCHAR(50) NULL DEFAULT NULL COMMENT '操作人登陆账号',
+        `creator_name` VARCHAR(50) NULL DEFAULT '' COMMENT '操作人实际名称',
+        `sys_name` VARCHAR(50) NULL DEFAULT '' COMMENT '子公司名称',
+        `menu_name` VARCHAR(50) NULL DEFAULT '' COMMENT '菜单名',
+        `operate_type` VARCHAR(50) NULL DEFAULT '' COMMENT '操作类型',
+        `operation` VARCHAR(50) NULL DEFAULT NULL COMMENT '操作',
+        `mobile` VARCHAR(20) NULL DEFAULT '' COMMENT '手机号',
+        `status` TINYINT(4) NULL DEFAULT '0' COMMENT '操作状态: 0正常 1异常',
+        `open_url` VARCHAR(100) NULL DEFAULT '' COMMENT '请求Url',
+        `ip_address` VARCHAR(50) NULL DEFAULT '' COMMENT 'IP地址',
+        `record_id` VARCHAR(300) NULL DEFAULT '' COMMENT '记录id',
+        PRIMARY KEY (`id`),
+        INDEX `idx_creator_id` (`creator_id`) ,
+        INDEX `idx_root_enterprise_id` (`root_enterprise_id`) ,
+        INDEX `idx_create_time` (`create_time`) ,
+        INDEX `idx_sys_name` (`sys_name`),
+        INDEX `idx_mobile` (`mobile`)
+    )
+    COLLATE='utf8_general_ci'
+    ENGINE=InnoDB
+    AUTO_INCREMENT=1
+
+    </update>
+
+</mapper>

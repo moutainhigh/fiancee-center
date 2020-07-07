@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.basedata.mapper.StaffUseCompanyMapper">
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+      id,staff_id,dept_id,use_company_id,business_unit_id,create_time,creator_id,creator_name
+  </sql>
+    <!--批量新增-->
+  <insert id="addBatch" parameterType="com.njwd.entity.basedata.dto.StaffUseCompanyDto">
+        insert into wd_staff_use_company
+          (
+           staff_id,
+           dept_id,
+           creator_id,
+           creator_name,
+           create_time,
+           use_company_id,
+           business_unit_id
+           )
+        values
+        <foreach collection="list" item="staff" separator=",">
+            (
+            #{staff.staffId},
+            #{staff.deptId},
+            #{staff.creatorId},
+            #{staff.creatorName},
+            #{staff.createTime},
+            #{staff.useCompanyId},
+            #{staff.businessUnitId}
+            )
+        </foreach>
+  </insert>
+    <insert id="insertStaffUseCompanyNotExist" parameterType="com.njwd.entity.basedata.dto.StaffUseCompanyDto">
+        insert into wd_staff_use_company
+            (
+            staff_id,
+            dept_id,
+            use_company_id,
+            business_unit_id,
+            create_time,
+            creator_id,
+            creator_name
+            )
+        select
+            #{staffId},
+            #{deptId},
+            #{useCompanyId},
+            #{businessUnitId},
+            #{createTime},
+            #{creatorId},
+            #{creatorName}
+             from DUAL where
+            not exists (select * from wd_staff_use_company  ws where  ws.staff_id = #{staffId} and ws.use_company_id = #{useCompanyId})
+    </insert>
+</mapper>

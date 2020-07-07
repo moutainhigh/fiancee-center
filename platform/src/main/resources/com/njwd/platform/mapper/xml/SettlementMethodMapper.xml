@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.SettlementMethodMapper">
+  <resultMap id="BaseResultMap" type="com.njwd.entity.platform.SettlementMethod">
+    <!--@mbg.generated-->
+    <!--@Table wd_settlement_method-->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="code" jdbcType="VARCHAR" property="code" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="settle_method" jdbcType="BIGINT" property="settleMethod" />
+    <result column="busi_type" jdbcType="BIGINT" property="busiType" />
+    <result column="is_approved" jdbcType="BOOLEAN" property="isApproved" />
+    <result column="is_released" jdbcType="BOOLEAN" property="isReleased" />
+    <result column="is_enable" jdbcType="TINYINT" property="isEnable" />
+    <result column="is_del" jdbcType="BOOLEAN" property="isDel" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="creator_id" jdbcType="BIGINT" property="creatorId" />
+    <result column="creator_name" jdbcType="VARCHAR" property="creatorName" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="updator_id" jdbcType="BIGINT" property="updatorId" />
+    <result column="updator_name" jdbcType="VARCHAR" property="updatorName" />
+    <result column="manage_info" jdbcType="OTHER" property="manageInfo" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, code, `name`, settle_method, busi_type, is_approved, is_released, is_enable, 
+    is_del, create_time, creator_id, creator_name, update_time, updator_id, updator_name, 
+    manage_info
+  </sql>
+</mapper>

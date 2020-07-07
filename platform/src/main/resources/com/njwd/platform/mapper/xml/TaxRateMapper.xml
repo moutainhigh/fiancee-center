@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.TaxRateMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.platform.TaxRate">
+      <id column="id" jdbcType="BIGINT" property="id" />
+      <result column="code" jdbcType="VARCHAR" property="code" />
+      <result column="name" jdbcType="VARCHAR" property="name" />
+      <result column="tax_rate" jdbcType="DECIMAL" property="taxRate" />
+      <result column="tax_system_id" jdbcType="BIGINT" property="taxSystemId" />
+      <result column="tax_category_id" jdbcType="BIGINT" property="taxCategoryId" />
+      <result column="taxpayer_qual" jdbcType="BIGINT" property="taxpayerQual" />
+      <result column="is_approved" jdbcType="BOOLEAN" property="isApproved" />
+      <result column="is_released" jdbcType="BOOLEAN" property="isReleased" />
+      <result column="is_enable" jdbcType="BOOLEAN" property="isEnable" />
+      <result column="is_del" jdbcType="BOOLEAN" property="isDel" />
+      <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+      <result column="creator_id" jdbcType="BIGINT" property="creatorId" />
+      <result column="creator_name" jdbcType="VARCHAR" property="creatorName" />
+      <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+      <result column="updator_id" jdbcType="BIGINT" property="updatorId" />
+      <result column="updator_name" jdbcType="VARCHAR" property="updatorName" />
+      <result column="manage_info" jdbcType="OTHER" property="manageInfo" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+      <!--@mbg.generated-->
+      id, code, `name`, tax_rate, tax_system_id, tax_category_id, taxpayer_qual, is_approved,
+      is_released, is_enable, is_del, create_time, creator_id, creator_name, update_time,
+      updator_id, updator_name, manage_info
+    </sql>
+
+    <!-- 查询税率 -->
+    <select id="findTaxRate"  resultType="com.njwd.entity.platform.vo.TaxRateVo">
+        select tr.id,
+        tr.code,
+        tr.name,
+        tr.tax_rate,
+        tr.tax_system_id,
+        ts.name tax_system_name,
+        tr.tax_category_id,
+        tc.name tax_category_name,
+        tr.is_approved,
+        tr.is_released,
+        tr.is_enable,
+        tr.is_del,
+        tr.version
+        from wd_tax_rate tr
+        left join wd_tax_system ts on tr.tax_system_id = ts.id
+        left join wd_tax_category tc on tr.tax_category_id = tc.id
+        <where>
+            <if test="taxRateDto.isDel != null">
+                and tr.is_del = #{taxRateDto.isDel }
+            </if>
+            <if test="taxRateDto.name != null">
+                and tr.name = #{taxRateDto.name}
+            </if>
+            <if test="taxRateDto.id != null">
+                and tr.id = #{taxRateDto.id}
+            </if>
+        </where>
+        order by substring(tr.code,3) * 1
+    </select>
+
+    <!-- 查询税率分页 -->
+    <select id="findTaxRatePage" resultType="com.njwd.entity.platform.vo.TaxRateVo">
+        select tr.id,
+        tr.code,
+        tr.name,
+        tr.tax_rate,
+        tr.tax_system_id,
+        ts.name tax_system_name,
+        tr.tax_category_id,
+        tc.name tax_category_name,
+        tr.taxpayer_qual,
+        tr.is_approved,
+        tr.is_released,
+        tr.is_enable,
+        tr.is_del,
+        tr.create_time,
+        tr.creator_id,
+        tr.creator_name,
+        tr.update_time,
+        tr.updator_id,
+        tr.updator_name,
+        tr.manage_info,
+        tr.version
+        from wd_tax_rate tr
+        left join wd_tax_system ts on tr.tax_system_id = ts.id
+        left join wd_tax_category tc on tr.tax_category_id = tc.id
+        <where>
+            and tr.is_enable = 1
+            and tr.is_del = 0
+            <if test="taxRateDto.codeOrName != null and taxRateDto.codeOrName != ''">
+                and (tr.code like concat('%', #{taxRateDto.codeOrName}, '%')
+                or tr.name like concat('%', #{taxRateDto.codeOrName}, '%'))
+            </if>
+            <if test="taxRateDto.taxSystemIdList != null and taxRateDto.taxSystemIdList.size() > 0">
+                and tr.tax_system_id in
+                <foreach collection="taxRateDto.taxSystemIdList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="taxRateDto.taxCategoryIdList != null and taxRateDto.taxCategoryIdList.size() > 0">
+                and tr.tax_category_id in
+                <foreach collection="taxRateDto.taxCategoryIdList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="taxRateDto.isReleased != null">
+                and tr.is_released = #{taxRateDto.isReleased}
+            </if>
+            <if test="taxRateDto.isApproved != null">
+                and tr.is_approved = #{taxRateDto.isApproved}
+            </if>
+        </where>
+        order by substring(tr.code,3) * 1
+  </select>
+
+    <!-- 查询税率列表 -->
+    <select id="findTaxRateList" resultType="com.njwd.entity.platform.vo.TaxRateVo">
+        select tr.id,
+        tr.code,
+        tr.name,
+        tr.tax_rate,
+        tr.tax_system_id,
+        ts.name tax_system_name,
+        tr.tax_category_id,
+        tc.name tax_category_name,
+        tr.taxpayer_qual,
+        tr.is_approved,
+        tr.is_released,
+        tr.is_enable,
+        tr.is_del,
+        tr.create_time,
+        tr.creator_id,
+        tr.creator_name,
+        tr.update_time,
+        tr.updator_id,
+        tr.updator_name,
+        tr.manage_info,
+        tr.version
+        from wd_tax_rate tr
+        left join wd_tax_system ts on tr.tax_system_id = ts.id
+        left join wd_tax_category tc on tr.tax_category_id = tc.id
+        <where>
+            and tr.is_enable = 1
+            and tr.is_del = 0
+            <if test="taxRateDto.codeOrName != null and taxRateDto.codeOrName != ''">
+                and (tr.code like concat('%', #{taxRateDto.codeOrName}, '%')
+                or tr.name like concat('%', #{taxRateDto.codeOrName}, '%'))
+            </if>
+            <if test="taxRateDto.taxSystemIdList != null and taxRateDto.taxSystemIdList.size() > 0">
+                and tr.tax_system_id in
+                <foreach collection="taxRateDto.taxSystemIdList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="taxRateDto.taxCategoryIdList != null and taxRateDto.taxCategoryIdList.size() > 0">
+                and tr.tax_category_id in
+                <foreach collection="taxRateDto.taxCategoryIdList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="taxRateDto.isReleased != null">
+                and tr.is_released = #{taxRateDto.isReleased}
+            </if>
+            <if test="taxRateDto.isApproved != null">
+                and tr.is_approved = #{taxRateDto.isApproved}
+            </if>
+        </where>
+        order by substring(tr.code,3) * 1
+    </select>
+
+    <!-- 查询税率状态 -->
+    <select id="findTaxRateListStatus" resultType="com.njwd.entity.platform.vo.TaxRateVo">
+        select tr.id,
+        tr.is_approved,
+        tr.is_released,
+        tr.is_enable,
+        tr.is_del,
+        tr.version
+        from wd_tax_rate tr
+        <where>
+            <if test="taxRateDto.changeList != null and taxRateDto.changeList.size() > 0">
+                and tr.id in
+                <foreach collection="taxRateDto.changeList" item="taxRate" index="index" open="(" close=")" separator=",">
+                    #{taxRate.id}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+</mapper>

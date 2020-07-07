@@ -1,0 +1,26 @@
+
+buildscript {
+    ext {
+        springBootVersion = '2.1.2.RELEASE'
+    }
+    repositories {
+        mavenLocal()
+        maven { url "http://maven.aliyun.com/nexus/content/groups/public/" }
+        mavenCentral()
+      //maven { url "http://192.168.1.160:8081/repository/maven-public/" }
+    }
+    dependencies {
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+    }
+}
+
+apply plugin: 'maven'
+apply plugin: 'war'
+
+
+dependencies {
+    compile project(':common')
+    compile rootProject.ext.dependencies['spring-boot-starter-amqp']
+    compile rootProject.ext.dependencies['tomcat-embed-jasper']
+    providedRuntime rootProject.ext.dependencies['spring-boot-starter-tomcat']
+}

@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.ledger.mapper.GeneralLedgerMapper">
+
+    <!-- 查询总分类账期初数据 -->
+    <select id="findGeneralLedgerList" resultType="com.njwd.entity.ledger.vo.GeneralLedgerVo">
+        SELECT
+        bs.id,
+        bs.account_book_id,
+        bs.account_book_entity_id,
+        bs.account_subject_id,
+        bs.period_year,
+        bs.period_num,
+        bs.period_year_num,
+        <if test="generalLedgerQueryDto.isIncludeUnbooked == 1 and generalLedgerQueryDto.isIncludeProfitAndLoss == 1">
+            bs.debit_amount selfDebit,
+            bs.credit_amount selfCredit,
+        </if>
+        <if test="generalLedgerQueryDto.isIncludeUnbooked == 1 and generalLedgerQueryDto.isIncludeProfitAndLoss == 0">
+            bs.debit_amount - bs.sy_debit_amount selfDebit,
+            bs.credit_amount - bs.sy_credit_amount selfCredit,
+        </if>
+        <if test="generalLedgerQueryDto.isIncludeUnbooked == 0 and generalLedgerQueryDto.isIncludeProfitAndLoss == 1 ">
+            bs.post_debit_amount selfDebit,
+            bs.post_credit_amount selfCredit,
+        </if>
+        <if test="generalLedgerQueryDto.isIncludeUnbooked == 0 and generalLedgerQueryDto.isIncludeProfitAndLoss == 0">
+            bs.post_debit_amount - bs.post_sy_debit_amount selfDebit,
+            bs.post_credit_amount - bs.post_sy_credit_amount selfCredit,
+        </if>
+        opening_balance,
+        closing_balance
+        from wd_balance_subject bs
+        <where>
+            <if test="generalLedgerQueryDto.accountBookEntityIds != null and generalLedgerQueryDto.accountBookEntityIds.size() > 0">
+                and bs.account_book_entity_id in
+                <foreach collection="generalLedgerQueryDto.accountBookEntityList" item="item" index="index" open="(" separator="," close=")">
+                    #{item.id}
+                </foreach>
+            </if>
+            and bs.period_year_num between CONCAT(left(#{generalLedgerQueryDto.periodYearNum1}, 4),'00') and #{generalLedgerQueryDto.periodYearNum2}
+            <if test="generalLedgerQueryDto.accountSubjectIds != null and generalLedgerQueryDto.accountSubjectIds.size() > 0">
+                and bs.account_subject_id in
+                <foreach collection="generalLedgerQueryDto.accountSubjectIds" item="accountSubjectId" index="index" open="(" separator="," close=")">
+                    #{accountSubjectId}
+                </foreach>
+            </if>
+        </where>
+        order by
+        account_subject_id,
+        bs.account_book_id,
+        account_book_entity_id,
+        period_year,
+        period_num
+    </select>
+    <!-- 查询明细分类账制单日期内id -->
+    <select id="findDetailInDataIds" parameterType="com.njwd.entity.ledger.dto.GeneralLedgerQueryDto"
+            resultType="com.njwd.entity.ledger.vo.GeneralLedgerVo">
+        select v.id voucherId,CONCAT(MIN(v.posting_period_year),'00') periodYearNum1,MAX(v.period_year_num) periodYearNum2
+        from wd_voucher_%s v
+        left join wd_voucher_entry_%s ve on v.id = ve.voucher_id
+        where
+        v.voucher_date between #{generalLedgerQueryDto.voucherDate1} and #{generalLedgerQueryDto.voucherDate2}
+        and v.is_del = 0
+        <if test="generalLedgerQueryDto.accountBookEntityList != null and generalLedgerQueryDto.accountBookEntityList.size() > 0">
+            and v.account_book_entity_id in (
+            <foreach collection="generalLedgerQueryDto.accountBookEntityList" item="item" index="index"
+                     separator=",">
+                #{item.id}
+            </foreach>
+            )
+        </if>
+        <if test="generalLedgerQueryDto.accountSubjectIds != null and generalLedgerQueryDto.accountSubjectIds.size()>0">
+            and ve.account_subject_id in
+            <foreach collection="generalLedgerQueryDto.accountSubjectIds" item="generalLedgerQueryDto.accountSubjectIds" index="index" open="(" separator="," close=")">
+                #{generalLedgerQueryDto.accountSubjectIds}
+            </foreach>
+        </if>
+        <if test="generalLedgerQueryDto.isIncludeUnbooked == 0">
+            and v.posting_status != 0
+        </if>
+        <if test="generalLedgerQueryDto.isIncludeProfitAndLoss == 0">
+            and v.source_type != 2
+        </if>
+        <if test="generalLedgerQueryDto.rootEnterpriseId != null">
+            and v.root_enterprise_id = #{generalLedgerQueryDto.rootEnterpriseId}
+        </if>
+        GROUP BY v.id
+    </select>
+    <!-- 查询明细分类账具体日数据-->
+    <select id="findDetailLedgerList" parameterType="com.njwd.entity.ledger.dto.GeneralLedgerQueryDto"
+            resultType="com.njwd.entity.ledger.vo.GeneralLedgerVo">
+        select
+        v.id voucherId,bs.account_book_id,bs.account_book_entity_id,bs.account_subject_id,
+        v.voucher_date voucherDate,unix_timestamp(v.voucher_date) voucherDateTime,bs.period_year,bs.period_num,bs.period_year_num,
+        CONCAT(case v.credential_word when 1 then '记' when 2 then '收' when 3 then '付' when 4 then '转' end,'-',v.main_code) voucherWord,
+        v.main_code,v.abstract_content summary,
+        case when bs.period_num != 0 then v.debit_amount else
+        <if test="generalLedgerQueryDto.isIncludeUnbooked == 1 and generalLedgerQueryDto.isIncludeProfitAndLoss == 1">
+            bs.debit_amount
+        </if>
+        <if test="generalLedgerQueryDto.isIncludeUnbooked == 1 and generalLedgerQueryDto.isIncludeProfitAndLoss == 0">
+            bs.debit_amount - bs.sy_debit_amount
+        </if>
+        <if test="generalLedgerQueryDto.isIncludeUnbooked == 0 and generalLedgerQueryDto.isIncludeProfitAndLoss == 1 ">
+            bs.post_debit_amount
+        </if>
+        <if test="generalLedgerQueryDto.isIncludeUnbooked == 0 and generalLedgerQueryDto.isIncludeProfitAndLoss == 0">
+            bs.post_debit_amount - bs.post_sy_debit_amount
+        </if>
+        end selfDebit,
+        case when bs.period_num != 0 then v.credit_amount else
+        <if test="generalLedgerQueryDto.isIncludeUnbooked == 1 and generalLedgerQueryDto.isIncludeProfitAndLoss == 1">
+            bs.credit_amount
+        </if>
+        <if test="generalLedgerQueryDto.isIncludeUnbooked == 1 and generalLedgerQueryDto.isIncludeProfitAndLoss == 0">
+            bs.credit_amount - bs.sy_credit_amount
+        </if>
+        <if test="generalLedgerQueryDto.isIncludeUnbooked == 0 and generalLedgerQueryDto.isIncludeProfitAndLoss == 1 ">
+            bs.post_credit_amount
+        </if>
+        <if test="generalLedgerQueryDto.isIncludeUnbooked == 0 and generalLedgerQueryDto.isIncludeProfitAndLoss == 0">
+            bs.post_credit_amount - bs.post_sy_credit_amount
+        </if>
+        end selfCredit,
+        bs.opening_balance
+        from wd_balance_subject bs
+        left join (
+        select
+        v.id,v.voucher_date,v.credential_word,ve.abstract_content,v.account_book_entity_id,ve.account_subject_id,v.posting_period_year,v.posting_period_num,
+        v.voucher_date voucherDate,	unix_timestamp(v.voucher_date) voucherDateTime,ve.abstract_content summary,
+        ve.debit_amount,ve.credit_amount,v.main_code
+        from wd_voucher_%s v
+        left join wd_voucher_entry_%s ve on v.id = ve.voucher_id
+        where
+        v.is_del = 0
+        <if test="generalLedgerQueryDto.isIncludeUnbooked == 0">
+            and v.posting_status != 0
+        </if>
+        <if test="generalLedgerQueryDto.isIncludeProfitAndLoss == 0">
+            and v.source_type != 2
+        </if>
+        )v
+        on v.account_book_entity_id = bs.account_book_entity_id
+        and v.posting_period_year = bs.period_year
+        and v.posting_period_num = bs.period_num
+        and v.account_subject_id = bs.account_subject_id
+        <where>
+            <if test="generalLedgerQueryDto.accountBookEntityList != null and generalLedgerQueryDto.accountBookEntityList.size() > 0">
+                and bs.account_book_entity_id in (
+                <foreach collection="generalLedgerQueryDto.accountBookEntityList" item="item" index="index"
+                         separator=",">
+                    #{item.id}
+                </foreach>
+                )
+            </if>
+            <if test="generalLedgerQueryDto.periodYearNum1 != null and generalLedgerQueryDto.periodYearNum2 != null ">
+                and  bs.period_year_num between CONCAT(left(#{generalLedgerQueryDto.periodYearNum1}, 4),'00') and #{generalLedgerQueryDto.periodYearNum2}
+            </if>
+            <if test="generalLedgerQueryDto.accountSubjectIds != null and generalLedgerQueryDto.accountSubjectIds.size()>0">
+                and bs.account_subject_id in
+                <foreach collection="generalLedgerQueryDto.accountSubjectIds" item="generalLedgerQueryDto.accountSubjectIds" index="index" open="(" separator="," close=")">
+                    #{generalLedgerQueryDto.accountSubjectIds}
+                </foreach>
+            </if>
+        </where>
+        order by
+        account_book_entity_id,
+        account_subject_id,
+        period_year,
+        period_num,
+        voucherDate,
+        main_code
+    </select>
+</mapper>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.basedata.mapper.MenuControlStrategyMapper">
+    
+    <insert id="addBatch">
+        INSERT INTO `wd_menu_control_strategy` ( `root_enterprise_id`, `menu_code`, `group_create`, `company_create`, `is_share`, `is_distribute`, `is_private`, `is_change_to_distribute`, `updator_name`, `updator_id` )
+        VALUES
+          <foreach collection="list" item="p" separator=",">
+              (#{p.rootEnterpriseId} ,#{p.menuCode},#{p.groupCreate} ,#{p.companyCreate} ,#{p.isShare},#{p.isDistribute} ,#{p.isPrivate} ,#{p.isChangeToDistribute} ,#{p.updatorName} ,#{p.updatorId})
+          </foreach>
+    </insert>
+
+</mapper>

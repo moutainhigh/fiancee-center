@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.mapper.ReferenceRelationMapper">
+
+
+  <select id="findReferenceCount" resultType="int">
+    select count(1) from ${referenceTable}
+    <where>
+      <foreach collection="referenceColumnArr" item="referenceColumn" separator="or" open="(" close=")">
+        ${referenceColumn} = #{businessKey}
+      </foreach>
+      <if test="filterCondition!=null and filterCondition!='' ">
+        and ${filterCondition}
+      </if>
+      <if test="isLogicDel==1">
+        and is_del = 0
+      </if>
+      <if test="rootEnterpriseId != null">
+        and root_enterprise_id = #{rootEnterpriseId}
+      </if>
+    </where>
+  </select>
+
+  <select id="findBusinessData" resultType="Map" >
+    select * from ${businessTable}
+    <where>
+      and id in
+      <foreach collection="businessIds" item="businessId" separator="," open="(" close=")">
+        #{businessId}
+      </foreach>
+    </where>
+  </select>
+
+  <select id="findReferenceCountList" resultType="com.njwd.entity.basedata.ReferenceRelation">
+    select ${referenceColumn} business_key,count(1) reference_count from ${referenceTable}
+    <where>
+      ${referenceColumn} in
+      <foreach collection="businessKeys" item="businessKey" open="(" close=")" separator=",">
+         #{businessKey}
+      </foreach>
+      <if test="filterCondition!=null and filterCondition!='' ">
+        and ${filterCondition}
+      </if>
+      <if test="isLogicDel==1">
+        and is_del = 0
+      </if>
+      <if test="rootEnterpriseId != null">
+        and root_enterprise_id = #{rootEnterpriseId}
+      </if>
+      group by ${referenceColumn}
+    </where>
+  </select>
+
+</mapper>

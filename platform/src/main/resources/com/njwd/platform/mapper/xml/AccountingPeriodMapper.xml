@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.AccountingPeriodMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.platform.vo.AccountingPeriodVo">
+        <!--@mbg.generated generated on Fri Jun 28 10:55:38 CST 2019.-->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="period_year" jdbcType="INTEGER" property="periodYear"/>
+        <result column="period_num" jdbcType="TINYINT" property="periodNum"/>
+        <result column="start_date" jdbcType="DATE" property="startDate"/>
+        <result column="end_date" jdbcType="DATE" property="endDate"/>
+        <result column="is_adjustment" jdbcType="TINYINT" property="isAdjustment"/>
+        <result column="acc_calendar_id" jdbcType="BIGINT" property="accCalendarId"/>
+        <result column="is_enable" jdbcType="TINYINT" property="isEnable"/>
+        <result column="is_del" jdbcType="TINYINT" property="isDel"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="creator_id" jdbcType="BIGINT" property="creatorId"/>
+        <result column="creator_name" jdbcType="VARCHAR" property="creatorName"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+        <result column="updator_id" jdbcType="BIGINT" property="updatorId"/>
+        <result column="updator_name" jdbcType="VARCHAR" property="updatorName"/>
+    </resultMap>
+
+    <resultMap id="TempBaseResultMap" type="com.njwd.entity.platform.vo.AccountingPeriodTypeVo">
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        <!--@mbg.generated generated on Fri Jun 28 10:55:38 CST 2019.-->
+        id, period_year, period_num, start_date, end_date, is_adjustment, acc_calendar_id,
+        is_enable, is_del, create_time, creator_id, creator_name, update_time, updator_id,
+        updator_name
+    </sql>
+    <select id="findAccPerByIsAdjAndAccCal" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_accounting_period
+        <where>
+            <if test="periodYear !=null">
+                and period_year=#{periodYear}
+            </if>
+            <if test="periodNum !=null">
+                and period_num=#{periodNum}
+            </if>
+            <if test="isAdjustment !=null">
+                and is_adjustment=#{isAdjustment}
+            </if>
+            <if test="accCalendarId !=null">
+                and acc_calendar_id=#{accCalendarId}
+            </if>
+            <if test="customPeriodYear != null and customPeriodNum != null">
+                and concat(period_year, LPAD(period_num,2,0))  &gt;= concat(#{customPeriodYear}, LPAD(#{customPeriodNum},2,0))
+            </if>
+                and is_enable=1 and is_del=0
+        </where>
+    </select>
+
+    <select id="findAccountingPeriodTypePage" resultMap="TempBaseResultMap">
+        select wapt.id,wapt.code,wapt.name,wapt.type_code,wapt.period_no from wd_accounting_period_type wapt
+         <where>
+             1 = 1
+             <if test="accountingPeriodTypeDto.codeOrName != null">
+                 and (wapt.code like concat('%',#{accountingPeriodTypeDto.codeOrName},'%')
+                 or wapt.`name` like  concat('%',#{accountingPeriodTypeDto.codeOrName},'%')
+                 or wapt.type_code like  concat('%',#{accountingPeriodTypeDto.codeOrName},'%')
+                 )
+             </if>
+         </where>
+    </select>
+</mapper>

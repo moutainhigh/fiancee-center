@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.AccountBookCategoryMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.platform.vo.AccountBookCategoryVo">
+        <!--@mbg.generated generated on Mon Jun 24 16:32:36 CST 2019.-->
+        <!--   <id column="id" jdbcType="BIGINT" property="id"/>
+           <result column="code" jdbcType="VARCHAR" property="code"/>
+           <result column="name" jdbcType="VARCHAR" property="name"/>
+           <result column="account_type_id" jdbcType="BIGINT" property="accountTypeId"/>
+           <result column="acc_standard_id" jdbcType="BIGINT" property="accStandardId"/>
+           <result column="subject_id" jdbcType="BIGINT" property="subjectId"/>
+           <result column="acc_calendar_id" jdbcType="BIGINT" property="accCalendarId"/>
+           <result column="cash_flow_item_id" jdbcType="BIGINT" property="cashFlowItemId"/>
+           <result column="currency_id" jdbcType="BIGINT" property="currencyId"/>
+           <result column="tax_system_id" jdbcType="BIGINT" property="taxSystemId"/>
+           <result column="share_status" jdbcType="TINYINT" property="shareStatus"/>
+           <result column="is_released" jdbcType="TINYINT" property="isReleased"/>
+           <result column="is_approved" jdbcType="TINYINT" property="isApproved"/>
+           <result column="is_enable" jdbcType="TINYINT" property="isEnable"/>
+           <result column="is_del" jdbcType="TINYINT" property="isDel"/>
+           <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+           <result column="creator_id" jdbcType="BIGINT" property="creatorId"/>
+           <result column="creator_name" jdbcType="VARCHAR" property="creatorName"/>
+           <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+           <result column="updator_id" jdbcType="BIGINT" property="updatorId"/>
+           <result column="updator_name" jdbcType="VARCHAR" property="updatorName"/>
+           <result column="manage_info" jdbcType="ManagerInfo" property="manageInfo"/>-->
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--@mbg.generated generated on Mon Jun 24 16:32:36 CST 2019.-->
+        id, code, `name`, account_type_id, acc_standard_id, type_code,subject_id, acc_calendar_id,
+        cash_flow_item_id, currency_id, tax_system_id, share_status, is_enable,
+        is_del, is_approved,is_released,create_time, creator_id, creator_name, update_time, updator_id, updator_name,manage_info,version
+    </sql>
+    <select id="findAccBoListByAccTypeAndStand" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_account_book_category
+        <where>
+            <if test="accountTypeId != null">
+                and account_type_id=#{accountTypeId}
+            </if>
+            <if test="accStandardId != null">
+                and acc_standard_id=#{accStandardId}
+            </if>
+            and is_enable=1 and is_del=0
+        </where>
+    </select>
+
+    <select id="findAccBookListByTypeAndEntId" resultMap="BaseResultMap">
+     select distinct
+        abc.acc_standard_id,
+        was.name accStandardName,
+        group_concat(distinct abc.currency_id) currencyIds,
+        group_concat(distinct wc.name) currencyNames,
+        group_concat(distinct abc.tax_system_id) taxSystemIds,
+        group_concat(distinct wts.name) taxSystemNames
+     from wd_account_book_category abc
+     left join wd_accounting_standard was on abc.acc_standard_id=was.id
+     left join wd_currency wc on abc.currency_id=wc.id
+     left join wd_tax_system wts on abc.tax_system_id=wts.id
+     where
+         abc.account_type_id=#{accountTypeId}
+         and abc.is_del=0
+         and abc.is_enable=1
+         and abc.ssued_status=1
+         and (abc.share_status=0 or(abc.share_status=1 and exists (select 1 from wd_account_book_enterprise abe where abe.account_book_category_id=abc.id and abe.root_enterprise_id=#{rootEnterpriseId} ) ))
+      group by abc.acc_standard_id
+  </select>
+<!--page分页-->
+    <select id="findPage" resultMap="BaseResultMap">
+        select wabc.id,
+               wabc.code,
+               wabc.acc_standard_id,
+               wabc.subject_id,
+               wabc.acc_calendar_id,
+                was.name as accStandardName,
+                wac.name calendarName,
+                ws.name subjectName,
+                wabc.type_code,
+                wabc.is_approved,
+                wabc.is_released,
+                wabc.version
+        from wd_account_book_category wabc left join  wd_accounting_standard was on wabc.acc_standard_id = was.id
+                                           left join wd_accounting_calendar wac on wabc.acc_calendar_id = wac.id
+                                           left join wd_subject ws on wabc.subject_id = ws.id
+        <where>
+            1 = 1 and wabc.is_del = 0
+            <if test="accountBookCategoryDto.accStandardIds != null and accountBookCategoryDto.accStandardIds.size() > 0">
+                and wabc.acc_standard_id in
+               <foreach collection="accountBookCategoryDto.accStandardIds" item="accStandardId" index="index" open="(" close=")" separator=",">
+                   #{accStandardId}
+               </foreach>
+            </if>
+            <if test="accountBookCategoryDto.isApproved == 1">
+              and  wabc.is_approved = 1
+            </if>
+            <if test="accountBookCategoryDto.isApproved == 0">
+                and  wabc.is_approved = 0
+            </if>
+            <if test="accountBookCategoryDto.isReleased == 1 ">
+              and  wabc.is_released = 1
+            </if>
+            <if test="accountBookCategoryDto.isReleased == 0 ">
+                and  wabc.is_released = 0
+            </if>
+        </where>
+        ORDER BY wabc.code
+    </select>
+    <!--根据id集合查询list数据-->
+    <select id="findAccBookListByIds" resultMap="BaseResultMap">
+        select  <include refid="Base_Column_List"/>
+        from wd_account_book_category wabc
+        <where>
+            1 = 1
+            <if test="accountBookCategoryDto.editList != null  and accountBookCategoryDto.editList.size() > 0">
+                and wabc.id in
+                <foreach collection="accountBookCategoryDto.editList" item="accountBookCategory" index="index" open="(" close=")" separator=",">
+                    #{accountBookCategory.id}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <update id="delteOrCheckOrRelease">
+        <foreach collection="accountBookCategoryList" item="accountBookCategory" index="index">
+            update wd_account_book_category wabc
+               <set>
+                   <if test="accountBookCategoryDto.isDel == 1 ">
+                       wabc.is_del = 1,
+                   </if>
+                   <if test="accountBookCategoryDto.isApproved == 1">
+                       wabc.is_approved = 1,
+                   </if>
+                   <if test="accountBookCategoryDto.isApproved == 0">
+                       wabc.is_approved = 0,
+                   </if>
+                   <if test="accountBookCategoryDto.isReleased == 1">
+                       wabc.is_released = 1,
+                   </if>
+                   wabc.version = wabc.version +1,
+               </set>
+                    where wabc.id = #{accountBookCategory.id}and wabc.version = #{accountBookCategory.version};
+        </foreach>
+    </update>
+    <select id="findAccountBookCategoryList" resultMap="BaseResultMap">
+        select  <include refid="Base_Column_List"/>
+        from wd_account_book_category
+        <where>
+            <if test="isApproved != null">
+              and is_approved = #{isApproved}
+            </if>
+            <if test="isReleased != null">
+              and is_released = #{isReleased}
+            </if>
+            <if test="platformIds!=null and platformIds.size()>0">
+                and id not in
+                <foreach collection="platformIds" item="platformId" open="(" close=")" separator=",">
+                    ${platformId}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="findAccountBookCategory" resultMap="BaseResultMap">
+      select ws.id,ws.name as subjectName
+               from wd_subject ws
+               <where>
+                   ws.id = #{subjectId}
+               </where>
+    </select>
+
+</mapper>

@@ -1,0 +1,36 @@
+bootJar {
+    enabled = true
+}
+jar{
+    enabled = true
+}
+
+dependencies {
+    compile project(':easyexcel')
+    compile rootProject.ext.dependencies['mybatis-plus-boot-starter']
+    compile rootProject.ext.dependencies['spring-boot-starter-aop']
+    compile rootProject.ext.dependencies['spring-boot-starter-web']
+    compile (rootProject.ext.dependencies['spring-boot-starter-data-redis']){
+        exclude(module: 'lettuce-core')
+    }
+    compile rootProject.ext.dependencies['jedis']
+    compile rootProject.ext.dependencies['poi-ooxml']
+    compile rootProject.ext.dependencies['commons-beanutils']
+    compile (rootProject.ext.dependencies['dozer']) {
+        exclude(module: 'slf4j-log4j12')
+    }
+    compile rootProject.ext.dependencies['lombok']
+    compile rootProject.ext.dependencies['commons-lang3']
+    compile rootProject.ext.dependencies['commons-io']
+    
+    compile rootProject.ext.dependencies['spring-cloud-starter-config']
+    compile rootProject.ext.dependencies['spring-cloud-starter-openfeign']
+    compile rootProject.ext.dependencies['alibaba-nacos-discovery']
+    compile rootProject.ext.dependencies['shiro-spring-boot-web-starter']
+    compile rootProject.ext.dependencies['shiro-redis']
+    compile rootProject.ext.dependencies['httpclient']
+    compile rootProject.ext.dependencies['okhttp']
+    compile rootProject.ext.dependencies['typetools']
+    runtimeOnly rootProject.ext.dependencies['mysql-connector-java']
+
+}

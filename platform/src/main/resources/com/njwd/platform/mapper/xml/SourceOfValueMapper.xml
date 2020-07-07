@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.SourceOfValueMapper">
+  <resultMap id="BaseResultMap" type="com.njwd.entity.platform.SourceOfValue">
+    <!--@mbg.generated-->
+    <!--@Table wd_source_of_value-->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="code" jdbcType="VARCHAR" property="code" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="aux_id" jdbcType="BIGINT" property="auxId" />
+    <result column="aux_type" jdbcType="VARCHAR" property="auxType" />
+    <result column="aux_name" jdbcType="VARCHAR" property="auxName" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="creator_id" jdbcType="BIGINT" property="creatorId" />
+    <result column="creator_name" jdbcType="VARCHAR" property="creatorName" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="updator_id" jdbcType="BIGINT" property="updatorId" />
+    <result column="updator_name" jdbcType="VARCHAR" property="updatorName" />
+    <result column="is_approved" jdbcType="BOOLEAN" property="isApproved" />
+    <result column="manage_info" jdbcType="OTHER" property="manageInfo" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, code, `name`, aux_id, aux_type, aux_name, create_time, creator_id, creator_name, 
+    update_time, updator_id, updator_name, is_approved, manage_info
+  </sql>
+</mapper>

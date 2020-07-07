@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.ledger.mapper.VoucherEntryInteriorMapper">
+    <insert id="insertInteriorRelation">
+        insert into wd_voucher_entry_interior_%s
+        (
+        voucher_id,
+        entry_id,
+        interior_voucher_id,
+        interior_entry_id
+        ) VALUES
+        <foreach collection="interiorGenerateEntryList" item="interiorEntry" separator=",">
+            (
+            #{voucherId},
+            #{interiorEntry.interiorEntry.id},
+            #{interiorVoucherId},
+            #{interiorEntry.id}
+            )
+        </foreach>
+    </insert>
+</mapper>

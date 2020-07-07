@@ -1,0 +1,558 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.ledger.mapper.AccountBookPeriodMapper">
+
+    <sql id="Base_Column_List">
+            wabp.`id`,
+            wabp.`root_enterprise_id`,
+            wabp.`account_book_id`,
+            wabp.`account_book_name`,
+            wabp.`account_book_code`,
+            wabp.`account_book_system_id`,
+            wabp.`system_name`,
+            wabp.`system_sign`,
+            wabp.`period_year`,
+            wabp.`period_num`,
+            wabp.`period_year_num`,
+            wabp.`start_date`,
+            wabp.`end_date`,
+            wabp.`status`,
+            wabp.`is_revise_period`,
+            wabp.`adjust_time`,
+            wabp.`is_make_report`,
+            wabp.`adjust_user_id`,
+            wabp.`adjust_user_name`,
+            wabp.`is_settle`,
+            wabp.`settle_time`,
+            wabp.`settle_user_id`,
+            wabp.`settle_user_name`,
+            wabp.`cancel_settle_time`,
+            wabp.`cancel_settle_user_id`,
+            wabp.`cancel_settle_user_name`,
+            wabp.`updator_id`,
+            wabp.`updator_name`,
+            wabp.`update_time`,
+            wabp.`manage_info`
+    </sql>
+    <resultMap id="BaseResultMap" type="com.njwd.entity.ledger.AccountBookPeriod">
+    </resultMap>
+
+    <!--  根据账簿ID,年度，期间 获取期间开始时间 -->
+    <select id="findPeriodStartDate" resultType="com.njwd.entity.ledger.vo.AccountBookPeriodVo">
+        select start_date
+        from wd_account_book_period
+        where 1=1
+        <if test="accountBookId != null">
+            and account_book_id = #{accountBookId}
+        </if>
+        <if test="periodYear != null">
+            and period_year = #{periodYear}
+        </if>
+        <if test="periodNum != null">
+            and period_num = #{periodNum}
+        </if>
+    </select>
+
+    <!--  根据账簿id查询该账簿最后一次（已结账已启用）账簿期间信息 -->
+    <select id="findLastPostingByAccountBookId" resultType="com.njwd.entity.ledger.vo.AccountBookPeriodVo">
+        SELECT
+        t1.id id,
+        t1.account_book_id accountBookId,
+        t1.period_year periodYear,
+        t1.period_num periodNum,
+        t1.start_date startDate,
+        t1.end_date endDate
+        FROM
+        wd_account_book_period t1
+        <where>
+            <if test="dto.rootEnterpriseId != null">
+                AND t1.root_enterprise_id = #{dto.rootEnterpriseId}
+            </if>
+            <if test="dto.accountBookId != null">
+                AND t1.account_book_id = #{dto.accountBookId}
+            </if>
+            AND t1.`status` = 1
+            AND t1.is_settle = 1
+        </where>
+        ORDER BY
+        t1.period_year DESC,
+        t1.period_num DESC
+        LIMIT 1
+    </select>
+
+    <!--  查询账簿的第一次期间信息 -->
+    <select id="findFirstPostingByAccountBookId" resultType="com.njwd.entity.ledger.vo.AccountBookPeriodVo">
+        SELECT
+        t1.id id,
+        t1.account_book_id accountBookId,
+        t1.period_year periodYear,
+        t1.period_num periodNum,
+        t1.start_date startDate,
+        t1.end_date endDate
+        FROM
+        wd_account_book_period t1
+        <where>
+            <if test="dto.rootEnterpriseId != null">
+                AND t1.root_enterprise_id = #{dto.rootEnterpriseId}
+            </if>
+            <if test="dto.accountBookId != null">
+                AND t1.account_book_id = #{dto.accountBookId}
+            </if>
+            AND t1.`status` = 1
+        </where>
+        ORDER BY
+        t1.period_year ASC,
+        t1.period_num ASC
+        LIMIT 1
+    </select>
+
+    <!--  根据账簿id查询该账簿最后一次（已结账已启用）账簿期间信息 -->
+    <select id="findAccountBookPeriodListByParams" resultType="com.njwd.entity.ledger.vo.AccountBookPeriodVo">
+        SELECT
+        t1.id,
+        t1.period_year,
+        t1.period_num,
+        t1.start_date,
+        t1.end_date
+        FROM
+        wd_account_book_period t1
+        <where>
+            <if test="dto.rootEnterpriseId != null">
+                AND t1.root_enterprise_id = #{dto.rootEnterpriseId}
+            </if>
+            <if test="dto.accountBookId != null">
+                AND t1.account_book_id = #{dto.accountBookId}
+            </if>
+            <if test="dto.periodYears != null and dto.periodNums != null">
+                AND t1.period_year_num
+                BETWEEN concat(#{dto.periodYears[0]}, LPAD(#{dto.periodNums[0]},2,0))
+                AND concat(#{dto.periodYears[1]}, LPAD(#{dto.periodNums[1]},2,0))
+            </if>
+            <if test="dto.dateList != null and dto.dateList.size() > 0">
+                AND(
+                t1.start_date &lt;= #{dto.dateList[0]}
+                AND t1.end_date >= #{dto.dateList[0]}
+                OR (
+                t1.start_date &lt;= #{dto.dateList[1]}
+                AND t1.end_date >= #{dto.dateList[1]}
+                )
+                )
+            </if>
+            AND t1.`status` = 1
+        </where>
+        ORDER BY
+        t1.period_year_num
+    </select>
+
+    <update id="updatePeriodPrintTime">
+        update wd_account_book_period
+        set
+        manage_info =
+        case when manage_info is null
+        then #{accountBookPeriod.manageInfos}
+        else
+        (JSON_SET(manage_info,
+        <foreach collection="manageList" item="field" separator="," close=")">
+            <if test="field instanceof java.util.Date">
+                UNIX_TIMESTAMP(NOW()) * 1000
+            </if>
+            <if test="not field instanceof java.util.Date">
+                #{field}
+            </if>
+        </foreach>
+        )
+        end
+        where
+        root_enterprise_id = #{accountBookPeriod.rootEnterpriseId}
+        and account_book_id = #{accountBookPeriod.accountBookId}
+        and period_year_num = #{accountBookPeriod.periodYearNum}
+        and system_sign = #{accountBookPeriod.systemSign}
+    </update>
+
+    <select id="selectPeriodByAccountBookId" resultType="com.njwd.entity.ledger.vo.AccountBookPeriodVo">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_account_book_period wabp
+        where
+        1=1
+        <if test="voucherDto.accountBookIds !=null and voucherDto.accountBookIds.size() != 0">
+            and wabp.account_book_id in
+            <foreach collection="voucherDto.accountBookIds" item="accountBookId" index="index" open="(" separator=","
+                     close=")">
+                #{accountBookId}
+            </foreach>
+        </if>
+        and wabp.root_enterprise_id = #{voucherDto.rootEnterpriseId}
+        and wabp.system_sign = 'ledger'
+        and wabp.status=1
+        group by wabp.id
+    </select>
+
+    <!-- 根据 ID 、账簿ID、子系统标识、期间年、期间号、制单日期、是否查询最小期间、是否查询最大期间 查询账簿期间 -->
+    <select id="findPeriodByAccBookIdAndSystemSign" parameterType="com.njwd.entity.ledger.dto.AccountBookPeriodDto"
+            resultType="com.njwd.entity.ledger.vo.AccountBookPeriodVo">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_account_book_period wabp
+        <where>
+            <if test="id != null">
+                and wabp.id = #{id}
+            </if>
+            <if test="accountBookId!=null ">
+                and wabp.account_book_id = #{accountBookId}
+            </if>
+            <if test="systemSign!=null">
+                and wabp.system_sign = #{systemSign}
+            </if>
+            <if test="status != null ">
+                and wabp.status = #{status}
+            </if>
+            <if test="isSettle != null">
+                and wabp.is_settle = #{isSettle}
+            </if>
+            <if test="type == null">
+                <if test="periodYear!=null">
+                    and wabp.period_year = #{periodYear}
+                </if>
+                <if test="periodNum!=null">
+                    and wabp.period_num = #{periodNum}
+                </if>
+            </if>
+            <if test="voucherDate != null">
+                and wabp.start_date &lt;= #{voucherDate}
+                and wabp.end_date &gt;= #{voucherDate}
+            </if>
+            <if test="isLeast != null and isLeast == 1">
+                order by wabp.period_year_num
+                limit 1
+            </if>
+            <if test="isMax != null and isMax == 1">
+                order by wabp.period_year_num desc
+                limit 1
+            </if>
+            <if test="type != null and type == 0">
+                and wabp.period_year_num &gt;= concat( #{periodYear}, LPAD( #{periodNum}, 2, 0 ) )
+                order by wabp.period_year_num
+                limit 1
+            </if>
+            <if test=" type != null and type == 1">
+                and wabp.period_year_num &lt;= concat( #{periodYear}, LPAD( #{periodNum}, 2, 0 ) )
+                order by wabp.period_year_num desc
+                limit 1
+            </if>
+        </where>
+
+    </select>
+
+    <!-- 根据 子系统标识、状态、是否已结账、租户ID、账簿DI/账簿IDs 获取账簿期间列表 -->
+    <select id="findPeriodRangeByAccBookIdsAndSystemSign"
+            parameterType="com.njwd.entity.ledger.dto.AccountBookPeriodDto"
+            resultType="com.njwd.entity.ledger.vo.AccountBookPeriodVo">
+        SELECT
+        DISTINCT wabp.`period_year_num`,
+        wabp.`id`,
+        wabp.`root_enterprise_id`,
+        wabp.`account_book_id`,
+        wabp.`account_book_name`,
+        wabp.`account_book_code`,
+        wabp.`account_book_system_id`,
+        wabp.`system_name`,
+        wabp.`system_sign`,
+        wabp.`period_year`,
+        wabp.`period_num`,
+        wabp.`start_date`,
+        wabp.`end_date`,
+        wabp.`status`,
+        wabp.`is_revise_period`,
+        wabp.`adjust_time`,
+        wabp.`is_make_report`,
+        wabp.`adjust_user_id`,
+        wabp.`adjust_user_name`,
+        wabp.`is_settle`,
+        wabp.`settle_time`,
+        wabp.`settle_user_id`,
+        wabp.`settle_user_name`,
+        wabp.`cancel_settle_time`,
+        wabp.`cancel_settle_user_id`,
+        wabp.`cancel_settle_user_name`,
+        wabp.`updator_id`,
+        wabp.`updator_name`,
+        wabp.`update_time`,
+        wabp.`manage_info`
+        FROM
+        wd_account_book_period wabp
+        <where>
+            <if test="systemSign != null">
+                AND wabp.system_sign = #{systemSign}
+            </if>
+            <if test="status != null ">
+                AND wabp.status = #{status}
+            </if>
+            <if test="isSettle != null ">
+                AND wabp.is_settle = #{isSettle}
+            </if>
+            <if test="rootEnterpriseId != null">
+                AND wabp.root_enterprise_id = #{rootEnterpriseId}
+            </if>
+            <if test="accountBookId != null">
+                AND wabp.account_book_id = #{accountBookId}
+            </if>
+            <if test="idList != null">
+                AND wabp.id IN
+                <foreach collection="idList" item="id" open="(" close=")" separator=",">
+                    #{id}
+                </foreach>
+            </if>
+            <if test="accountBookIds!=null and accountBookIds.size()>0">
+                AND wabp.account_book_id IN
+                <foreach collection="accountBookIds" item="id" open="(" close=")" separator=",">
+                    #{id}
+                </foreach>
+            </if>
+        </where>
+        ORDER BY wabp.period_year_num
+
+    </select>
+
+    <!-- 根据账簿id和年度查询期间范围-->
+    <select id="findPeriodAreaByYear" resultType="com.njwd.entity.ledger.vo.AccountBookPeriodVo">
+        select account_book_id,period_year,min(period_num) beginNumber,max(period_num) endNumber
+        from wd_account_book_period
+        where 1=1
+        <if test="list != null and list.size() != 0">
+            and concat(account_book_id,period_year) in
+            <foreach collection="list" item="item" open="(" close=")" separator=",">
+                concat(#{item.accountBookId},#{item.periodYear})
+            </foreach>
+        </if>
+        group by account_book_id,period_year
+    </select>
+
+    <!-- 根据账簿id查询启用期间-->
+    <select id="findStartPeriodByAccountBook" resultType="com.njwd.entity.ledger.vo.AccountBookPeriodVo">
+        select min(period_year_num) periodYearNum
+        from wd_account_book_period
+        where 1=1
+        <if test="accountBookId != null">
+            and account_book_id = #{accountBookId}
+        </if>
+    </select>
+
+    <!-- 根据年份查询当前年份最大期间数 -->
+    <select id="findMaxPeriodNumByYearAndAccountBookId" resultType="java.lang.Byte"
+            parameterType="com.njwd.entity.ledger.dto.AccountBookPeriodDto">
+        select
+        IFNULL(max(p.period_num),0)
+        from
+        wd_account_book_period p
+        <where>
+            p.account_book_id = #{accountBookId}
+            and p.period_year = #{periodYear}
+        </where>
+    </select>
+
+    <!-- 获取待整理账簿期间 -->
+    <select id="findToAdjustPage" resultType="com.njwd.entity.ledger.vo.AccountBookPeriodVo">
+        select a.*,case when a.account_book_id = #{accountBookPeriodDto.accountBookId} then 0 else 1 end sort_num
+        from wd_account_book_period a
+        join (select min( period_year_num ) period_year_num ,account_book_id
+        from wd_account_book_period
+        <where>
+            system_sign = 'ledger'
+            and `status` = 1
+            and is_settle = 0
+            and root_enterprise_id = #{accountBookPeriodDto.rootEnterpriseId}
+            <if test="accountBookPeriodDto.periodNum!=null">
+                and period_num = #{accountBookPeriodDto.periodNum}
+            </if>
+            <if test="accountBookPeriodDto.periodYear!=null">
+                and period_year = #{accountBookPeriodDto.periodYear}
+            </if>
+            <if test="accountBookPeriodDto.accountBookIds!=null and accountBookPeriodDto.accountBookIds.size()>0">
+                and account_book_id in
+                <foreach collection="accountBookPeriodDto.accountBookIds" item="accountBookId" separator="," open="("
+                         close=")">
+                    #{accountBookId}
+                </foreach>
+            </if>
+        </where>
+        GROUP BY account_book_id) b
+        on a.period_year_num = b.period_year_num and a.account_book_id = b.account_book_id
+        order by sort_num,a.account_book_code
+    </select>
+
+    <!-- 查询未来期间数 -->
+    <select id="selectFuturePeriodList" resultType="com.njwd.entity.ledger.AccountBookPeriod">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_account_book_period wabp
+        where
+        wabp.account_book_id = #{accountBookPeriodDto.accountBookId,jdbcType=BIGINT}
+        <if test="accountBookPeriodDto.isFuture == 1">
+            and wabp.period_year_num > #{accountBookPeriodDto.periodYearNum,jdbcType=INTEGER}
+        </if>
+        <if test="accountBookPeriodDto.isFuture == 0">
+            and #{accountBookPeriodDto.periodYearNum,jdbcType=INTEGER} > wabp.period_year_num
+        </if>
+        order by wabp.period_year_num asc
+        limit 0,#{accountBookPeriodDto.futurePeriodNum,jdbcType=TINYINT}
+    </select>
+
+    <!-- 查询两个期间 -->
+    <select id="selectTwoPeriod" resultType="java.lang.Integer">
+        select period_year_num
+        from wd_account_book_period
+        where
+        account_book_id = #{accountBookPeriod.accountBookId,jdbcType=BIGINT}
+        <if test="accountBookPeriod.beforeOrFuture == -1">
+            and #{accountBookPeriod.periodYearNum,jdbcType=INTEGER} >= period_year_num
+            order by period_year_num desc
+        </if>
+        <if test="accountBookPeriod.beforeOrFuture == 1">
+            and period_year_num >= #{accountBookPeriod.periodYearNum,jdbcType=INTEGER}
+            order by period_year_num asc
+        </if>
+        limit 0,2
+
+    </select>
+
+    <!-- 根据账簿ID和最大期间查询账簿信息 -->
+    <select id="selectPeriodPage" resultType="com.njwd.entity.ledger.vo.AccountBookPeriodVo">
+        select
+        wabp.id,
+        wabp.account_book_id,
+        wabp.period_year,
+        wabp.period_num,
+        wabp.is_settle,
+        wabp.settle_user_name,
+        wabp.settle_time,
+        wabp.cancel_settle_user_name,
+        wabp.cancel_settle_time,
+        case wabp.account_book_id when #{accountBookPeriod.accountBookId} then 0 else 1 end orderSign,
+        wabp.period_year_num
+        from wd_account_book_period wabp
+        where
+        <foreach collection="accountBookPeriod.accountBookPeriodVos" item="accountBookPeriod" separator="or">
+            (wabp.account_book_id = #{accountBookPeriod.accountBookId,jdbcType=BIGINT}
+            and wabp.period_year_num = #{accountBookPeriod.periodYearNum,jdbcType=INTEGER})
+        </foreach>
+        order by orderSign asc, wabp.account_book_code asc
+    </select>
+
+    <!-- 查询已结账的账簿期间 -->
+    <select id="selectSettleYesPageByCondition" resultType="com.njwd.entity.ledger.vo.AccountBookPeriodVo">
+        select
+        wabp.account_book_id,
+        max(wabp.period_year_num) period_year_num
+        from wd_account_book_period wabp
+        where
+        wabp.is_settle = 1
+        and root_enterprise_id = #{abpd.rootEnterpriseId,jdbcType=BIGINT}
+        <if test="abpd.periodYear != null">
+            and wabp.period_year = #{abpd.periodYear,jdbcType=INTEGER}
+        </if>
+        <if test="abpd.periodNum != null">
+            and wabp.period_num = #{abpd.periodNum,jdbcType=INTEGER}
+        </if>
+        <if test="abpd.accountBookIds != null and abpd.accountBookIds.size() > 0 ">
+            and wabp.account_book_id in
+            <foreach collection="abpd.accountBookIds" item="accBookId" separator="," open="(" close=")">
+                #{accBookId,jdbcType=BIGINT}
+            </foreach>
+        </if>
+        group by wabp.account_book_id
+    </select>
+
+    <!-- 查询未结账(排除不可结账)的账簿期间 -->
+    <select id="selectSettleNoPageByCondition" resultType="com.njwd.entity.ledger.vo.AccountBookPeriodVo">
+        select
+        wabp.account_book_id,
+        min(wabp.period_year_num) period_year_num
+        from wd_account_book_period wabp
+        where
+        wabp.is_settle = 0
+        and root_enterprise_id = #{abpd.rootEnterpriseId,jdbcType=BIGINT}
+        <if test="abpd.periodYear != null">
+            and wabp.period_year = #{abpd.periodYear,jdbcType=INTEGER}
+        </if>
+        <if test="abpd.periodNum != null">
+            and wabp.period_num = #{abpd.periodNum,jdbcType=INTEGER}
+        </if>
+        <if test="abpd.accountBookIds != null and abpd.accountBookIds.size() > 0 ">
+            and wabp.account_book_id in
+            <foreach collection="abpd.accountBookIds" item="accBookId" separator="," open="(" close=")">
+                #{accBookId,jdbcType=BIGINT}
+            </foreach>
+        </if>
+        group by wabp.account_book_id
+    </select>
+
+    <!-- 过账时 查询记录 -->
+    <select id="selectRecordsPageForPostPeriod" resultType="com.njwd.entity.ledger.vo.AccountBookPeriodVo">
+        select t2.*
+        from
+        (select t1.id,
+        t1.account_book_id,
+        t1.account_book_code,
+        t1.period_year,
+        t1.period_num,
+        t1.period_year_num,
+        t1.is_settle,
+        t1.settle_user_name,
+        t1.settle_time,
+        t1.cancel_settle_user_name,
+        t1.cancel_settle_time,
+        case t1.account_book_id when #{abpd.accountBookId} then 0 else 1 end orderSign,
+        t1.manage_info from wd_account_book_period t1
+        where t1.root_enterprise_id = #{abpd.rootEnterpriseId,jdbcType=BIGINT}
+        and t1.status = 1
+        and t1.is_settle = 0
+        <if test="abpd.accountBookIds != null and abpd.accountBookIds.size() > 0 ">
+            and t1.account_book_id in
+            <foreach collection="abpd.accountBookIds" item="accBookId" separator="," open="(" close=")">
+                #{accBookId,jdbcType=BIGINT}
+            </foreach>
+        </if>
+        order by account_book_id,period_year,period_num) t2
+        group by t2.account_book_id
+        order by orderSign asc, t2.account_book_code asc
+    </select>
+    <!-- 查询可 结账/反结账 的账簿列表 -->
+    <select id="findPageForSettle" resultType="com.njwd.entity.ledger.vo.AccountBookPeriodVo">
+        select
+        <include refid="Base_Column_List"/>
+        from
+        (select
+        <choose>
+            <when test="accountBookPeriodDto.isSettle == 0">
+                <!-- 结账页面 查未结账的首个期间 -->
+                min(wabp.period_year_num) period_year_num,
+            </when>
+            <otherwise>
+                <!-- 反结账页面 查已结账的最后一个期间 -->
+                max(wabp.period_year_num) period_year_num,
+            </otherwise>
+        </choose>
+        case wabp.account_book_id when #{firstAccBookId} then 0 else 1 end orderSign,
+        wabp.account_book_id
+        from wd_account_book_period wabp
+        where
+        wabp.account_book_id in
+        <foreach collection="hasPermAccBookIds" item="accBookId" open="(" close=")" separator=",">
+            #{accBookId}
+        </foreach>
+        and wabp.is_settle = #{accountBookPeriodDto.isSettle}
+        group by wabp.account_book_id) t
+        inner join wd_account_book_period wabp on wabp.account_book_id = t.account_book_id and wabp.period_year_num =
+        t.period_year_num
+        <where>
+            <if test="accountBookPeriodDto.periodYear != null">
+                and wabp.period_year = #{accountBookPeriodDto.periodYear}
+            </if>
+            <if test="accountBookPeriodDto.periodNum != null">
+                and wabp.period_num = #{accountBookPeriodDto.periodNum}
+            </if>
+        </where>
+        order by t.orderSign, wabp.account_book_code
+    </select>
+</mapper>

@@ -1,0 +1,65 @@
+# server配置
+server:
+  port: 8187
+  tomcat:
+    uri-encoding: UTF-8
+  servlet:
+    context-path: /monitor-client
+
+# spring配置
+spring:
+  profiles:
+    active: dev
+  # 数据库配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://192.168.1.160:3306/njwd_finance_back_sys?useUnicode=true&characterEncoding=utf-8&autoReconnect=true&autoReconnectForPools=true&failOverReadOnly=false&useSSL=false&allowMultiQueries=true&serverTimezone=Asia/Shanghai
+    username: root
+    password: sys8888
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      maximum-pool-size: 50
+      minimum-idle: 8
+  redis:
+    database: 4
+    host: 192.168.1.160
+    port: 6379
+    password: sys1234
+    # 使用连接池
+    jedis:
+      pool:
+        max-active: 1024
+        max-idle: 200
+        min-idle: 0
+  rabbitmq:
+    host: 192.168.1.160
+    port: 5672
+    username: guest
+    password: guest
+    publisher-confirms: true    #  消息发送到交换机确认机制,是否确认回调
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    timezone: GMT+8
+    serialization:
+      # false:不使用 true:使用 时间戳
+      write-dates-as-timestamps: true
+  cloud:
+    nacos:
+      config:
+        server-addr: 192.168.1.161:8848
+        file-extension: yaml
+      #        namespace:
+      discovery:
+        server-addr: 192.168.1.161:8848
+        enabled: true
+        namespace: liantiao
+logging:
+  config: classpath:logback.xml
+
+#监控的进程列表,http方式时,多个元素以;分开  每个元素包含：序号,appCode,appName,url
+#ls时
+process:
+  httpListStr: 1,base-data,基础资料,http://127.0.0.1:8183/financeback/connect/main;2,MK,MK,http://127.0.0.1:8189/mk/connect/main;
+  lsListStr: 3,redis,redis,redis-server;4,nacos,nacos,nacos-server.jar
+  #时间间隔 单位：秒
+  timeLong: 60

@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.AccountingStandardMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.platform.vo.AccountingStandardVo">
+    </resultMap>
+    <sql id="Base_Column_List">
+            was.`id`,
+            was.`code`,
+            was.`name`,
+            was.`area`,
+            was.`currency_id`,
+            was.`tax_system_id`,
+            was.`is_del`,
+            was.`is_approved`,
+            was.`is_enable`,
+            was.`create_time`,
+            was.`creator_id`,
+            was.`creator_name`,
+            was.`updator_id`,
+            was.`updator_name`,
+            was.`update_time`,
+            was.`manage_info`
+    </sql>
+    <select id="findAccountingList" resultMap="BaseResultMap">
+        select<include refid="Base_Column_List"/>,
+            wc.name as currencyName,
+            wts.name as taxSystemName
+        from wd_accounting_standard was
+        left join wd_currency wc on was.currency_id=wc.id
+        left join wd_tax_system wts on was.tax_system_id=wts.id
+        where
+            was.is_enable=1
+            and wc.is_del=0
+    </select>
+    <select id="findAccountingById" resultMap="BaseResultMap">
+        select<include refid="Base_Column_List"/>,
+            wc.name as currencyName,
+            wts.name as taxSystemName
+        from wd_accounting_standard was
+        left join wd_currency wc on was.currency_id=wc.id
+        left join wd_tax_system wts on was.tax_system_id=wts.id
+        where
+            was.id=#{id}
+            and was.is_enable=1
+            and wc.is_del=0
+    </select>
+    <select id="findPage" resultMap="BaseResultMap">
+        select
+        wts.name taxSystemName,
+        wc.name currencyName,
+        wc.code currencyCode,
+        <include refid="Base_Column_List"/>
+        from wd_accounting_standard was
+        left join wd_tax_system wts on wts.id = was.tax_system_id
+        left join wd_accounting_standard_currency wasc on wasc.acc_standard_id = was.id and wasc.is_default = 1
+        left join wd_currency wc on wc.id = wasc.currency_id
+        <where>
+            <if test="accountingStandardDto.areas != null and accountingStandardDto.areas.size() != 0">
+                was.area in
+                <foreach collection="accountingStandardDto.areas" item="area" open="(" close=")" separator=",">
+                    #{area}
+                </foreach>
+            </if>
+            <if test="accountingStandardDto.codeOrName != null and accountingStandardDto.codeOrName != ''">
+                and (
+                was.code like concat('%',#{accountingStandardDto.codeOrName},'%')
+                or was.name like concat('%',#{accountingStandardDto.codeOrName},'%')
+                )
+            </if>
+            <if test="accountingStandardDto.isApproved != null">
+                and was.is_approved = #{accountingStandardDto.isApproved}
+            </if>
+            and was.is_del = 0
+        </where>
+        order by was.code
+    </select>
+    <select id="findDetail" resultMap="BaseResultMap">
+        select
+        wts.name taxSystemName,
+        <include refid="Base_Column_List"/>
+        from wd_accounting_standard was
+        left join wd_tax_system wts on wts.id = was.tax_system_id
+        where was.id = #{id}
+    </select>
+</mapper>

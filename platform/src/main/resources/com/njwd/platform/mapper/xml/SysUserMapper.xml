@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.SysUserMapper">
+
+    <sql id="Menu_Base_Column_List">
+            wsm.`menu_id`,
+            wsm.`type`,
+            wsm.`type_name`,
+            wsm.`name`,
+            wsm.`sort`,
+            wsm.`code`,
+            wsm.`parent_id`,
+            wsm.`is_child`,
+            wsm.`permission`,
+            wsm.`remark`,
+            wsm.`is_default_select`,
+            wsm.`is_del`,
+            wsm.`creator_id`,
+            wsm.`creator_name`,
+            wsm.`create_time`,
+            wsm.`updator_id`,
+            wsm.`updator_name`,
+            wsm.`update_time`
+
+    </sql>
+
+    <!--      用户—菜单/权限            -->
+    <!-- 新增 用户—菜单/权限 -->
+    <insert id="addSysUserMenu">
+        insert into `wd_sys_user_menu`(
+        user_id ,
+        menu_id ,
+        mobile,
+        creator_id ,
+        creator_name
+        )values
+
+        <foreach collection="sysUserDto.toAssMenuIdList" item="item" separator=",">
+            (
+            #{sysUserDto.userId} ,
+            #{item} ,
+            #{sysUserDto.mobile} ,
+            #{operator.userId} ,
+            #{operator.name}
+            )
+        </foreach>
+    </insert>
+
+    <insert id="addSysUserMenuList">
+        insert into `wd_sys_user_menu`(
+        user_id ,
+        menu_id ,
+        mobile,
+        creator_id ,
+        creator_name
+        )values
+        <foreach collection="sysUserDto.toAssMenuList" item="item" separator=",">
+            (
+            #{sysUserDto.userId} ,
+            #{sysUserDto.mobile} ,
+            #{item.menuId} ,
+            #{operator.userId} ,
+            #{operator.name}
+            )
+        </foreach>
+    </insert>
+
+    <!-- 删除用户已分配权限 -->
+    <delete id="deleteUserMenuByUserId">
+        delete from wd_sys_user_menu
+        where
+        <if test="sysUserDto.userId != null ">
+            user_id = #{sysUserDto.userId}
+        </if>
+        <if test="sysUserDto.userIdList != null and sysUserDto.userIdList.size() != 0">
+            user_id in
+            <foreach collection="sysUserDto.userIdList" item="userId" open="(" close=")" separator=",">
+                #{userId}
+            </foreach>
+
+        </if>
+    </delete>
+
+    <!-- 已配置 菜单/权限 列表 -->
+    <select id="findAssedMenuList" resultType="com.njwd.entity.platform.vo.SysMenuVo">
+        select
+        distinct wsum.menu_id,
+        wsum.user_id,
+        wsm.code,
+        wsm.parent_id
+        from wd_sys_user_menu wsum left join wd_sys_menu wsm on wsum.menu_id = wsm.menu_id
+        <where>
+            <if test="sysUserDto.user_id != null">
+                wsum.user_id = #{sysUserDto.user_id}
+            </if>
+            <if test="sysUserDto.selectType == 'menu' ">
+                and wsm.type = 3
+            </if>
+            <if test="sysUserDto.selectType == 'button' ">
+                and wsm.type &gt;= 4
+            </if>
+        </where>
+
+    </select>
+
+    <!-- 已配置 菜单/权限 树 -->
+    <select id="findAssedMenuTree" resultType="com.njwd.entity.platform.vo.SysMenuVo">
+        select
+        wsm.`menu_id`,
+        wsm.`type`,
+        wsm.`name`,
+        wsm.`parent_id`,
+        wsm.`is_child`,
+        wsm.`permission`,
+        wsm.`remark`
+        from wd_sys_menu wsm join wd_sys_user_menu wsum on wsm.menu_id = wsum.menu_id
+        <where>
+            wsum.user_id = #{sysUserDto.userId}
+        </where>
+
+    </select>
+
+    <!-- 用户权限表 -->
+    <select id="findUserRoleMenuList" resultType="com.njwd.entity.platform.vo.SysMenuVo">
+        select
+        um.user_id,
+        um.menu_id,
+        um.mobile,
+        m2.name f_level_name,
+        m0.name t_level_name,
+        m.name childName,
+        m.type
+        from
+        wd_sys_user_menu um
+        LEFT JOIN wd_sys_menu m ON m.menu_id = um.menu_id
+        LEFT JOIN wd_sys_menu m0 on m.parent_id = m0.menu_id
+        LEFT JOIN wd_sys_menu m1 on m0.parent_id = m1.menu_id
+        LEFT JOIN wd_sys_menu m2 on m1.parent_id = m2.menu_id
+        <where>
+            m.type >3
+            <if test="sysMenuDto.userList != null and sysMenuDto.userList.size() != 0">
+                and um.user_id in
+                <foreach collection="sysMenuDto.userList" item="sysUserVo" open="(" close=")" separator=",">
+                    #{sysUserVo.user_id}
+                </foreach>
+            </if>
+            <if test="sysMenuDto.thirdLevelMenuIdList != null and sysMenuDto.thirdLevelMenuIdList.size() != 0">
+                and m0.menu_id in
+                <foreach collection="sysMenuDto.thirdLevelMenuIdList" item="item" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+        order by um.mobile
+    </select>
+
+
+    <!--      角色—菜单/权限            -->
+    <!-- 返回 实施、运营、产品、管理员 拥有的角色权限列表 -->
+    <select id="findRoleMenuList" resultType="com.njwd.entity.platform.vo.SysRoleMenuVo">
+        select rm.role_id,rm.menu_id, m1.menu_id tLevelMenuId
+        from wd_sys_role_menu rm
+        left join wd_sys_menu m on rm.menu_id = m.menu_id
+        left join wd_sys_menu m1 on m1.menu_id = m.parent_id
+
+    </select>
+
+
+    <!--      用户—租户           -->
+    <!-- 获取用户已分配租户信息  -->
+    <select id="findAssnedEnterList" resultType="com.njwd.entity.platform.SysUserEnterprise">
+        select
+        id,
+        user_id ,
+        root_enterprise_id,
+        root_enterprise_name
+        from wd_sys_user_enterprise
+        <where>
+            <if test="sysUserDto.user_id != null">
+                and user_id = #{sysUserDto.user_id}
+            </if>
+        </where>
+    </select>
+
+    <select id="findUserIds" resultType="Long">
+        select
+        distinct user_id
+        from wd_sys_user_enterprise
+        <where>
+            <if test="sysUserDto.userIdList != null and sysUserDto.userIdList.size() != 0">
+                user_id in
+                <foreach collection="sysUserDto.userIdList" item="userId" open="(" close=")" separator=",">
+                    #{userId}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <!-- 删除已分配租户 -->
+    <delete id="delAssignedEnterpriseByEnterpriseIds">
+        delete from wd_sys_user_enterprise
+        where
+        user_id = #{sysUserDto.user_id}
+        and root_enterprise_id in (
+        <foreach collection="sysUserDto.delList" item="item" separator=",">
+            #{item.rootEnterpriseId}
+        </foreach>
+        )
+    </delete>
+
+    <!--分配租户 -->
+    <insert id="assEnterprises">
+        insert into wd_sys_user_enterprise(
+        user_id,
+        root_enterprise_id,
+        root_enterprise_name,
+        creator_id,
+        creator_name
+        )
+        values
+        <foreach collection="sysUserDto.toAssEnterList" item="item"
+                 separator=",">
+            (
+            #{sysUserDto.user_id},
+            #{item.rootEnterpriseId},
+            #{item.rootEnterpriseName},
+            #{operator.userId} ,
+            #{operator.name}
+            )
+        </foreach>
+    </insert>
+
+    <insert id="addSysUserRole">
+        insert into wd_sys_user_role(
+        user_id,
+        role_id,
+        creator_id,
+        creator_name
+        )
+        values
+        <foreach collection="sysUserDto.roleIdList" item="roleId"
+                 separator=",">
+            (
+            #{sysUserDto.userId},
+            #{roleId},
+            #{operator.userId} ,
+            #{operator.name}
+            )
+        </foreach>
+    </insert>
+
+    <delete id="delUserRoleByUserIds">
+        delete from wd_sys_user_role
+        where
+        <if test="sysUserDto.userId != null ">
+            user_id = #{sysUserDto.userId}
+        </if>
+        <if test="sysUserDto.userIdList != null and sysUserDto.userIdList.size() != 0">
+            user_id in
+            <foreach collection="sysUserDto.userIdList" item="userId" separator="," open="(" close=")">
+                #{userId}
+            </foreach>
+        </if>
+
+    </delete>
+
+    <select id="findAssedRoleIdList" resultType="Long">
+        select
+            role_id
+        from wd_sys_user_role
+        where
+            user_id = #{sysUserDto.userId}
+    </select>
+
+</mapper>

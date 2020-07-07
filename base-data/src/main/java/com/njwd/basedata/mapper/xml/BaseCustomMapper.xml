@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.basedata.mapper.BaseCustomMapper">
+    <update id="batchEnabled">
+    update ${entity.tableName}
+    set is_enable = 1,
+        version = version + 1,
+        manage_info =
+        case when manage_info is null
+            then #{entity.manageInfos}
+            else
+                (JSON_SET(manage_info,
+                <foreach collection="manageList" item="field" separator="," close=")" >
+                    <if test="field instanceof java.util.Date">
+                        UNIX_TIMESTAMP(NOW()) * 1000
+                    </if>
+                    <if test="not field instanceof java.util.Date">
+                        #{field}
+                    </if>
+                </foreach>)
+            end
+    WHERE ID in
+      <foreach collection="entity.batchIds" item="id" separator="," open="(" close=")">
+        #{id}
+      </foreach>
+    </update>
+
+    <update id="batchDisabled">
+        update ${entity.tableName}
+        set is_enable = 0,
+        version = version + 1,
+        manage_info =
+        case when manage_info is null
+        then #{entity.manageInfos}
+        else
+        (JSON_SET(manage_info,
+        <foreach collection="manageList" item="field" separator="," close=")" >
+            <if test="field instanceof java.util.Date">
+                UNIX_TIMESTAMP(NOW()) * 1000
+            </if>
+            <if test="not field instanceof java.util.Date">
+                #{field}
+            </if>
+        </foreach>)
+        end
+        WHERE ID in
+        <foreach collection="entity.batchIds" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </update>
+</mapper>

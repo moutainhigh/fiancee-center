@@ -1,0 +1,11 @@
+
+bootJar {
+    enabled = true
+}
+jar{
+    enabled = true
+}
+
+dependencies {
+    compile project(':common')
+}

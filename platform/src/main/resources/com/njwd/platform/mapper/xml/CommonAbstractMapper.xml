@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.CommonAbstractMapper">
+
+    <!-- 查询常用摘要 -->
+    <select id="findCommonAbstract" resultType="com.njwd.entity.platform.vo.CommonAbstractVo">
+        select ca.id,
+        ca.code,
+        ca.abstract_content,
+        ca.abstract_code,
+        ca.is_del,
+        ca.is_approved,
+        ca.is_released,
+        ca.version
+        from wd_common_abstract ca
+        <where>
+            <if test="commonAbstractDto.id != null">
+                and ca.id = #{commonAbstractDto.id}
+            </if>
+        </where>
+        limit 1
+    </select>
+
+    <!-- 查询是否存在常用摘要 -->
+    <select id="findExistCommonAbstract" resultType="com.njwd.entity.platform.vo.CommonAbstractVo">
+        select ca.id,
+        ca.abstract_content,
+        ca.abstract_code
+        from wd_common_abstract ca
+        <where>
+            and ca.is_del = 0
+            and (ca.abstract_content = #{commonAbstractDto.abstractContent}
+                or ca.`abstract_code` = #{commonAbstractDto.abstractCode})
+            <if test="commonAbstractDto.id != null">
+                and ca.id != #{commonAbstractDto.id}
+            </if>
+        </where>
+        limit 1
+    </select>
+
+    <!-- 查询常用摘要分页 -->
+    <select id="findCommonAbstractPage" resultType="com.njwd.entity.platform.vo.CommonAbstractVo">
+        select ca.id,
+        ca.code,
+        ca.abstract_content,
+        ca.abstract_code,
+        ca.is_approved,
+        ca.is_released,
+        ca.is_del,
+        ca.create_time,
+        ca.creator_id,
+        ca.creator_name,
+        ca.update_time,
+        ca.updator_id,
+        ca.updator_name,
+        ca.manage_info,
+        ca.version
+        from wd_common_abstract ca
+        <where>
+            and ca.is_del = 0
+            <if test="commonAbstractDto.codeOrName != null and commonAbstractDto.codeOrName != ''">
+                and (ca.abstract_code like concat('%', #{commonAbstractDto.codeOrName}, '%')
+                or ca.abstract_content like concat('%', #{commonAbstractDto.codeOrName}, '%'))
+            </if>
+            <if test="commonAbstractDto.isReleased != null">
+                and ca.is_released = #{commonAbstractDto.isReleased}
+            </if>
+            <if test="commonAbstractDto.isApproved != null">
+                and ca.is_approved = #{commonAbstractDto.isApproved}
+            </if>
+        </where>
+        order by substring(ca.code,3) * 1
+    </select>
+
+    <!-- 查询常用摘要列表 -->
+    <select id="findCommonAbstractList" resultType="com.njwd.entity.platform.vo.CommonAbstractVo">
+        select ca.id,
+        ca.code,
+        ca.abstract_content,
+        ca.abstract_code,
+        ca.is_approved,
+        ca.is_released,
+        ca.is_del,
+        ca.create_time,
+        ca.creator_id,
+        ca.creator_name,
+        ca.update_time,
+        ca.updator_id,
+        ca.updator_name,
+        ca.manage_info,
+        ca.version
+        from wd_common_abstract ca
+        <where>
+            and ca.is_del = 0
+            <if test="commonAbstractDto.codeOrName != null and commonAbstractDto.codeOrName != ''">
+                and (ca.abstract_code like concat('%', #{commonAbstractDto.codeOrName}, '%')
+                or ca.abstract_content like concat('%', #{commonAbstractDto.codeOrName}, '%'))
+            </if>
+            <if test="commonAbstractDto.isReleased != null">
+                and ca.is_released = #{commonAbstractDto.isReleased}
+            </if>
+            <if test="commonAbstractDto.isApproved != null">
+                and ca.is_approved = #{commonAbstractDto.isApproved}
+            </if>
+            <if test="commonAbstractDto.platformIds!=null and commonAbstractDto.platformIds.size()>0">
+                and ca.id not in
+                <foreach collection="commonAbstractDto.platformIds" item="id" open="(" close=")" separator=",">
+                  #{id}
+                </foreach>
+            </if>
+        </where>
+        order by substring(ca.code,3) * 1
+    </select>
+
+    <!-- 查询常用摘要列表状态 -->
+    <select id="findCommonAbstractListStatus" resultType="com.njwd.entity.platform.vo.CommonAbstractVo">
+        select ca.id,
+        ca.is_del,
+        ca.is_approved,
+        ca.is_released,
+        ca.version
+        from wd_common_abstract ca
+        <where>
+            <if test="commonAbstractDto.changeList != null and commonAbstractDto.changeList.size() > 0">
+            and ca.id in
+                <foreach collection="commonAbstractDto.changeList" item="commonAbstract" index="index" open="(" close=")" separator=",">
+                    #{commonAbstract.id}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <!--  批量修改　-->
+    <update id="updateStatusBatch">
+        update wd_common_abstract
+        <set>
+            <if test="commonAbstractDto.isDel == 1">
+                is_del = #{commonAbstractDto.isDel},
+            </if>
+            <if test="commonAbstractDto.isApproved == 1">
+                is_approved = #{commonAbstractDto.isApproved},
+            </if>
+            <if test="commonAbstractDto.isApproved == 0">
+                is_approved = #{commonAbstractDto.isApproved},
+            </if>
+            <if test="commonAbstractDto.isReleased == 1">
+                is_released = #{commonAbstractDto.isReleased},
+            </if>
+            version = version + 1
+        </set>
+        <where>
+            and id in
+            <foreach collection="commonAbstractDto.batchIds" item="id" index="index" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
+        </where>
+    </update>
+
+</mapper>

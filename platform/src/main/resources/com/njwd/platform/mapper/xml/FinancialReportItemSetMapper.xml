@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.FinancialReportItemSetMapper">
+  <resultMap id="BaseResultMap" type="com.njwd.entity.platform.vo.FinancialReportItemSetVo">
+    <!--@mbg.generated-->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="report_id" jdbcType="BIGINT" property="reportId" />
+    <result column="report_item_id" jdbcType="BIGINT" property="reportItemId" />
+    <result column="code" jdbcType="VARCHAR" property="code" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="direction" jdbcType="TINYINT" property="direction" />
+    <result column="level" jdbcType="TINYINT" property="level" />
+    <result column="item_type" jdbcType="TINYINT" property="itemType" />
+    <result column="is_add" jdbcType="TINYINT" property="isAdd" />
+      <result column="is_contain" jdbcType="TINYINT" property="isContain" />
+    <result column="is_flow" jdbcType="TINYINT" property="isFlow" />
+      <result column="data_type" jdbcType="TINYINT" property="dataType" />
+      <result column="reportCode" jdbcType="VARCHAR" property="reportCode" />
+      <result column="reportName" jdbcType="VARCHAR" property="reportName" />
+      <result column="reportItemCode" jdbcType="VARCHAR" property="reportItemCode" />
+      <result column="reportItemName" jdbcType="VARCHAR" property="reportItemName" />
+      <result column="reportTypeId" jdbcType="BIGINT" property="reportTypeId" />
+      <result column="version" jdbcType="INTEGER" property="version" />
+    <result column="is_enable" jdbcType="TINYINT" property="isEnable" />
+      <result column="is_del" jdbcType="TINYINT" property="isDel" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="creator_id" jdbcType="BIGINT" property="creatorId" />
+    <result column="creator_name" jdbcType="VARCHAR" property="creatorName" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="updator_id" jdbcType="BIGINT" property="updatorId" />
+    <result column="updator_name" jdbcType="VARCHAR" property="updatorName" />
+    <collection property="financialReportItemFormulaVoList" ofType="com.njwd.entity.platform.vo.FinancialReportItemFormulaVo" column="id">
+      <id column="fId" property="id"/><!-- 这里的column对应的是下面查询的别名，而不是表字段名 -->
+      <result column="formulaType" jdbcType="TINYINT" property="formulaType" />
+      <result column="formulaItemCode" jdbcType="VARCHAR" property="formulaItemCode" />
+        <result column="formulaItemName" jdbcType="VARCHAR" property="formulaItemName" />
+        <result column="formulaItemDirection" jdbcType="TINYINT" property="formulaItemDirection" />
+      <result column="operator" jdbcType="TINYINT" property="operator" />
+    </collection>
+      <collection property="financialReportRearrangeFormulaVoList" ofType="com.njwd.entity.platform.vo.FinancialReportRearrangeFormulaVo" column="id">
+          <id column="cId" property="id"/><!-- 这里的column对应的是下面查询的别名，而不是表字段名 -->
+          <result column="cFormulaItemCode" jdbcType="VARCHAR" property="formulaItemCode" />
+          <result column="cFormulaItemName" jdbcType="VARCHAR" property="cFormulaItemName" />
+          <result column="cFormulaItemDirection" jdbcType="TINYINT" property="cFormulaItemDirection" />
+          <result column="itemId" jdbcType="BIGINT" property="itemId" />
+          <result column="othersideItemId" jdbcType="BIGINT" property="othersideItemId" />
+          <result column="othersideFormulaItemCode" jdbcType="VARCHAR" property="othersideFormulaItemCode" />
+          <result column="othersideFormulaItemName" jdbcType="VARCHAR" property="othersideFormulaItemName" />
+          <result column="othersideFormulaItemDirection" jdbcType="TINYINT" property="othersideFormulaItemDirection" />
+          <result column="createTime" jdbcType="TIMESTAMP" property="createTime" />
+          <result column="cOperator" jdbcType="TINYINT" property="operator" />
+          <result column="isOther" jdbcType="TINYINT" property="isOther" />
+      </collection>
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, report_id, report_item_id, code, `name`, direction, `level`, is_enable, create_time, 
+    creator_id, creator_name, update_time, updator_id, updator_name
+  </sql>
+  <select id="findFinancialReportItemSetList" resultMap="BaseResultMap">
+		SELECT
+		    a.id,
+			a.code,
+			a.name,
+			a.level,
+			b.id fId,
+			b.formula_type formulaType,
+			b.formula_item_code formulaItemCode,
+            (select was.name from wd_account_subject was where was.code=b.formula_item_code limit 1) formulaItemName,
+            (select was.balance_direction from wd_account_subject was where was.code=b.formula_item_code limit 1) formulaItemDirection,
+			b.operator,
+			c.item_type,
+			c.is_add,
+			c.is_contain,
+			c.is_flow,
+            f.id cId,
+            f.item_id itemId,
+            f.otherSide_item_id othersideItemId,
+            f.formula_item_code cFormulaItemCode,
+            f.operator cOperator,
+            f.isOther,
+            (select was.name from wd_account_subject was where was.code=f.formula_item_code limit 1) cFormulaItemName,
+            (select was.balance_direction from wd_account_subject was where was.code=f.formula_item_code limit 1) cFormulaItemDirection,
+            f.otherSide_formula_item_code othersideFormulaItemCode,
+            (select was.name from wd_account_subject was where was.code=f.otherSide_formula_item_code limit 1) othersideFormulaItemName,
+            (select was.balance_direction from wd_account_subject was where was.code=f.otherSide_formula_item_code limit 1) othersideFormulaItemDirection,
+            f.create_time createTime
+		FROM
+			wd_financial_report_item_set a
+		left join wd_financial_report_item c on c.id=a.report_item_id
+		LEFT JOIN wd_financial_report_item_formula b ON a.id=b.item_set_id
+		LEFT JOIN wd_financial_report_rearrange_formula f ON a.report_item_id=f.item_id
+		where a.report_id=#{reportId} and a.is_enable=1 and a.is_del=0
+      order by a.`code`*1,a.creator_id,c.item_type
+	</select>
+    <select id="findReportItemSetList" resultMap="BaseResultMap">
+        select wfris.id,
+        wfris.report_id,
+        wfris.report_item_id,
+        wfris.code,
+        wfris.`name`,
+        wfris.`level`,
+        wfris.direction,
+        wfri.item_type,
+        wfr.name reportName,
+        wfrt.name reportTypeName,
+        wfr.report_type_id reportTypeId,
+        b.id fId,
+        b.formula_item_code formulaItemCode,
+        ifnull((
+        CASE
+        b.formula_type
+        WHEN 1 THEN
+        s.`name` ELSE ( SELECT was.NAME FROM wd_account_subject was WHERE was.CODE = b.formula_item_code LIMIT 1 )
+        END
+        ),(
+        SELECT
+        wcfi.NAME
+        FROM
+        wd_cash_flow_item wcfi
+        WHERE
+        wcfi.CODE = b.formula_item_code
+        LIMIT 1
+        )) formulaItemName,
+        b.operator
+        from wd_financial_report_item_set wfris
+        left join wd_financial_report_item wfri on wfri.id=wfris.report_item_id
+        left join wd_financial_report wfr on wfr.id=wfris.report_id
+        left join wd_financial_report_type wfrt on wfrt.id=wfr.report_type_id
+        left join wd_financial_report_item_formula b ON wfris.id=b.item_set_id
+        left join wd_financial_report_item_set s ON s.`code`=b.formula_item_code and s.report_id= wfris.report_id
+        where wfris.report_id=#{reportId} and wfris.is_del=0
+        order by wfris.`code`*1
+    </select>
+    <select id="findReportItemSetById" resultMap="BaseResultMap">
+        select
+        wfris.id,
+        wfris.report_id,
+        wfris.report_item_id,
+        wfris.code,
+        wfris.`name`,
+        wfris.`level`,
+        wfris.direction,
+        wfris.data_type,
+        wfri.item_type,
+        wfris.version,
+        wfr.code reportCode,
+        wfr.name reportName,
+        wfri.code reportItemCode,
+        wfri.name reportItemName,
+        wfr.report_type_id reportTypeId,
+        b.id fId,
+        b.formula_item_code formulaItemCode,
+        ifnull((
+        CASE
+        b.formula_type
+        WHEN 1 THEN
+        s.`name` ELSE ( SELECT was.NAME FROM wd_account_subject was WHERE was.CODE = b.formula_item_code LIMIT 1 )
+        END
+        ),(
+        SELECT
+        wcfi.NAME
+        FROM
+        wd_cash_flow_item wcfi
+        WHERE
+        wcfi.CODE = b.formula_item_code
+        LIMIT 1
+        )) formulaItemName,
+        b.operator
+        from wd_financial_report_item_set wfris
+        left join wd_financial_report_item wfri on wfri.id=wfris.report_item_id
+        left join wd_financial_report wfr on wfr.id=wfris.report_id
+        left join wd_financial_report_item_formula b ON wfris.id=b.item_set_id
+        left join wd_financial_report_item_set s ON s.`code`=b.formula_item_code and s.report_id= wfris.report_id
+        where
+        wfris.id=#{id} and wfris.is_del=0
+    </select>
+    <select id="findReportItemSetListPage" resultType="com.njwd.entity.platform.vo.FinancialReportItemSetVo">
+        select
+        wfris.id,
+        wfris.report_id,
+        wfris.report_item_id,
+        wfris.code,
+        wfris.`name`,
+        wfrt.name reportTypeName
+        from wd_financial_report_item_set wfris
+        left join wd_financial_report wfr on wfr.id=wfris.report_id
+        left join wd_financial_report_type wfrt on wfrt.id=wfr.report_type_id
+        where wfris.report_id=#{dto.reportId} and wfris.is_del=0
+        <if test="dto.reportTypeId != null">
+            and wfr.report_type_id=#{dto.reportTypeId}
+        </if>
+        <if test="dto.codeOrName != null and dto.codeOrName != ''">
+            and (wfris.code like concat('%',#{dto.codeOrName} ,'%') or wfris.name like concat('%',#{dto.codeOrName}
+            ,'%'))
+        </if>
+        order by wfris.`code`*1
+    </select>
+    <insert id="insertItemFormulaBatch">
+        insert into wd_financial_report_item_formula(item_set_id,formula_type,formula_item_code,operator,create_time)
+        values
+        <foreach collection="financialReportItemFormulaList" item="item" index="index" separator=",">
+            (#{item.itemSetId},#{item.formulaType},#{item.formulaItemCode} ,#{item.operator},#{item.createTime})
+        </foreach>
+    </insert>
+    <delete id="deleteItemFormulaByItemId">
+       delete from wd_financial_report_item_formula where item_set_id=#{itemSetId}
+    </delete>
+</mapper>

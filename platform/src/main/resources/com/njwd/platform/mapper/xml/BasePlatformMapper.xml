@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.njwd.platform.mapper.BasePlatformMapper">
+    <update id="batchProcess">
+        update ${tableName} t
+        <set>
+            t.version = t.version + 1,
+            <choose>
+                <when test="type == 0">
+                    t.is_del = 1,
+                </when>
+                <when test="type == 1">
+                    t.is_approved = 1,
+                </when>
+                <when test="type == 2">
+                    t.is_approved = 0,
+                </when>
+                <when test="type == 3">
+                    t.is_released = 1,
+                </when>
+            </choose>
+            t.manage_info =
+            JSON_SET(ifnull(t.manage_info,'{}'),
+            <choose>
+                <when test="type == 0">
+                    "$.deletedUserId", #{operator.userId},
+                    "$.deletedUserName", #{operator.name},
+                    "$.deletedTime",
+                </when>
+                <when test="type == 1">
+                    "$.approvedUserId", #{operator.userId},
+                    "$.approvedUserName", #{operator.name},
+                    "$.approvedTime",
+                </when>
+                <when test="type == 2">
+                    "$.reversalApprovedUserId", #{operator.userId},
+                    "$.reversalApprovedUserName", #{operator.name},
+                    "$.reversalApprovedTime",
+                </when>
+                <when test="type == 3">
+                    "$.releasedUserId", #{operator.userId},
+                    "$.releasedUserName", #{operator.name},
+                    "$.releasedTime",
+                </when>
+            </choose>
+            UNIX_TIMESTAMP(NOW()) * 1000)
+        </set>
+        where t.id in
+        <foreach collection="idList" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </update>
+</mapper>

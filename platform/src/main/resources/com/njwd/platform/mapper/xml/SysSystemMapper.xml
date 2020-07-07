@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.SysSystemMapper">
+  <resultMap id="BaseResultMap" type="com.njwd.entity.platform.vo.SysSystemVo">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="root_enterprise_id" jdbcType="BIGINT" property="rootEnterpriseId" />
+    <result column="system_name" jdbcType="VARCHAR" property="systemName" />
+    <result column="system_sign" jdbcType="VARCHAR" property="systemSign" />
+    <result column="buy_time" jdbcType="TIMESTAMP" property="buyTime" />
+    <result column="validity_period" jdbcType="TIMESTAMP" property="validityPeriod" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="creator_name" jdbcType="VARCHAR" property="creatorName" />
+    <result column="creator_id" jdbcType="BIGINT" property="creatorId" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    id,root_enterprise_id,system_name, system_sign,buy_time,validity_period,create_time,creator_name,creator_id
+  </sql>
+    <select id="findSysSystemList" resultMap="BaseResultMap">
+      select distinct root_enterprise_id,system_name, system_sign,buy_time,validity_period
+          from  wd_sys_system wss
+          <where>
+            <if test="rootEnterpriseId !=null and rootEnterpriseId != 0">
+              wss.root_enterprise_id=#{rootEnterpriseId}
+            </if>
+          </where>
+    </select>
+    <select id="findSysSystemById" resultMap="BaseResultMap">
+      select <include refid="Base_Column_List"/>
+        from  wd_sys_system where id=#{id}
+    </select>
+</mapper>

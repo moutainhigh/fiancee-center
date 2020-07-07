@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.financeback.mapper.SysRoleMenuMapper">
+    <!--为角色分配菜单权限-->
+    <insert id="insertBatch">
+        insert into wd_sys_role_menu (role_id, menu_id, is_half, creator_id) values
+        <foreach collection="sysRoleDto.sysMenuList" separator="," item="menu">
+            (#{sysRoleDto.roleId} ,#{menu.menuId} ,ifnull(#{menu.isHalf},0) ,#{operator.userId} )
+        </foreach>
+    </insert>
+</mapper>

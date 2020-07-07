@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.TaxCategoryMapper">
+
+  <resultMap id="BaseResultMap" type="com.njwd.entity.platform.TaxCategory">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="code" jdbcType="VARCHAR" property="code" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="precision" jdbcType="BOOLEAN" property="precision" />
+    <result column="rounding_type" jdbcType="BOOLEAN" property="roundingType" />
+    <result column="is_vat" jdbcType="BOOLEAN" property="isVat" />
+    <result column="is_approved" jdbcType="BOOLEAN" property="isApproved" />
+    <result column="is_released" jdbcType="BOOLEAN" property="isReleased" />
+    <result column="is_enable" jdbcType="BOOLEAN" property="isEnable" />
+    <result column="is_del" jdbcType="BOOLEAN" property="isDel" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="creator_id" jdbcType="BIGINT" property="creatorId" />
+    <result column="creator_name" jdbcType="VARCHAR" property="creatorName" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="updator_id" jdbcType="BIGINT" property="updatorId" />
+    <result column="updator_name" jdbcType="VARCHAR" property="updatorName" />
+    <result column="manage_info" jdbcType="OTHER" property="manageInfo" />
+  </resultMap>
+
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, code, `name`, `precision`, rounding_type, is_vat, is_approved, is_released, is_enable,
+    is_del, create_time, creator_id, creator_name, update_time, updator_id, updator_name,
+    manage_info
+  </sql>
+
+  <!-- 查询税种 -->
+  <select id="findTaxCategory" resultType="com.njwd.entity.platform.vo.TaxCategoryVo">
+    select tc.id,
+    tc.code,
+    tc.name,
+    tc.tax_system_id,
+    ts.name tax_system_name,
+    tc.`precision`,
+    tc.rounding_type,
+    tc.is_vat,
+    tc.is_approved,
+    tc.is_released,
+    tc.is_enable,
+    tc.is_del,
+    tc.version
+    from wd_tax_category tc
+    left join wd_tax_system ts on tc.tax_system_id = ts.id
+    <where>
+      <if test="taxCategoryDto.isDel != null">
+        and tc.is_del = #{taxCategoryDto.isDel }
+      </if>
+      <if test="taxCategoryDto.name != null and taxCategoryDto.name != ''">
+        and tc.name = #{taxCategoryDto.name}
+      </if>
+      <if test="taxCategoryDto.taxSystemId != null">
+        and tc.tax_system_id = #{taxCategoryDto.taxSystemId}
+      </if>
+      <if test="taxCategoryDto.id != null">
+        and tc.id = #{taxCategoryDto.id}
+      </if>
+    </where>
+    limit 1
+  </select>
+
+  <!-- 查询税种分页 -->
+  <select id="findTaxCategoryPage" resultType="com.njwd.entity.platform.vo.TaxCategoryVo">
+    select tc.id,
+    tc.code,
+    tc.name,
+    tc.tax_system_id,
+    ts.name tax_system_name,
+    tc.`precision`,
+    tc.rounding_type,
+    tc.is_vat,
+    tc.is_approved,
+    tc.is_released,
+    tc.is_del,
+    tc.is_enable,
+    tc.create_time,
+    tc.creator_id,
+    tc.creator_name,
+    tc.update_time,
+    tc.updator_id,
+    tc.updator_name,
+    tc.manage_info,
+    tc.version
+    from wd_tax_category tc
+    left join wd_tax_system ts on tc.tax_system_id = ts.id
+    <where>
+      and tc.is_del = 0
+      and tc.is_enable = 1
+      <if test="taxCategoryDto.codeOrName != null and taxCategoryDto.codeOrName != ''">
+        and (tc.code like concat('%', #{taxCategoryDto.codeOrName}, '%')
+        or tc.name like concat('%', #{taxCategoryDto.codeOrName}, '%'))
+      </if>
+      <if test="taxCategoryDto.taxSystemIdList != null and taxCategoryDto.taxSystemIdList.size() > 0">
+        and tc.tax_system_id in
+        <foreach collection="taxCategoryDto.taxSystemIdList" item="item" index="index" open="(" close=")" separator=",">
+          #{item}
+        </foreach>
+      </if>
+      <if test="taxCategoryDto.isReleased != null">
+        and tc.is_released = #{taxCategoryDto.isReleased}
+      </if>
+      <if test="taxCategoryDto.isApproved != null">
+        and tc.is_approved = #{taxCategoryDto.isApproved}
+      </if>
+    </where>
+    order by substring(tc.code,3) * 1
+  </select>
+
+  <!-- 查询税种列表 -->
+  <select id="findTaxCategoryList" resultType="com.njwd.entity.platform.vo.TaxCategoryVo">
+    select tc.id,
+    tc.code,
+    tc.name,
+    tc.tax_system_id,
+    ts.name tax_system_name,
+    tc.`precision`,
+    tc.rounding_type,
+    tc.is_vat,
+    tc.is_approved,
+    tc.is_released,
+    tc.is_del,
+    tc.is_enable,
+    tc.create_time,
+    tc.creator_id,
+    tc.creator_name,
+    tc.update_time,
+    tc.updator_id,
+    tc.updator_name,
+    tc.manage_info,
+    tc.version
+    from wd_tax_category tc
+    left join wd_tax_system ts on tc.tax_system_id = ts.id
+    <where>
+      and tc.is_del = 0
+      and tc.is_enable = 1
+      <if test="taxCategoryDto.codeOrName != null and taxCategoryDto.codeOrName != ''">
+        and (tc.code like concat('%', #{taxCategoryDto.codeOrName}, '%')
+        or tc.name like concat('%', #{taxCategoryDto.codeOrName}, '%'))
+      </if>
+      <if test="taxCategoryDto.taxSystemIdList != null and taxCategoryDto.taxSystemIdList.size() > 0">
+        and tc.tax_system_id in
+        <foreach collection="taxCategoryDto.taxSystemIdList" item="item" index="index" open="(" close=")" separator=",">
+          #{item}
+        </foreach>
+      </if>
+      <if test="taxCategoryDto.isReleased != null">
+        and tc.is_released = #{taxCategoryDto.isReleased}
+      </if>
+      <if test="taxCategoryDto.isApproved != null">
+        and tc.is_approved = #{taxCategoryDto.isApproved}
+      </if>
+      <if test="taxCategoryDto.platformIds!=null and taxCategoryDto.platformIds.size()>0">
+        and tc.id not in
+        <foreach collection="taxCategoryDto.platformIds" item="platformId" open="(" close=")" separator=",">
+          #{platformId}
+        </foreach>
+      </if>
+    </where>
+    order by substring(tc.code,3) * 1
+  </select>
+
+  <!-- 查询税种[列表]状态 -->
+  <select id="findTaxCategoryListStatus" resultType="com.njwd.entity.platform.vo.TaxCategoryVo">
+    select tc.id,
+    tc.is_enable,
+    tc.is_del,
+    tc.is_approved,
+    tc.is_released,
+    tc.version
+    from wd_tax_category tc
+    <where>
+      <if test="taxCategoryDto.changeList != null and taxCategoryDto.changeList.size() > 0">
+        and tc.id in
+        <foreach collection="taxCategoryDto.changeList" item="taxCategory" index="index" open="(" close=")" separator=",">
+          #{taxCategory.id}
+        </foreach>
+      </if>
+    </where>
+  </select>
+
+</mapper>

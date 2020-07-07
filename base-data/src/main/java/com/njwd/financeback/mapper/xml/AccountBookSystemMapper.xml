@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.financeback.mapper.AccountBookSystemMapper">
+
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        s.id, s.root_enterprise_id, s.account_book_id, s.account_book_name, s.system_name, s.system_sign,
+        s.status, s.is_initalized, s.period_year, s.period_num, s.cash_flow_enable_status, s.operator_id, s.operator_name, s.operate_time
+    </sql>
+
+    <!--  根据子系统标识 查询当前企业已启用子系统列表 -->
+    <select id="findLedgerList" parameterType="com.njwd.entity.basedata.dto.AccountBookSystemDto"
+            resultType="com.njwd.entity.basedata.vo.AccountBookSystemVo">
+        select
+        <include refid="Base_Column_List"/>,
+        b.name account_book_name
+        from
+        wd_account_book_system s join wd_account_book b on s.account_book_id = b.id
+        where
+        s.root_enterprise_id = #{accountBookSystemDto.rootEnterpriseId}
+        <if test="accountBookSystemDto.accountBookId != null ">
+            and s.account_book_id = #{accountBookSystemDto.accountBookId}
+        </if>
+        <if test="accountBookSystemDto.isInitalized != null ">
+            and s.is_initalized = #{accountBookSystemDto.isInitalized}
+        </if>
+        <if test="accountBookSystemDto.accBookCodeOrName != null ">
+            and (b.code like concat('%',#{accountBookSystemDto.accBookCodeOrName},'%')
+            or b.name like concat('%',#{accountBookSystemDto.accBookCodeOrName},'%'))
+        </if>
+    </select>
+
+    <!--  根据子系统标识 查询当前企业用户已启用子系统列表 -->
+    <select id="findLedgerListByUserId" parameterType="com.njwd.entity.basedata.dto.AccountBookSystemDto"
+            resultType="com.njwd.entity.basedata.vo.AccountBookSystemVo">
+        select
+        DISTINCT
+        s.id,
+        s.root_enterprise_id,
+        s.account_book_id,
+        s.account_book_name,
+        s.system_name,
+        s.system_sign,
+        s. STATUS,
+        s.is_initalized,
+        s.period_year,
+        s.period_num,
+        s.cash_flow_enable_status,
+        s.operator_id,
+        s.operator_name,
+        s.operate_time,
+        b.`code`,
+        b.company_id
+        from
+        wd_account_book_system s join wd_account_book b on s.account_book_id = b.id
+        where s.system_sign = 'ledger'
+        and b.is_del = 0 and s.`status`=1 and s.root_enterprise_id = #{accountBookSystemDto.rootEnterpriseId}
+        <if test="accountBookSystemDto.userId != null ">
+            and b.company_id in (
+            select distinct wsur.company_id from wd_sys_user_role wsur
+            inner join wd_sys_role_menu wsrm on wsrm.role_id = wsur.role_id
+            inner join wd_sys_menu wsm on wsm.menu_id = wsrm.menu_id
+            where wsur.user_id = #{accountBookSystemDto.userId}
+            and wsm.code = #{accountBookSystemDto.menuCode}
+            )
+        </if>
+        <if test="accountBookSystemDto.accountBookId != null ">
+            and s.account_book_id = #{accountBookSystemDto.accountBookId}
+        </if>
+        <if test="accountBookSystemDto.isInitalized != null ">
+            and s.is_initalized = #{accountBookSystemDto.isInitalized}
+        </if>
+        <if test="accountBookSystemDto.accBookCodeOrName != null ">
+            and (b.code like concat('%',#{accountBookSystemDto.accBookCodeOrName},'%')
+            or b.name like concat('%',#{accountBookSystemDto.accBookCodeOrName},'%'))
+        </if>
+    </select>
+
+    <!--  根据 账簿ID/子系统标识 查询已启用子系统 -->
+    <select id="findListByAccBookId" parameterType="com.njwd.entity.basedata.dto.AccountBookSystemDto"
+            resultType="com.njwd.entity.basedata.vo.AccountBookSystemVo">
+        select
+            <include refid="Base_Column_List"/>
+            ,b.name account_book_name
+        from
+        wd_account_book_system s join wd_account_book b on s.account_book_id = b.id
+        where
+        s.root_enterprise_id = #{rootEnterpriseId}
+        <if test="accountBookId != null ">
+            and s.account_book_id = #{accountBookId}
+        </if>
+        <if test="systemSign != null ">
+            and s.system_sign = #{systemSign}
+        </if>
+        <if test="isInitalized != null ">
+            and s.is_initalized = #{isInitalized}
+        </if>
+    </select>
+
+    <select id="selectInitStatusByCondition" resultType="com.njwd.entity.basedata.AccountBookSystem">
+        select wabs.is_initalized,
+               wabs.cash_flow_enable_status,
+               wabs.status,
+               wabs.`account_book_id`,
+               wabs.`account_book_name`,
+               wabs.`system_name`,
+               wabs.`system_sign`,
+               wabs.`period_year`,
+               wabs.`period_num`,
+               wabs.`id`
+        from wd_account_book_system wabs
+        where true
+        <if test="systemSign != null and systemSign != ''">
+            and wabs.system_sign = #{systemSign,jdbcType=VARCHAR}
+        </if>
+        <if test="accountBookId != null">
+            and wabs.account_book_id = #{accountBookId,jdbcType=BIGINT}
+        </if>
+        limit 0,1
+    </select>
+
+</mapper>

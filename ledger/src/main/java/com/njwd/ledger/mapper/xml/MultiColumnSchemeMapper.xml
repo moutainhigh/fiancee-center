@@ -1,0 +1,321 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.ledger.mapper.MultiColumnSchemeMapper">
+  <resultMap id="BaseResultMap" type="com.njwd.entity.ledger.vo.MultiColumnSchemeVo">
+    <!--@mbg.generated-->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="root_enterprise_id" jdbcType="BIGINT" property="rootEnterpriseId" />
+    <result column="account_book_id" jdbcType="BIGINT" property="accountBookId" />
+    <result column="account_book_name" jdbcType="VARCHAR" property="accountBookName" />
+    <result column="code" jdbcType="VARCHAR" property="code" />
+    <result column="scheme_name" jdbcType="VARCHAR" property="schemeName" />
+    <result column="scheme_type" jdbcType="TINYINT" property="schemeType" />
+    <result column="account_subject_id" jdbcType="BIGINT" property="accountSubjectId" />
+    <result column="is_custom" jdbcType="TINYINT" property="isCustom" />
+    <result column="auxiliary_item_id" jdbcType="BIGINT" property="auxiliaryItemId" />
+    <result column="auxiliary_item_name" jdbcType="VARCHAR" property="auxiliaryItemName" />
+    <result column="is_del" jdbcType="TINYINT" property="isDel" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="creator_id" jdbcType="BIGINT" property="creatorId" />
+    <result column="creator_name" jdbcType="VARCHAR" property="creatorName" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="updator_id" jdbcType="BIGINT" property="updatorId" />
+    <result column="updator_name" jdbcType="VARCHAR" property="updatorName" />
+      <result column="company_id" jdbcType="BIGINT" property="companyId" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, root_enterprise_id, account_book_id, account_book_name, code, scheme_name,
+    scheme_type, account_subject_id,account_subject_name, is_custom, auxiliary_item_id, auxiliary_item_name,
+    is_del, create_time, creator_id, creator_name, update_time, updator_id, updator_name ,company_id
+  </sql>
+    <insert id="addMultiColumnScheme" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        <selectKey resultType="long" order="AFTER" keyProperty="id">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+        insert into wd_multi_column_scheme
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="rootEnterpriseId!=null">
+                root_enterprise_id,
+            </if>
+            <if test="accountBookId!=null">
+                account_book_id,
+            </if>
+            <if test="accountBookName!=null">
+                account_book_name,
+            </if>
+            <if test="code!=null">
+                code,
+            </if>
+            <if test="schemeName!=null">
+                scheme_name,
+            </if>
+            <if test="schemeType!=null">
+                scheme_type,
+            </if>
+            <if test="accountSubjectId!=null">
+                account_subject_id,
+            </if>
+            <if test="accountSubjectName!=null">
+                account_subject_name,
+            </if>
+            <if test="isCustom!=null">
+                is_custom,
+            </if>
+            <if test="auxiliaryItemId!=null">
+                auxiliary_item_id,
+            </if>
+            <if test="auxiliaryItemName!=null">
+                auxiliary_item_name,
+            </if>
+            <if test="createTime!=null">
+                create_time,
+            </if>
+            <if test="creatorId!=null">
+                creator_id,
+            </if>
+            <if test="creatorName!=null">
+                creator_name,
+            </if>
+            <if test="companyId!=null">
+                company_id
+            </if>
+        </trim>
+        <trim prefix="values (" suffixOverrides="," suffix=")">
+            <if test="rootEnterpriseId!=null">
+                #{rootEnterpriseId},
+            </if>
+            <if test="accountBookId!=null">
+                #{accountBookId},
+            </if>
+            <if test="accountBookName!=null">
+                #{accountBookName},
+            </if>
+            <if test="code!=null">
+                #{code},
+            </if>
+            <if test="schemeName!=null">
+                #{schemeName},
+            </if>
+            <if test="schemeType!=null">
+                #{schemeType},
+            </if>
+            <if test="accountSubjectId!=null">
+                #{accountSubjectId},
+            </if>
+            <if test="accountSubjectName!=null">
+                #{accountSubjectName},
+            </if>
+            <if test="isCustom!=null">
+                #{isCustom},
+            </if>
+            <if test="auxiliaryItemId!=null">
+                #{auxiliaryItemId},
+            </if>
+            <if test="auxiliaryItemName!=null">
+                #{auxiliaryItemName},
+            </if>
+            <if test="createTime!=null">
+                #{createTime},
+            </if>
+            <if test="creatorId!=null">
+                #{creatorId},
+            </if>
+            <if test="creatorName!=null">
+                #{creatorName},
+            </if>
+            <if test="companyId!=null">
+                #{companyId}
+            </if>
+        </trim>
+    </insert>
+  <select id="findMultiColumnSchemeList" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List"/>
+    from wd_multi_column_scheme
+    where is_del=0
+  </select>
+  <select id="findMultiColumnSchemeById" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List"/>
+    from wd_multi_column_scheme
+    where id=#{id}
+  </select>
+  <select id="findMultiColumnSchemePage" resultMap="BaseResultMap">
+    select
+    a.id,
+    a.code,
+    a.scheme_name,
+    a.scheme_type,
+    a.account_book_name,
+    a.account_book_id,
+    a.auxiliary_item_id,
+    a.auxiliary_item_name,
+    a.is_custom,
+    a.is_del,
+    a.creator_name,
+    a.creator_id,
+    a.create_time,
+    a.updator_name,
+    a.updator_id,
+    a.update_time,
+    a.account_subject_id,
+    a.account_subject_name,
+    a.company_id
+    from wd_multi_column_scheme a
+    <where>
+      <if test="multiColumnSchemeDto.codeOrName != null and multiColumnSchemeDto.codeOrName != ''">
+        and (a.code like concat('%',#{multiColumnSchemeDto.codeOrName} ,'%') or a.scheme_name like concat('%',#{multiColumnSchemeDto.codeOrName},'%'))
+      </if>
+      <if test="multiColumnSchemeDto.accountBookIds != null and multiColumnSchemeDto.accountBookIds.size()>0" >
+        and a.account_book_id in
+          <foreach collection="multiColumnSchemeDto.accountBookIds" index="index" item="item" open="(" separator="," close=")">
+              #{item}
+          </foreach>
+      </if>
+        and a.is_del=0 and a.root_enterprise_id = #{multiColumnSchemeDto.rootEnterpriseId}
+    </where>
+     order by a.code asc
+  </select>
+
+  <select id="findStatusByIdList" resultMap="BaseResultMap">
+    select mcs.id,mcs.is_del
+    from wd_multi_column_scheme mcs
+    <where>
+      and mcs.id in
+      <foreach collection="idList" item="id" index="index" open="(" close=")" separator=",">
+        #{id}
+      </foreach>
+    </where>
+  </select>
+
+    <update id="updateMultiColumnScheme">
+        update wd_multi_column_scheme set scheme_name = #{schemeName},scheme_type=#{schemeType} ,account_subject_id=#{accountSubjectId} ,account_subject_name=#{accountSubjectName}
+        ,auxiliary_item_id=#{auxiliaryItemId} ,auxiliary_item_name=#{auxiliaryItemName},updator_id = #{updatorId} ,updator_name = #{updatorName}
+        where id = #{id}
+    </update>
+
+    <select id="findVoucherEntry" resultType="com.njwd.entity.ledger.vo.VoucherEntryVo">
+      select
+        wv.account_book_entity_name,
+        wv.account_book_entity_id,
+        wv.voucher_date,
+        wv.credential_word,
+        wv.main_code,
+        wv.period_year_num,
+        wve.id,
+        wve.voucher_id,
+        wve.account_subject_id,
+        wve.abstract_content,
+        wve.debit_amount,
+        wve.credit_amount
+    from wd_voucher_%s wv
+    join wd_voucher_entry_%s wve on wv.id = wve.voucher_id
+    where wv.account_book_id = #{accountBookId}
+        and wv.account_book_entity_id in
+        <foreach collection="accountBookEntityIds" item="entityId" open="(" close=")" separator=",">
+            #{entityId}
+        </foreach>
+        and wv.period_year_num between concat(#{periodYears[0]},LPAD(#{periodNumbers[0]},2,0))
+            and concat(#{periodYears[1]},LPAD(#{periodNumbers[1]},2,0))
+        and wv.is_del = 0
+        and wv.status in
+        <foreach collection="voucherStatusList" item="status" open="(" close=")" separator=",">
+          #{status}
+        </foreach>
+        and wv.source_type in
+        <foreach collection="voucherSourceTypes" item="sourceType" open="(" close=")" separator="," >
+          #{sourceType}
+        </foreach>
+        and wve.account_subject_id in
+        <foreach collection="accountSubjectIds" item="accountSubjectId" open="(" close=")" separator="," >
+            #{accountSubjectId}
+        </foreach>
+    order by wv.account_book_id,wv.account_book_entity_id,wv.period_year_num,wv.credential_word,wv.main_code
+    </select>
+
+    <select id="findBalanceSubject" resultType="com.njwd.entity.ledger.vo.BalanceSubjectVo">
+        SELECT
+        t1.id,
+        t1.account_book_id,
+        t1.account_book_entity_id,
+        t1.account_subject_id,
+        t1.period_year,
+        t1.period_num,
+        t1.period_year_num,
+        ifnull(t1.opening_balance,0) opening_balance,
+        ifnull(t1.closing_balance,0) closing_balance,
+        ifnull(t1.debit_amount,0) debit_amount,
+        ifnull(t1.credit_amount,0) credit_amount,
+        ifnull(t1.total_debit_amount,0) total_debit_amount,
+        ifnull(t1.total_credit_amount,0) total_credit_amount,
+        ifnull(t1.post_debit_amount,0) post_debit_amount,
+        ifnull(t1.post_credit_amount,0) post_credit_amount,
+        ifnull(t1.post_total_debit_amount,0) post_total_debit_amount,
+        ifnull(t1.post_total_credit_amount,0) post_total_credit_amount,
+        ifnull(t1.sy_debit_amount,0) sy_debit_amount,
+        ifnull(t1.sy_credit_amount,0) sy_credit_amount,
+        ifnull(t1.sy_total_debit_amount,0) sy_total_debit_amount,
+        ifnull(t1.sy_total_credit_amount,0) sy_total_credit_amount,
+        ifnull(t1.post_sy_debit_amount,0) post_sy_debit_amount,
+        ifnull(t1.post_sy_credit_amount,0) post_sy_credit_amount,
+        ifnull(t1.post_sy_total_debit_amount,0) post_sy_total_debit_amount,
+        ifnull(t1.post_sy_total_credit_amount,0) post_sy_total_credit_amount
+        FROM
+        wd_balance_subject t1
+        <where>
+            t1.account_book_id = #{accountBookId}
+            AND t1.account_book_entity_id IN
+            <foreach collection="accountBookEntityIds" item="item" index="index" open="(" close=")"
+                     separator=",">
+                #{item}
+            </foreach>
+            AND t1.period_year_num
+            BETWEEN concat(#{periodYears[0]}, LPAD(#{periodNumbers[0]},2,0))
+            AND concat(#{periodYears[1]}, LPAD(#{periodNumbers[1]},2,0))
+            and t1.account_subject_id in
+            <foreach collection="accountSubjectIds" item="accountSubjectId" open="(" close=")" separator="," >
+                #{accountSubjectId}
+            </foreach>
+        </where>
+    </select>
+
+    <select id="findBalanceSubjectAuxiliary" resultType="com.njwd.entity.ledger.vo.BalanceSubjectAuxiliaryVo">
+      select bsa.*,bsai.item_value_id
+      from wd_balance_subject_auxiliary bsa
+      join wd_balance_subject_auxiliary_item bsai on bsa.id = bsai.balance_auxiliary_id
+        <where>
+            bsa.account_book_id = #{accountBookId}
+            AND bsa.account_book_entity_id IN
+            <foreach collection="accountBookEntityIds" item="item" index="index" open="(" close=")"
+                     separator=",">
+                #{item}
+            </foreach>
+            AND bsa.period_year_num
+            BETWEEN concat(#{periodYears[0]}, LPAD(#{periodNumbers[0]},2,0))
+            AND concat(#{periodYears[1]}, LPAD(#{periodNumbers[1]},2,0))
+            and bsa.account_subject_id in
+            <foreach collection="accountSubjectIds" item="accountSubjectId" open="(" close=")" separator="," >
+                #{accountSubjectId}
+            </foreach>
+            and bsai.source_table = #{sourceTable}
+            and bsai.item_value_id in
+            <foreach collection="itemValueIds" item="itemValueId" open="(" close=")" separator=",">
+                #{itemValueId}
+            </foreach>
+        </where>
+    </select>
+
+
+    <select id="findMinPeriod"
+            resultType="com.njwd.entity.ledger.vo.AccountBookPeriodVo">
+        select wabp.*
+        from wd_account_book_period wabp
+        where wabp.status = 1 -- 已启用
+        and wabp.is_settle = 0 -- 未结账
+        and wabp.system_sign = 'ledger'
+        and wabp.account_book_id = #{accountBookId}
+        and wabp.period_year_num &lt; concat(#{periodYears[0]},LPAD(#{periodNumbers[0]},2,0))
+        order by wabp.period_year_num asc
+        limit 1
+    </select>
+
+</mapper>

@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.ledger.mapper.CashJournalMapper">
+    <sql id="Base_Column_List">
+            wv.`id`,
+            wv.`root_enterprise_id`,
+            wv.`account_book_id`,
+            wv.`account_book_name`,
+            wv.`account_book_entity_id`,
+            wv.`account_book_entity_name`,
+            wv.`voucher_date`,
+            wv.`bill_num`,
+            wv.`posting_period_year`,
+            wv.`posting_period_num`,
+            wv.`credential_word`,
+            wv.`main_code`,
+            wv.`child_code`,
+            wv.`source_type`,
+            wv.`source_system`,
+            wv.`source_code`,
+            wv.`first_abstract`,
+            wv.`debit_amount`,
+            wv.`credit_amount`,
+            wv.`cash_check_type`,
+            wv.`cash_flow_amount`,
+            wv.`status`,
+            wv.`interior_type`,
+            wv.`is_offset`,
+            wv.`is_del`,
+            wv.`version`,
+            wv.`create_time`,
+            wv.`creator_id`,
+            wv.`creator_name`,
+            wv.`update_time`,
+            wv.`updator_id`,
+            wv.`updator_name`,
+            wv.`approve_status`,
+            wv.`approve_time`,
+            wv.`approver_id`,
+            wv.`approver_name`,
+            wv.`review_status`,
+            wv.`review_time`,
+            wv.`reviewer_id`,
+            wv.`reviewer_name`,
+            wv.`posting_status`,
+            wv.`posting_time`,
+            wv.`posting_user_id`,
+            wv.`posting_user_name`
+    </sql>
+    <resultMap id="BaseResultMap" type="com.njwd.entity.ledger.vo.VoucherVo">
+    </resultMap>
+
+    <!-- 查询 现金日记账/银行日记账 -->
+    <select id="findCashJournalList"  resultType="com.njwd.entity.ledger.vo.BalanceSubjectCashJournalVo">
+        SELECT
+            #{dto.accountSubjectId} subjectId,
+            #{dto.subjectName} subjectName,
+            #{dto.subjectCode} subjectCode,
+            #{dto.balanceDirection} balanceDirection,
+            t2.id voucherId,
+            t2.account_book_entity_id,
+            t2.account_book_entity_name,
+            t2.voucher_date,
+            t2.posting_period_year,
+            t2.posting_period_num,
+            t2.period_year_num,
+            t2.credential_word,
+            t2.main_code,
+            t1.abstract_content first_abstract,
+            IFNULL(t1.debit_amount, 0) debitAmount,
+            IFNULL(t1.credit_amount, 0) creditAmount
+        FROM wd_voucher_entry_%s t1
+        INNER JOIN wd_voucher_%s t2 ON t2.id = t1.voucher_id
+        <where>
+            AND t2.is_del = 0
+            <if test="dto.accountBookId != null">
+                AND t2.account_book_id = #{dto.accountBookId}
+            </if>
+            <if test="dto.accountBookEntityIdOperator != null and dto.accountBookEntityIds != null">
+                <if test="dto.accountBookEntityIdOperator == 0">
+                    AND t2.account_book_entity_id IN
+                    <foreach collection="dto.accountBookEntityIds" item="item" index="index" open="(" close=")" separator=",">
+                        #{item}
+                    </foreach>
+                </if>
+            </if>
+            <if test="dto.periodYears != null and dto.periodNumbers != null">
+                <if test="dto.periodOperator != null and dto.periodOperator == 1">
+                    AND t2.period_year_num
+                    BETWEEN concat(#{dto.periodYears[0]}, LPAD(#{dto.periodNumbers[0]},2,0))
+                    AND concat(#{dto.periodYears[1]}, LPAD(#{dto.periodNumbers[1]},2,0))
+                </if>
+            </if>
+            <if test="dto.periodYear != null and dto.periodNumber != null">
+                AND t2.period_year_num = concat(#{dto.periodYear}, LPAD(#{dto.periodNumber},2,0))
+            </if>
+            <if test="dto.voucherDate != null and dto.voucherDate.size() > 0">
+                AND t2.voucher_date
+                BETWEEN #{dto.voucherDate[0]} AND #{dto.voucherDate[1]}
+            </if>
+            <if test="dto.periodYear != null and dto.periodNumber != null and dto.vocherTime != null">
+                AND t2.period_year_num > concat(#{dto.periodYear}, LPAD(#{dto.periodNumber},2,0))
+                AND t2.voucher_date &lt; #{dto.vocherTime}
+            </if>
+            <if test="dto.subjectList != null and dto.subjectList.size() > 0">
+                AND t1.account_subject_id IN
+                <foreach collection="dto.subjectList" item="subjectId" index="index" open="(" close=")" separator=",">
+                    #{subjectId}
+                </foreach>
+            </if>
+            <if test="dto.isIncludeUnbooked != null and dto.isIncludeUnbooked == 0">
+                AND t2.posting_status = 1
+            </if>
+            <if test="dto.isIncludeProfitAndLoss != null and dto.isIncludeProfitAndLoss == 0">
+                AND t2.source_type != 2
+            </if>
+        </where>
+        ORDER BY t2.account_book_entity_id,t2.period_year_num,t2.voucher_date,t2.credential_word,t2.main_code ASC
+    </select>
+
+    <select id="findVoucherEntryForAuxiary" resultType="com.njwd.entity.ledger.vo.VoucherEntryAuxiliaryVo">
+        select
+          t1.entry_id,
+          t1.source_table,
+          t1.item_value_id
+        from wd_voucher_entry_auxiliary_%s t1
+        <!--<where>-->
+            <!--<if test="dto.itemValueList != null and dto.itemValueList.size() > 0">-->
+                <!--<foreach collection="dto.itemValueList" item="itemValueList" index="index" separator="OR" open="(" close=")">-->
+                    <!--<if test="itemValueList.itemValueInfos != null and itemValueList.itemValueInfos.size() > 0">-->
+                        <!--wvea.source_table = #{itemValueList.sourceTable}-->
+                        <!--&lt;!&ndash;AND wvea.item_value_id IN&ndash;&gt;-->
+                        <!--&lt;!&ndash;<foreach collection="itemValueList.itemValueInfos" item="itemValueInfo" index="index" open="(" close=")" separator=",">&ndash;&gt;-->
+                            <!--&lt;!&ndash;#{itemValueInfo.id}&ndash;&gt;-->
+                        <!--&lt;!&ndash;</foreach>&ndash;&gt;-->
+                    <!--</if>-->
+                <!--</foreach>-->
+            <!--</if>-->
+        <!--</where>;-->
+    </select>
+
+    <!-- 查询辅助核算 现金日记账/银行日记账 -->
+    <select id="findCashJournalAuxiliaryList"  resultType="com.njwd.entity.ledger.vo.BalanceSubjectCashJournalVo">
+        SELECT
+            #{dto.accountSubjectId} subjectId,
+            #{dto.subjectName} subjectName,
+            #{dto.subjectCode} subjectCode,
+            #{dto.balanceDirection} balanceDirection,
+            t2.id voucherId,
+            t2.account_book_entity_id,
+            t2.account_book_entity_name,
+            t2.voucher_date,
+            t2.posting_period_year,
+            t2.posting_period_num,
+            t2.period_year_num,
+            t2.credential_word,
+            t2.main_code,
+            t1.abstract_content first_abstract,
+            t1.id,
+            IFNULL(t1.debit_amount, 0) debitAmount,
+            IFNULL(t1.credit_amount, 0) creditAmount
+        FROM wd_voucher_entry_%s t1
+        INNER JOIN wd_voucher_%s t2 ON t2.id = t1.voucher_id
+        <where>
+            AND t2.is_del = 0
+            <if test="dto.accountBookId != null">
+                AND t2.account_book_id = #{dto.accountBookId}
+            </if>
+            <if test="dto.accountBookEntityIdOperator != null and dto.accountBookEntityIds != null">
+                <if test="dto.accountBookEntityIdOperator == 0">
+                    AND t2.account_book_entity_id IN
+                    <foreach collection="dto.accountBookEntityIds" item="item" index="index" open="(" close=")" separator=",">
+                        #{item}
+                    </foreach>
+                </if>
+            </if>
+            <if test="dto.periodYears != null and dto.periodNumbers != null">
+                <if test="dto.periodOperator != null and dto.periodOperator == 1">
+                    AND t2.period_year_num
+                    BETWEEN concat(#{dto.periodYears[0]}, LPAD(#{dto.periodNumbers[0]},2,0))
+                    AND concat(#{dto.periodYears[1]}, LPAD(#{dto.periodNumbers[1]},2,0))
+                </if>
+            </if>
+            <if test="dto.periodYear != null and dto.periodNumber != null">
+                AND t2.period_year_num = concat(#{dto.periodYear}, LPAD(#{dto.periodNumber},2,0))
+            </if>
+            <if test="dto.voucherDate != null and dto.voucherDate.size() > 0">
+                AND t2.voucher_date
+                BETWEEN #{dto.voucherDate[0]} AND #{dto.voucherDate[1]}
+            </if>
+            <if test="dto.periodYear != null and dto.periodNumber != null and dto.vocherTime != null">
+                AND t2.period_year_num > concat(#{dto.periodYear}, LPAD(#{dto.periodNumber},2,0))
+                AND t2.voucher_date &lt; #{dto.vocherTime}
+            </if>
+            <if test="dto.subjectList != null and dto.subjectList.size() > 0">
+                AND t1.account_subject_id IN
+                <foreach collection="dto.subjectList" item="subjectId" index="index" open="(" close=")" separator=",">
+                    #{subjectId}
+                </foreach>
+            </if>
+            <if test="dto.isIncludeUnbooked != null and dto.isIncludeUnbooked == 0">
+                AND t2.posting_status = 1
+            </if>
+            <if test="dto.isIncludeProfitAndLoss != null and dto.isIncludeProfitAndLoss == 0">
+                AND t2.source_type != 2
+            </if>
+            <if test="dto.ids != null and dto.ids.size()>0">
+                and t1.id in (
+                <foreach collection="dto.ids" separator="," item="id">
+                    #{id,jdbcType=BIGINT}
+                </foreach>
+                )
+            </if>
+        </where>
+        ORDER BY t2.account_book_entity_id,t2.period_year_num,t2.voucher_date,t2.credential_word,t2.main_code ASC
+    </select>
+
+    <!-- 查询凭证信息 -->
+    <select id="findVocherListByParams"  resultType="java.lang.Long">
+        SELECT
+            distinct t1.account_subject_id
+        FROM wd_voucher_entry_%s t1
+        INNER JOIN wd_voucher_%s t2 ON t2.id = t1.voucher_id
+        <if test="dto.itemValueIds != null and dto.itemValueIds.size() > 0">
+            INNER JOIN wd_voucher_entry_auxiliary_%s t3 ON t3.voucher_id = t1.voucher_id
+            AND t3.entry_id = t1.id
+        </if>
+        <where>
+            AND t2.is_del = 0
+            <if test="dto.accountBookId != null">
+                AND t2.account_book_id = #{dto.accountBookId}
+            </if>
+            <if test="dto.accountBookEntityIdOperator != null and dto.accountBookEntityIds != null">
+                <if test="dto.accountBookEntityIdOperator == 0">
+                    AND t2.account_book_entity_id IN
+                    <foreach collection="dto.accountBookEntityIds" item="item" index="index" open="(" close=")" separator=",">
+                        #{item}
+                    </foreach>
+                </if>
+            </if>
+            <if test="dto.periodYears != null and dto.periodNumbers != null">
+                <if test="dto.periodOperator != null and dto.periodOperator == 1">
+                    AND t2.period_year_num
+                    BETWEEN concat(#{dto.periodYears[0]}, LPAD(#{dto.periodNumbers[0]},2,0))
+                    AND concat(#{dto.periodYears[1]}, LPAD(#{dto.periodNumbers[1]},2,0))
+                </if>
+            </if>
+            <if test="dto.periodYear != null and dto.periodNumber != null">
+                AND t2.period_year_num = concat(#{dto.periodYear}, LPAD(#{dto.periodNumber},2,0))
+            </if>
+            <if test="dto.voucherDate != null and dto.voucherDate.size() > 0">
+                AND t2.voucher_date
+                BETWEEN #{dto.voucherDate[0]} AND #{dto.voucherDate[1]}
+            </if>
+            <if test="dto.periodYear != null and dto.periodNumber != null and dto.vocherTime != null">
+                AND t2.period_year_num > concat(#{dto.periodYear}, LPAD(#{dto.periodNumber},2,0))
+                AND t2.voucher_date &lt; #{dto.vocherTime}
+            </if>
+            <if test="dto.subjectList != null and dto.subjectList.size() > 0">
+                AND t1.account_subject_id IN
+                <foreach collection="dto.subjectList" item="subjectId" index="index" open="(" close=")" separator=",">
+                    #{subjectId}
+                </foreach>
+            </if>
+            <if test="dto.itemValueIds != null and dto.itemValueIds.size() > 0">
+                AND t3.item_value_id IN
+                <foreach collection="dto.itemValueIds" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="dto.sourceTables != null and dto.sourceTables.size() > 0">
+                AND t3.source_table IN
+                <foreach collection="dto.sourceTables" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="dto.isIncludeUnbooked != null and dto.isIncludeUnbooked == 0">
+                AND t2.posting_status = 1
+            </if>
+            <if test="dto.isIncludeProfitAndLoss != null and dto.isIncludeProfitAndLoss == 0">
+                AND t2.source_type != 2
+            </if>
+        </where>
+        ORDER BY t1.account_subject_id
+    </select>
+
+    <select id="selectAuxiliaryIteam" resultType="com.njwd.entity.ledger.vo.VoucherEntryAuxiliaryVo">
+        select wvea.entry_id,wvea.source_table,wvea.item_value_id
+        from wd_voucher_entry_auxiliary_%s wvea
+        where wvea.entry_id in
+        <foreach collection="collection" open="(" separator="," close=")" item="entryId">
+          #{entryId,jdbcType=BIGINT}
+        </foreach>
+    </select>
+
+</mapper>

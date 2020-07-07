@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.ledger.mapper.AccountBookPeriodReportMapper">
+  <resultMap id="BaseResultMap" type="com.njwd.entity.ledger.AccountBookPeriodReport">
+    <!--@mbg.generated-->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="root_enterprise_id" jdbcType="BIGINT" property="rootEnterpriseId" />
+    <result column="period_id" jdbcType="BIGINT" property="periodId" />
+    <result column="account_book_entity_id" jdbcType="BIGINT" property="accountBookEntityId" />
+    <result column="account_book_entity_name" jdbcType="VARCHAR" property="accountBookEntityName" />
+    <result column="credential_word_name" jdbcType="VARCHAR" property="credentialWordName" />
+    <result column="old_voucher_code" jdbcType="VARCHAR" property="oldVoucherCode" />
+    <result column="new_voucher_code" jdbcType="VARCHAR" property="newVoucherCode" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, root_enterprise_id, period_id,account_book_id,account_book_name ,account_book_entity_id, account_book_entity_name,
+    credential_word_name, old_voucher_code, new_voucher_code
+  </sql>
+
+  <insert id="addBatch">
+    insert into `wd_account_book_period_report`(`root_enterprise_id`, `period_id`,`account_book_id`,`account_book_name`, `account_book_entity_id`, `account_book_entity_name`, `credential_word_name`, `old_voucher_code`, `new_voucher_code` )
+    values
+    <foreach collection="list" item="p" separator=",">
+      (#{p.rootEnterpriseId}, #{p.periodId}, #{p.accountBookId}, #{p.accountBookName}, #{p.accountBookEntityId}, #{p.accountBookEntityName}, #{p.credentialWordName}, #{p.oldVoucherCode}, #{p.newVoucherCode} )
+    </foreach>
+  </insert>
+
+  <select id="findPage" resultType="com.njwd.entity.ledger.vo.AccountBookPeriodReportVo">
+    select <include refid="Base_Column_List"/>
+    from wd_account_book_period_report
+    where period_id = #{accountBookPeriodReportDto.periodId}
+  </select>
+
+</mapper>

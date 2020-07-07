@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.UnitMapper">
+  <resultMap id="BaseResultMap" type="com.njwd.entity.platform.Unit">
+    <!--@mbg.generated-->
+    <!--@Table wd_unit-->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="code" jdbcType="VARCHAR" property="code" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="rounding_type" jdbcType="BOOLEAN" property="roundingType" />
+    <result column="precision" jdbcType="TINYINT" property="precision" />
+    <result column="conversion_id" jdbcType="BIGINT" property="conversionId" />
+    <result column="is_base" jdbcType="BOOLEAN" property="isBase" />
+    <result column="conversion_value" jdbcType="DECIMAL" property="conversionValue" />
+    <result column="is_approved" jdbcType="BOOLEAN" property="isApproved" />
+    <result column="is_released" jdbcType="BOOLEAN" property="isReleased" />
+    <result column="is_enable" jdbcType="BOOLEAN" property="isEnable" />
+    <result column="is_del" jdbcType="BOOLEAN" property="isDel" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="creator_id" jdbcType="BIGINT" property="creatorId" />
+    <result column="creator_name" jdbcType="VARCHAR" property="creatorName" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="updator_id" jdbcType="BIGINT" property="updatorId" />
+    <result column="updator_name" jdbcType="VARCHAR" property="updatorName" />
+    <result column="manage_info" jdbcType="OTHER" property="manageInfo" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, code, `name`, rounding_type, `precision`, conversion_id, is_base, conversion_value, 
+    is_approved, is_released, is_enable, is_del, create_time, creator_id, creator_name, 
+    update_time, updator_id, updator_name, manage_info
+  </sql>
+
+    <select id="findUnitById" resultType="com.njwd.entity.platform.vo.UnitVo">
+      select <include refid="Base_Column_List" />
+      from wd_unit where id = #{id}
+    </select>
+
+  <select id="findUnitPage" resultType="com.njwd.entity.platform.vo.UnitVo">
+    select <include refid="Base_Column_List" />
+      from wd_unit
+      <where>
+        <if test="unitDto.codeOrName != null">
+          and (code like concat('%',#{unitDto.codeOrName},'%') or name like concat('%',#{unitDto.codeOrName},'%'))
+        </if>
+        <if test="unitDto.isReleased!=null ">
+          and is_released = #{unitDto.isReleased}
+        </if>
+        <if test="unitDto.isApproved!=null">
+          and is_approved = #{unitDto.isApproved}
+        </if>
+        <if test="unitDto.isBase!=null">
+          and is_base = #{unitDto.isBase}
+        </if>
+        and is_del = 0
+      </where>
+  </select>
+
+  <update id="updateBatch">
+    <foreach collection="idList" item="id">
+      update wd_unit
+      <set>
+        <if test="isApproved != null">
+          is_approved = #{isApproved} ,
+        </if>
+        <if test="isReleased != null">
+          is_released = #{isReleased},
+        </if>
+      </set>
+      where id = #{id};
+    </foreach>
+  </update>
+  <select id="findUnitList" resultType="com.njwd.entity.platform.vo.UnitVo">
+    select <include refid="Base_Column_List" />
+    from wd_unit
+    <where>
+      <if test="isReleased!=null ">
+        and is_released = #{isReleased}
+      </if>
+      <if test="isApproved!=null">
+        and is_approved = #{isApproved}
+      </if>
+     <if test="platformIds!=null and platformIds.size()>0" >
+       and id not in
+       <foreach collection="platformIds" item="platformId" open="(" close=")" separator=",">
+          ${platformId}
+       </foreach>
+     </if>
+      and is_del = 0
+    </where>
+  </select>
+
+</mapper>

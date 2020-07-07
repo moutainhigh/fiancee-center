@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.financeback.mapper.AccountCashFlowMapper">
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, root_enterprise_id,cash_flow_id,cash_flow_name,template_cash_flow_id,template_cash_flow_name,create_time,creator_id,creator_name,
+    account_book_type_id,account_book_type_name,acc_standard_id,acc_standard_name,max_level
+  </sql>
+
+  <select id="selectByAccStandardId" parameterType="com.njwd.entity.basedata.AccountCashFlow" resultType="com.njwd.entity.basedata.AccountCashFlow">
+    select
+        <include refid="Base_Column_List"/>
+    from wd_cash_flow
+    where
+        account_book_type_id = #{accountBookTypeId}
+    and acc_standard_id = #{accStandardId}
+    and root_enterprise_id = #{rootEnterpriseId}
+  </select>
+
+
+</mapper>

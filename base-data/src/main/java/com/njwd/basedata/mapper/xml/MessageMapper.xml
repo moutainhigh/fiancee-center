@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+
+<mapper namespace="com.njwd.basedata.mapper.MessageMapper">
+
+    <insert id="addBatch">
+        INSERT INTO `wd_message`( `title`, `content`, `menu_code`, `menu_name`,  `type`, `rootEnterpriseId`)
+        VALUES
+        <foreach collection="messageDto.rootEnterpriseIds" item="rootEnterpriseId" separator=",">
+            (
+                #{messageDto.title},
+                #{messageDto.content},
+                #{messageDto.menuCode},
+                #{messageDto.menuName},
+                #{messageDto.type},
+                #{rootEnterpriseId}
+            )
+        </foreach>
+    </insert>
+
+    <select id="findRootEnterpriseIds" resultType="long">
+        select DISTINCT root_enterprise_id from wd_sys_user_enterprise
+    </select>
+    <select id="findMessagePage" resultType="com.njwd.entity.platform.vo.MessageVo">
+        select
+            wm.id,
+            wm.title,
+            wm.content,
+            wm.menu_code,
+            wm.menu_name,
+            wm.type,
+            wm.status,
+            wm.createTime,
+            wm.update_time
+        from wd_message wm
+        <where>
+            wm.rootEnterpriseId = #{messageDto.rootEnterpriseId}
+            <if test="messageDto.type != null">
+                and wm.type = #{messageDto.type}
+            </if>
+            <if test="messageDto.status != null">
+                and wm.status = #{messageDto.status}
+            </if>
+        </where>
+    </select>
+    <update id="updateMessageBatch">
+        update wd_message
+        set status=1,
+        updator_id =#{messageDto.updatorId},
+        update_time=#{messageDto.updateTime},
+        updator_name=#{messageDto.updatorName}
+        <where>
+            and id in
+            <foreach collection="messageDto.ids" item="id" index="index" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
+        </where>
+    </update>
+
+</mapper>

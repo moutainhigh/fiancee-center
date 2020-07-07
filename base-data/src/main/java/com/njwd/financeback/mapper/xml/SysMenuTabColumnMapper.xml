@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.financeback.mapper.SysMenuTabColumnMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.basedata.vo.SysMenuTabColumnVo">
+        <!--@mbg.generated-->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="root_enterprise_id" jdbcType="BIGINT" property="rootEnterpriseId"/>
+        <result column="menu_code" jdbcType="VARCHAR" property="menuCode"/>
+        <result column="table_name" jdbcType="VARCHAR" property="tableName"/>
+        <result column="table_as_name" jdbcType="VARCHAR" property="tableAsName"/>
+        <result column="column_name" jdbcType="VARCHAR" property="columnName"/>
+        <result column="column_remark" jdbcType="VARCHAR" property="columnRemark"/>
+        <result column="convert_type" jdbcType="VARCHAR" property="convertType"/>
+        <result column="sort_num" jdbcType="TINYINT" property="sortNum"/>
+        <result column="is_sort" jdbcType="TINYINT" property="isSort"/>
+        <result column="is_show" jdbcType="TINYINT" property="isShow"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="creator_id" jdbcType="BIGINT" property="creatorId"/>
+        <result column="creator_name" jdbcType="VARCHAR" property="creatorName"/>
+        <result column="column_json_name" jdbcType="VARCHAR" property="columnJsonName"/>
+        <result column="is_edit" jdbcType="TINYINT" property="isEdit"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        id, root_enterprise_id, menu_code, `table_name`, table_as_name, `column_name`, column_remark,convert_type,sort_num,
+        is_sort, is_show, create_time, creator_id, creator_name,column_json_name,is_edit
+    </sql>
+    <!--根据菜单code和用户查询列表-->
+    <select id="findList" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from
+        wd_sys_menu_tab_column
+        <where>
+            <if test="queryDto.rootEnterpriseId != null">
+                and root_enterprise_id = #{queryDto.rootEnterpriseId,jdbcType=BIGINT}
+            </if>
+            <if test="queryDto.menuCode != null and queryDto.menuCode != ''">
+                and menu_code = #{queryDto.menuCode,jdbcType=VARCHAR}
+            </if>
+            <if test="queryDto.isEnterpriseAdmin != null">
+                and is_enterprise_admin = #{queryDto.isEnterpriseAdmin,jdbcType=TINYINT}
+            </if>
+            <if test="queryDto.userId != null">
+                and creator_id = #{queryDto.userId,jdbcType=BIGINT}
+            </if>
+            <choose>
+                <when test="queryDto.schemeId!=null ">
+                    and scheme_id = #{queryDto.schemeId}
+                </when>
+                <otherwise>
+                    and scheme_id = -1
+                </otherwise>
+            </choose>
+        </where>
+        order by is_edit,sort_num
+    </select>
+
+    <select id="findUserList" resultType="com.njwd.entity.basedata.SysMenuTabColumn">
+        select
+        <include refid="Base_Column_List"/>
+        from
+        wd_sys_menu_tab_column
+        <where>
+            <if test="rootEnterpriseId != null">
+                and root_enterprise_id = #{rootEnterpriseId,jdbcType=BIGINT}
+            </if>
+            <if test="menuCode != null and menuCode != ''">
+                and menu_code = #{menuCode,jdbcType=VARCHAR}
+            </if>
+            <if test="userId != null">
+                and creator_id = #{userId,jdbcType=BIGINT}
+            </if>
+            <if test="isEnterpriseAdmin != null">
+                and is_enterprise_admin = #{isEnterpriseAdmin,jdbcType=TINYINT}
+            </if>
+            and is_show = 1
+            and scheme_id = -1
+        </where>
+        order by sort_num asc
+    </select>
+
+    <!--按条件删除表格配置中数据-->
+    <delete id="batchDelete">
+        delete from wd_sys_menu_tab_column
+        <where>
+            <if test="queryDto.rootEnterpriseId != null">
+                and root_enterprise_id = #{queryDto.rootEnterpriseId,jdbcType=BIGINT}
+            </if>
+            <if test="queryDto.menuCode != null and queryDto.menuCode != ''">
+                and menu_code = #{queryDto.menuCode,jdbcType=VARCHAR}
+            </if>
+            <if test="queryDto.isEnterpriseAdmin != null">
+                and is_enterprise_admin = #{queryDto.isEnterpriseAdmin,jdbcType=TINYINT}
+            </if>
+            <if test="queryDto.userId != null">
+                and creator_id = #{queryDto.userId,jdbcType=BIGINT}
+            </if>
+            <choose>
+                <when test="queryDto.schemeId!=null ">
+                    and scheme_id = #{queryDto.schemeId}
+                </when>
+                <otherwise>
+                    and scheme_id = -1
+                </otherwise>
+            </choose>
+        </where>
+
+    </delete>
+
+    <insert id="batchUpdate" parameterType="java.util.List">
+        insert into wd_sys_menu_tab_column(
+        is_enterprise_admin,
+        root_enterprise_id,
+        menu_code,
+        `table_name`,
+        table_as_name,
+        `column_name`,
+        column_remark,
+        convert_type,
+        sort_num,
+        is_sort, is_show, creator_id, creator_name,scheme_id, column_json_name,is_edit)
+        values
+        <foreach collection="tabColumnList" item="item" index="INDEX" separator=",">
+            (
+            #{isEnterpriseAdmin,jdbcType=TINYINT} ,
+            #{item.rootEnterpriseId,jdbcType=BIGINT} ,
+            #{item.menuCode,jdbcType=VARCHAR} ,
+            #{item.tableName,jdbcType=VARCHAR} ,
+            #{item.tableAsName,jdbcType=VARCHAR} ,
+            #{item.columnName,jdbcType=VARCHAR} ,
+            #{item.columnRemark,jdbcType=VARCHAR} ,
+            #{item.convertType,jdbcType=VARCHAR} ,
+            #{item.sortNum,jdbcType=TINYINT} ,
+            #{item.isSort,jdbcType=TINYINT} ,
+            #{item.isShow,jdbcType=TINYINT},
+            #{item.creatorId,jdbcType=BIGINT} ,
+            #{item.creatorName,jdbcType=VARCHAR},
+            #{item.schemeId,jdbcType=BIGINT},
+            #{item.columnJsonName,jdbcType=VARCHAR},
+            #{item.isEdit,jdbcType=TINYINT}
+            )
+        </foreach>
+    </insert>
+
+</mapper>

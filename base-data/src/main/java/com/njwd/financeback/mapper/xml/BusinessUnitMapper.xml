@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.financeback.mapper.BusinessUnitMapper">
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        u.id, u.root_enterprise_id, u.company_id, u.code, u.`name`, u.unit_form_id, u.unit_form_name, u.is_del, u.is_enable, u.is_ref,u.is_account_entity,u.is_company,
+        u.version, u.creator_id, u.creator_name, u.create_time, u.updator_id, u.updator_name,u.update_time
+    </sql>
+
+    <sql id="FIND_PAGE_WHERE">
+        u.is_del = 0
+        AND u.is_enable = 1
+        AND c.is_del = 0
+        <if test="businessUnitDto.rootEnterpriseId != null ">
+            AND u.root_enterprise_id = #{businessUnitDto.rootEnterpriseId}
+        </if>
+        <if test="businessUnitDto.companyId != null ">
+            AND c.id = #{businessUnitDto.companyId}
+        </if>
+        <if test = "businessUnitDto.companyIdList != null and businessUnitDto.companyIdList.size() != 0">
+            AND c.id IN
+            <foreach collection="businessUnitDto.companyIdList" item="id" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
+        </if>
+        <if test="businessUnitDto.unitFormId  != null ">
+            AND u.unit_form_id = #{businessUnitDto.unitFormId}
+        </if>
+        <if test = "businessUnitDto.codeOrName != null">
+            AND (u.code like concat('%',#{businessUnitDto.codeOrName},'%')
+            OR u.name like concat('%',#{businessUnitDto.codeOrName},'%'))
+        </if>
+        <if test = "businessUnitDto.codes != null and businessUnitDto.codes.size() > 0">
+            AND u.code NOT IN
+            <foreach collection="businessUnitDto.codes" item="code" open="(" separator="," close=")">
+                #{code}
+            </foreach>
+        </if>
+    </sql>
+
+    <!--  批量新增 -->
+    <insert id="addBatch">
+        insert
+        into
+        wd_business_unit
+        (root_enterprise_id, company_id, code, `name`, unit_form_id, unit_form_name, is_account_entity, creator_id, creator_name)
+        values
+        <foreach collection="list" item="p" separator=",">
+            (#{p.rootEnterpriseId} ,#{p.companyId} ,#{p.code} ,#{p.name},#{p.unitFormId} ,#{p.unitFormName} ,#{p.isAccountEntity} ,#{p.creatorId} ,#{p.creatorName})
+        </foreach>
+    </insert>
+
+    <!-- 根据ID查询业务单元，是否删除不校验-->
+    <select id="selectById" parameterType="com.njwd.entity.basedata.BusinessUnit"
+            resultType="com.njwd.entity.basedata.vo.BusinessUnitVo">
+        SELECT
+            <include refid="Base_Column_List"/>
+            ,c.name companyName
+            ,c.code companyCode
+            ,c.has_sub_account companyHasSubAccount
+        FROM wd_business_unit u
+        JOIN wd_company c ON u.company_id = c.id
+        WHERE
+            u.id = #{id}
+    </select>
+
+    <!-- 根据 公司ID 查询业务单元列表 -->
+    <select id="findPageByCompanyId" resultType="com.njwd.entity.basedata.vo.BusinessUnitVo">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM wd_business_unit u
+        WHERE
+        u.is_del = 0
+        AND
+        u.root_enterprise_id = #{rootEnterpriseId}
+        AND
+        u.company_id = #{companyId}
+        ORDER BY u.code
+    </select>
+
+    <!-- 根据 公司ID List 查询业务单元列表 -->
+    <select id="findListByCompanyIds" parameterType="java.util.List" resultType="Long">
+        SELECT
+        id
+        FROM wd_business_unit
+        WHERE
+        is_del = 0
+        <if test="list != null and list.size() != 0">
+            and company_id in
+            <foreach collection="list" item="id" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
+        </if>
+
+    </select>
+
+    <!-- 查询业务单元列表(含公司ID、公司名称) -->
+    <select id="findPage" parameterType="com.njwd.entity.basedata.dto.BusinessUnitDto"
+            resultType="com.njwd.entity.basedata.vo.BusinessUnitVo">
+        SELECT
+        <include refid="Base_Column_List"/>
+        ,c.name companyName
+        ,1 dataTypes
+        FROM wd_business_unit u
+        JOIN wd_company c
+        ON u.company_id = c.id
+        <where>
+            <include refid="FIND_PAGE_WHERE"/>
+        </where>
+        ORDER BY u.code
+    </select>
+
+    <!-- 查询业务单元列表(含公司ID、公司名称) -->
+    <select id="findBusinessUnitList" parameterType="com.njwd.entity.basedata.dto.BusinessUnitDto"
+            resultType="com.njwd.entity.basedata.vo.BusinessUnitVo">
+        SELECT
+        <include refid="Base_Column_List"/>
+        ,c.name companyName
+        ,1 dataTypes
+        FROM wd_business_unit u
+        JOIN wd_company c
+        ON u.company_id = c.id
+        <where>
+            <include refid="FIND_PAGE_WHERE"/>
+        </where>
+        ORDER BY u.code
+    </select>
+
+</mapper>

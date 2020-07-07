@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.basedata.mapper.CashFlowTempleteMapper">
+  <resultMap id="BaseResultMap" type="com.njwd.entity.platform.CashFlow">
+    <!--@mbg.generated-->
+      <id column="id" jdbcType="BIGINT" property="id"/>
+      <result column="root_enterprise_id" jdbcType="BIGINT" property="rootEnterpriseId"/>
+      <result column="cash_flow_id" jdbcType="BIGINT" property="cashFlowId"/>
+      <result column="cash_flow_name" jdbcType="VARCHAR" property="cashFlowName"/>
+      <result column="template_cash_flow_id" jdbcType="BIGINT" property="templateCashFlowId"/>
+      <result column="template_cash_flow_name" jdbcType="VARCHAR" property="templateCashFlowName"/>
+      <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+      <result column="creator_id" jdbcType="BIGINT" property="creatorId"/>
+      <result column="creator_name" jdbcType="VARCHAR" property="creatorName"/>
+      <result column="max_level" jdbcType="VARCHAR" property="maxLevel"/>
+      <result column="account_book_type_id" jdbcType="BIGINT" property="accountBookTypeId"/>
+      <result column="acc_standard_id" jdbcType="BIGINT" property="accStandardId"/>
+      <result column="account_book_type_name" jdbcType="VARCHAR" property="accountBookTypeName"/>
+      <result column="acc_standard_name" jdbcType="VARCHAR" property="accStandardName"/>
+
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+      id, root_enterprise_id, cash_flow_id, cash_flow_name, template_cash_flow_id,max_level,
+    template_cash_flow_name,create_time,creator_id,creator_name,account_book_type_id,acc_standard_id,
+    account_book_type_name,acc_standard_name
+  </sql>
+
+    <update id="updateCashFlowTemplate">
+    update  wd_cash_flow
+     set cash_flow_id = #{cashFlow.cashFlowId},
+         cash_flow_name= #{cashFlow.cashFlowName},
+         template_cash_flow_id= #{cashFlow.templateCashFlowId},
+         template_cash_flow_name = #{cashFlow.templateCashFlowName},
+         max_level = #{cashFlow.maxLevel},
+         create_time =#{cashFlow.createTime},
+         creator_id=#{cashFlow.creatorId},
+         creator_name=#{cashFlow.creatorName}
+         where root_enterprise_id = #{cashFlow.rootEnterpriseId} and
+         account_book_type_id = #{cashFlow.accountBookTypeId}
+         and acc_standard_id= #{cashFlow.accStandardId}
+  </update>
+
+    <select id="findCashFlowTemplate" resultType="com.njwd.entity.platform.CashFlow">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_cash_flow
+        where 1=1
+        <if test="cashFlow.rootEnterpriseId != null">
+            and root_enterprise_id = #{cashFlow.rootEnterpriseId}
+        </if>
+        <if test="cashFlow.cashFlowId != null">
+            and cash_flow_id = #{cashFlow.cashFlowId}
+        </if>
+    </select>
+
+
+    <!--根据Code查询上级现金流量项目-->
+    <select id="findCashFlowItemTemplateId" resultType="com.njwd.entity.platform.CashFlow">
+        select
+        t.id,t.max_level
+        from wd_cash_flow t
+        <where>
+            t.root_enterprise_id = #{cashFlowItemDto.rootEnterpriseId}
+            <if test="cashFlowItemDto.cashFlowId != null ">
+                and t.cash_flow_id = #{cashFlowItemDto.cashFlowId}
+            </if>
+            <if test="cashFlowItemDto.id != null ">
+                and t.id = #{cashFlowItemDto.id}
+            </if>
+        </where>
+    </select>
+    <!--根据Code查询上级现金流量项目-->
+    <select id="findCashFlowItemTemplateIdByParam" resultType="com.njwd.entity.platform.CashFlow">
+        select
+        t.id
+        from wd_cash_flow t
+        <where>
+            t.root_enterprise_id = #{cashFlowItemDto.rootEnterpriseId}
+            and t.account_book_type_id = #{cashFlowItemDto.accountBookTypeId}
+            and t.acc_standard_id = #{cashFlowItemDto.accStandardId}
+        </where>
+    </select>
+
+
+</mapper>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.basedata.mapper.BankAccountCurrencyMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.basedata.BankAccountCurrency">
+        <!--@mbg.generated-->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="bank_account_id" jdbcType="BIGINT" property="bankAccountId"/>
+        <result column="currency_id" jdbcType="BIGINT" property="currencyId"/>
+        <result column="currency_name" jdbcType="BIGINT" property="currencyName"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        id, bank_account_id, currency_id, currency_name, create_time
+    </sql>
+
+    <!-- 批量新增 -->
+    <insert id="insertBatch">
+        insert into wd_bank_account_currency
+        (`bank_account_id`,
+        currency_id,
+        currency_name)
+        values
+        <foreach collection="currencies" item="c" index="index" separator=",">
+            (#{bankAccountId},
+            #{c.currencyId},
+            #{c.currencyName})
+        </foreach>
+    </insert>
+</mapper>

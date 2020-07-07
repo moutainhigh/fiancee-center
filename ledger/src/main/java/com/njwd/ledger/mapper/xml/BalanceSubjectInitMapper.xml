@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.ledger.mapper.BalanceSubjectInitMapper">
+  <resultMap id="BaseResultMap" type="com.njwd.entity.ledger.BalanceSubjectInit">
+    <!--@mbg.generated-->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="account_book_system_id" jdbcType="BIGINT" property="accountBookSystemId" />
+    <result column="account_book_id" jdbcType="BIGINT" property="accountBookId" />
+    <result column="account_book_entity_id" jdbcType="BIGINT" property="accountBookEntityId" />
+    <result column="account_subject_id" jdbcType="BIGINT" property="accountSubjectId" />
+    <result column="period_year" jdbcType="BIGINT" property="periodYear" />
+    <result column="period_num" jdbcType="BIGINT" property="periodNum" />
+    <result column="opening_balance" jdbcType="DECIMAL" property="openingBalance" />
+    <result column="this_year_debit_amount" jdbcType="DECIMAL" property="thisYearDebitAmount" />
+    <result column="this_year_credit_amount" jdbcType="DECIMAL" property="thisYearCreditAmount" />
+    <result column="year_opening_balance" jdbcType="DECIMAL" property="yearOpeningBalance" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, account_book_system_id, account_book_id, account_book_entity_id, account_subject_id,period_year,period_num,
+    opening_balance, this_year_debit_amount, this_year_credit_amount, year_opening_balance
+  </sql>
+
+    <insert id="addSubjectInitBatch">
+      insert into wd_balance_subject_init(account_book_system_id,account_book_id,account_book_entity_id,account_subject_id,period_year,period_num,opening_balance,this_year_debit_amount,this_year_credit_amount,year_opening_balance)
+      values
+      <foreach collection="balanceSubjectInitList" item="item" index="index" separator=",">
+        (#{item.accountBookSystemId},#{item.accountBookId},#{item.accountBookEntityId} ,#{item.accountSubjectId},#{item.periodYear},#{item.periodNum},#{item.openingBalance} ,#{item.thisYearDebitAmount} ,#{item.thisYearCreditAmount} ,#{item.yearOpeningBalance}  )
+      </foreach>
+    </insert>
+    <select id="selectSubjectInitList" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List"/>
+    from wd_balance_subject_init t
+    <where>
+        <if test="accountBookId != null">
+            t.account_book_id=#{accountBookId}
+        </if>
+        <if test="accountBookSystemId != null">
+            and t.account_book_system_id=#{accountBookSystemId}
+        </if>
+        <if test="periodYear != null">
+            and t.period_year=#{periodYear}
+        </if>
+        <if test="periodNum != null">
+            and t.period_num=#{periodNum}
+        </if>
+    </where>
+    </select>
+
+    <delete id="deleteSubjectInitBatch">
+        <foreach collection="balanceSubjectInitList" item="item" index="index" separator=";">
+         delete from wd_balance_subject_init
+            where
+             account_book_entity_id=#{item.accountBookEntityId}
+            and account_subject_id=#{item.accountSubjectId}
+            and period_year=#{item.periodYear}
+            and period_num=#{item.periodNum}
+        </foreach>
+    </delete>
+</mapper>

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.SubjectSynergyMapper">
+    <sql id="Base_Column_List">
+            wss.`id`,
+            wss.`root_enterprise_id`,
+            wss.`subject_id`,
+            wss.`code`,
+            wss.`name`,
+            wss.`direction`,
+            wss.`src_account_subject_id`,
+            wss.`src_auxiliary_name`,
+            wss.`src_auxiliary_source`,
+            wss.`dest_account_subject_id`,
+            wss.`dest_auxiliary_name`,
+            wss.`dest_auxiliary_source`,
+            wss.`period_year`,
+            wss.`period_num`,
+            wss.`period_year_num`,
+            wss.`is_approved`,
+            wss.`is_released`,
+            wss.`is_enable`,
+            wss.`is_del`,
+            wss.`create_time`,
+            wss.`creator_id`,
+            wss.`creator_name`,
+            wss.`update_time`,
+            wss.`updator_id`,
+            wss.`updator_name`,
+            wss.`manage_info`,
+            wss.`version`
+    </sql>
+    <resultMap id="BaseResultMap" type="com.njwd.entity.platform.vo.SubjectSynergyVo">
+    </resultMap>
+    <select id="findById" resultMap="BaseResultMap">
+        select
+        ws.subject_name,
+        ws.account_book_type_name,
+        was_src.code src_account_subject_code,
+        was_src.full_name src_account_subject_name,
+        was_dest.code dest_account_subject_code,
+        was_dest.full_name dest_account_subject_name,
+        <include refid="Base_Column_List"/>
+        from wd_subject_synergy wss
+        left join wd_subject ws on ws.id = wss.subject_id
+        left join wd_account_subject was_src on was_src.id = wss.src_account_subject_id
+        left join wd_account_subject was_dest on was_dest.id = wss.dest_account_subject_id
+        where wss.id = #{id}
+    </select>
+     <!--查询列表-->
+    <select id="findSubjectSynergyList" resultMap="BaseResultMap">
+      select
+        ws.name as subjectName,
+        ws.account_book_type_name,
+        was_src.code src_account_subject_code,
+        was_src.full_name src_account_subject_name,
+        was_dest.code dest_account_subject_code,
+        was_dest.full_name dest_account_subject_name,
+        <include refid="Base_Column_List"/>
+        from wd_subject_synergy wss
+        left join wd_subject ws on ws.id = wss.subject_id
+        left join wd_account_subject was_src on was_src.id = wss.src_account_subject_id
+        left join wd_account_subject was_dest on was_dest.id = wss.dest_account_subject_id
+        <where>
+           1 = 1 and wss.is_del = 0
+            <if test="subjectSynergyDto.subjectIds != null and subjectSynergyDto.subjectIds.size() > 0">
+                and wss.subject_id in
+                <foreach collection="subjectSynergyDto.subjectIds" item="subjectId" index="index"  open="(" close=")" separator=",">
+                    #{subjectId}
+                </foreach>
+            </if>
+        </where>
+    </select>
+    <!--根据主键id查询多条数据-->
+    <select id="findSubjectSynergyListById" resultMap="BaseResultMap">
+       select
+        ws.subject_name,
+        ws.account_book_type_name,
+        was_src.code src_account_subject_code,
+        was_src.full_name src_account_subject_name,
+        was_dest.code dest_account_subject_code,
+        was_dest.full_name dest_account_subject_name,
+        <include refid="Base_Column_List"/>
+        from wd_subject_synergy wss
+        left join wd_subject ws on ws.id = wss.subject_id
+        left join wd_account_subject was_src on was_src.id = wss.src_account_subject_id
+        left join wd_account_subject was_dest on was_dest.id = wss.dest_account_subject_id
+        <where>
+            1 = 1 and wss.is_del = 0
+                and wss.id in
+                <foreach collection="subjectSynergyDto.editList" item="subjectSynergy" index="index"  open="(" close=")" separator=",">
+                    #{subjectSynergy.id}
+                </foreach>
+        </where>
+    </select>
+    <update id="deleteSubjectSynergy">
+        <foreach collection="subjectSynergyList" item="subjectSynergy" index="index">
+            update wd_subject_synergy wdss
+            <set>
+                <if test="subjectSynergyDto.isDel == 1 ">
+                    wdss.is_del = 1,
+                </if>
+                <if test="subjectSynergyDto.isApproved == 1 ">
+                    wdss.is_approved = 1,
+                </if>
+                <if test="subjectSynergyDto.isApproved == 0">
+                    wdss.is_approved = 0,
+                </if>
+                <if test="subjectSynergyDto.isReleased == 1">
+                    wdss.is_released = 1,
+                </if>
+                wdss.version = wdss.version +1,
+            </set>
+            where wdss.id = #{subjectSynergy.id} and wdss.version = #{subjectSynergy.version};
+        </foreach>
+    </update>
+</mapper>

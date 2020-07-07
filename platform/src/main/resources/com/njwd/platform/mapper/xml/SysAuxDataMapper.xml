@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.SysAuxDataMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.platform.vo.SysAuxDataVo">
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="type" jdbcType="VARCHAR" property="type"/>
+        <result column="CODE" jdbcType="VARCHAR" property="code"/>
+        <result column="NAME" jdbcType="VARCHAR" property="name"/>
+        <result column="remark" jdbcType="VARCHAR" property="remark"/>
+        <result column="is_default" jdbcType="TINYINT" property="isDefault"/>
+        <result column="is_enable" jdbcType="TINYINT" property="isEnable"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+    id, `type`, CODE, `NAME`, remark, is_default, is_enable
+  </sql>
+
+    <select id="findAuxDataPageByNameCodeType" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_sys_aux_data a
+        <where>
+            <if test="sysAuxDataDto.codeOrName != null and sysAuxDataDto.codeOrName != ''">
+                and (a.code like ('%',#{sysAuxDataDto.codeOrName},'%') or a.name like
+                concat('%',#{sysAuxDataDto.codeOrName},'%'))
+            </if>
+            <if test="sysAuxDataDto.type != null and sysAuxDataDto.type != ''">
+                and a.type=#{sysAuxDataDto.type}
+            </if>
+            and a.is_enable=1
+        </where>
+    </select>
+    <select id="findSysAuxDataListByNameType" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_sys_aux_data
+        <where>
+            <if test="name != null and name != ''">
+                and name=#{name}
+            </if>
+            <if test="type != null and type != ''">
+                and type=#{type}
+            </if>
+                and is_enable=1
+        </where>
+    </select>
+
+    <select id="findSysAuxDataListByType" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_sys_aux_data
+        <where>
+            <if test="type != null and type != ''">
+                and type=#{type}
+            </if>
+                and is_enable=1
+        </where>
+    </select>
+
+    <select id="findSysAuxDataListByNames" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_sys_aux_data
+        <where>
+            <if test="names != null and names != ''">
+                and FIND_IN_SET(`NAME`,#{names})
+            </if>
+                and is_enable=1
+        </where>
+    </select>
+
+    <select id="findSysAuxDataById"  resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_sys_aux_data
+        where is_enable=1
+        and id=#{id}
+    </select>
+</mapper>

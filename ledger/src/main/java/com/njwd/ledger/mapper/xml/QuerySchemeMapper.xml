@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.ledger.mapper.QuerySchemeMapper">
+  <resultMap id="BaseResultMap" type="com.njwd.entity.ledger.QueryScheme">
+    <!--@mbg.generated-->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="menu_code" jdbcType="VARCHAR" property="menuCode" />
+    <result column="scheme_name" jdbcType="VARCHAR" property="schemeName" />
+    <result column="root_enterprise_id" jdbcType="BIGINT" property="rootEnterpriseId" />
+    <result column="creator_id" jdbcType="BIGINT" property="creatorId" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="updator_id" jdbcType="BIGINT" property="updatorId" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="is_default" jdbcType="TINYINT" property="isDefault" />
+    <result column="is_del" jdbcType="TINYINT" property="isDel" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, menu_code, scheme_name, root_enterprise_id, creator_id, create_time, updator_id,
+    update_time, is_default, is_del
+  </sql>
+  <select id="findQueryScheme" resultType="com.njwd.entity.ledger.vo.QuerySchemeVo">
+    select * from wd_query_scheme
+    where menu_code = #{menuCode} and root_enterprise_id = #{rootEnterpriseId} and creator_id = #{creatorId} and is_del = 0
+  </select>
+
+
+  <update id="updateQueryScheme">
+    update wd_query_scheme
+      <set>
+        <if  test="schemeName!=null" >
+          scheme_name = #{schemeName},
+        </if>
+        <if test="isDefault!=null">
+          is_default = #{isDefault},
+        </if>
+        version=version+1,updator_id=#{updatorId}
+      </set>
+      where id = #{id} and version=#{version}
+  </update>
+
+</mapper>

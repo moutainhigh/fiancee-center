@@ -1,0 +1,106 @@
+# server配置
+server:
+  port: 8183
+  tomcat:
+    uri-encoding: UTF-8
+  servlet:
+    context-path: /financeback
+
+# spring配置
+spring:
+  profiles:
+    active: liantiao
+  application:
+    name: base-data
+  cloud:
+    nacos:
+      config:
+        server-addr: 192.168.1.161:8848
+        file-extension: yaml
+      #        namespace:
+      discovery:
+        server-addr: 192.168.1.161:8848
+        enabled: true
+        namespace: lt
+  # 数据库配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://192.168.1.160:3306/njwd_finance_back_sys_191111?useUnicode=true&characterEncoding=utf-8&autoReconnect=true&autoReconnectForPools=true&failOverReadOnly=false&useSSL=false&allowMultiQueries=true&serverTimezone=Asia/Shanghai&tinyInt1isBit=false
+    username: root
+    password: sys8888
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      maximum-pool-size: 50
+      minimum-idle: 8
+    tomcat:
+      initialSize: 5
+      minIdle: 5
+      maxActive: 20
+      maxWait: 60000
+      timeBetweenEvictionRunsMillis: 60000
+      minEvictableIdleTimeMillis: 300000
+      validationQuery: SELECT1FROMDUAL
+      testWhileIdle: true
+      testOnBorrow: false
+      testOnReturn: false
+  redis:
+    database: 4
+    host: 192.168.1.160
+    port: 6379
+    password: sys1234
+    # 使用连接池
+    jedis:
+      pool:
+        max-active: 1024
+        max-idle: 200
+        min-idle: 0
+  rabbitmq:
+    host: 192.168.1.160
+    port: 5672
+    username: guest
+    password: guest
+    publisher-confirms: true    #  消息发送到交换机确认机制,是否确认回调
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    timezone: GMT+8
+    serialization:
+      # false:不使用 true:使用 时间戳
+      write-dates-as-timestamps: true
+ribbon:
+  ReadTimeout: 120000
+  #请求连接的超时时间
+  ConnectTimeout: 30000
+
+logging:
+  config: classpath:logback.xml
+
+mybatis-plus:
+  mapper-locations: classpath*:/com/njwd/**/mapper/xml/*.xml
+  typeAliasesPackage: com.njwd.*.entity
+  global-config:
+    db-config:
+      id-type: auto
+      field-strategy: not_null
+      table-prefix: wd_
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+
+system:
+  properties:
+    profileActive: liantiao
+    njwdCoreUrl: 'http://192.168.1.160:8188/njwd_core/'
+
+#自定义常量
+constant:
+  file:
+    #服务端excel的保存路径,模版在该路径下,上传的excle文件在对应文件夹下
+    excelRootPath: /home/njwd_finance_back/excel_upload/
+#openfire地址
+openfire:
+  server: 192.168.1.215
+  domainName: njwdopenfire
+  port: 5222
+  #配置用发送消息的账号信息
+  loginAccount: admin
+  loginPassword: admin

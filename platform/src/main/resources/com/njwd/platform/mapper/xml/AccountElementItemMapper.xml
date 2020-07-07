@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.AccountElementItemMapper">
+  <resultMap id="BaseResultMap" type="com.njwd.entity.platform.vo.AccountElementItemVo">
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    waei.id, waei.element_id, waei.code, waei.`name`, waei.direction, waei.is_profit_and_loss, waei.is_off_balance, waei.create_time,
+    waei.creator_id, waei.creator_name,waei.is_middle,waei.is_approved,waei.is_enable,waei.manage_info
+  </sql>
+  <select id="findListByEleId" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List"/>,wae.name as elementName
+    from wd_account_element_item waei
+      left join wd_account_element wae on waei.element_id = wae.id
+    <where>
+        <if test="elementId!=null ">
+          waei.element_id=#{elementId}
+        </if>
+        <if test="code != null ">
+            waei.code = #{code}
+        </if>
+    </where>
+  </select>
+
+  <select id="findPage" resultMap="BaseResultMap">
+      select <include refid="Base_Column_List"/>,wae.name as elementName
+             from wd_account_element_item waei left join wd_account_element wae on waei.element_id = wae.id
+             <where>
+                 1 = 1
+                 <if test="accountElementItemDto.ids != null and accountElementItemDto.ids.size() > 0">
+                    and waei.element_id in
+                    <foreach collection="accountElementItemDto.ids" item="id" index="index" open="(" close=")" separator=",">
+                         #{id}
+                    </foreach>
+                 </if>
+                 <if test="accountElementItemDto.direction == 0 or accountElementItemDto.direction == 1">
+                    and waei.direction = #{accountElementItemDto.direction}
+                 </if>
+               <if test="accountElementItemDto.isEnable == 0 or accountElementItemDto.isEnable == 1">
+                 and waei.is_enable = #{accountElementItemDto.isEnable}
+               </if>
+               <if test="accountElementItemDto.isApproved == 0 or accountElementItemDto.isApproved == 1">
+                 and waei.is_approved = #{accountElementItemDto.isApproved}
+               </if>
+               <if test="accountElementItemDto.codeOrName != null">
+                  and (waei.code like concat('%',#{accountElementItemDto.codeOrName},'%')
+                  or waei.`name` like  concat('%',#{accountElementItemDto.codeOrName},'%'))
+               </if>
+             </where>
+      ORDER BY waei.code
+  </select>
+
+    <select id="findAccountElementPage" resultMap="BaseResultMap">
+        select wae.id,wae.code,wae.name from  wd_account_element wae
+        <where>
+            1 = 1 and wae.is_approved = 1
+            <if test="accountElementItemDto.codeOrName != null">
+                and (wae.code like concat('%',#{accountElementItemDto.codeOrName},'%')
+                or wae.`name` like  concat('%',#{accountElementItemDto.codeOrName},'%'))
+            </if>
+        </where>
+    </select>
+
+</mapper>

@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.basedata.mapper.SubjectMapper">
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        id, root_enterprise_id, account_book_type_id, account_book_type_name, acc_standard_id, acc_standard_name,
+        subject_id, subject_name, template_subject_id, template_subject_name, max_level, element_id,
+        create_time, creator_id, creator_name
+    </sql>
+
+    <select id="findInfoByParam" resultType="com.njwd.entity.platform.Subject">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_subject
+        where 1=1
+        <if test="subject.id != null">
+            and id = #{subject.id}
+        </if>
+        <if test="subject.rootEnterpriseId != null">
+            and root_enterprise_id = #{subject.rootEnterpriseId}
+        </if>
+        <if test="subject.subjectId != null">
+            and subject_id = #{subject.subjectId}
+        </if>
+    </select>
+
+    <insert id="addBatch">
+        INSERT INTO `wd_subject` (
+        `root_enterprise_id`,
+        `account_book_type_id`,
+        `account_book_type_name`,
+        `code`,
+        `name`,
+        `acc_standard_id`,
+        `acc_standard_name`,
+        `subject_id`,
+        `subject_name`,
+        `template_subject_id`,
+        `template_subject_name`,
+        `is_base`,
+        `account_type_id`,
+        `parent_id`,
+        `max_level`,
+        `is_init`,
+        `is_enable`,
+        `creator_id`,
+        `creator_name`
+        )
+        VALUES
+        <foreach collection="list" item="p" separator=",">
+            (
+            #{p.rootEnterpriseId} ,
+            #{p.accountBookTypeId} ,
+            #{p.accountBookTypeName} ,
+            #{p.code} ,
+            #{p.name} ,
+            #{p.accStandardId} ,
+            #{p.accStandardName} ,
+            #{p.subjectId} ,
+            #{p.subjectName} ,
+            #{p.templateSubjectId} ,
+            #{p.templateSubjectName} ,
+            #{p.isBase} ,
+            #{p.accountTypeId} ,
+            #{p.parentId} ,
+            #{p.maxLevel} ,
+            #{p.isInit} ,
+            #{p.isEnable} ,
+            #{p.creatorId} ,
+            #{p.creatorName}
+            )
+        </foreach>
+    </insert>
+
+</mapper>

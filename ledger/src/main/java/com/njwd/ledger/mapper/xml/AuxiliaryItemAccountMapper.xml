@@ -1,0 +1,610 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.ledger.mapper.AuxiliaryItemAccountMapper">
+    <select id="getStartOpeningInfo" parameterType="com.njwd.entity.ledger.dto.AuxiliaryAccountingQueryDto" resultType="com.njwd.entity.ledger.vo.GeneralReturnAuxiliaryVo">
+        select
+        0 as sortNum,
+        wbs.id ,
+        wbs.period_year_num periodYearNum,
+        wbs.account_book_id as accountBookId,
+        wbs.account_book_entity_id as accountBookEntityId,
+        wbs.account_subject_id as subjectId,
+        wbs.period_year as periodYear,
+        wbs.period_num as periodNum,
+        "期初余额" as abstractContent,
+        wbs.opening_balance balance
+        from
+        wd_balance_subject_auxiliary wbs
+        where
+        1=1
+        <if test="auxiliaryAccountingQueryDto.subjectIdList !=null and auxiliaryAccountingQueryDto.subjectIdList.size() != 0">
+            and wbs.account_subject_id in
+            <foreach collection="auxiliaryAccountingQueryDto.subjectIdList" item="subjectId" index="index" open="(" separator="," close=")">
+                #{subjectId}
+            </foreach>
+        </if>
+        <if test="auxiliaryAccountingQueryDto.accountBookIds !=null and auxiliaryAccountingQueryDto.accountBookIds.size() != 0">
+            and wbs.account_book_id in
+            <foreach collection="auxiliaryAccountingQueryDto.accountBookIds" item="accountBookId" index="index" open="(" separator="," close=")">
+                #{accountBookId}
+            </foreach>
+        </if>
+        <if test="auxiliaryAccountingQueryDto.accountBookEntityIds !=null and auxiliaryAccountingQueryDto.accountBookEntityIds.size() != 0">
+            and wbs.account_book_entity_id in
+            <foreach collection="auxiliaryAccountingQueryDto.accountBookEntityIds" item="accountBookEntityId" index="index" open="(" separator="," close=")">
+                #{accountBookEntityId}
+            </foreach>
+        </if>
+        <if test="auxiliaryAccountingQueryDto.auxiliaryIdList !=null and auxiliaryAccountingQueryDto.auxiliaryIdList.size() != 0">
+            and wbs.id in
+            <foreach collection="auxiliaryAccountingQueryDto.auxiliaryIdList" item="id" index="index" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        </if>
+        and  wbs.period_year_num  =  (select min(wabp1.period_year_num) from wd_account_book_period wabp1 where wabp1.root_enterprise_id = #{auxiliaryAccountingQueryDto.rootEnterpriseId}
+        and  wbs.account_book_id = wabp1.account_book_id and wabp1.system_sign = 'ledger')
+    </select>
+
+    <select id="getZeroOpeningInfo" parameterType="com.njwd.entity.ledger.dto.AuxiliaryAccountingQueryDto" resultType="com.njwd.entity.ledger.vo.GeneralReturnAuxiliaryVo">
+        select
+        0 as sortNum,
+        wbs.id ,
+        wbs.period_year_num periodYearNum,
+        wbs.account_book_id as accountBookId,
+        wbs.account_book_entity_id as accountBookEntityId,
+        wbs.account_subject_id as subjectId,
+        wbs.period_year as periodYear,
+        wbs.period_num as periodNum,
+        "期初余额" as abstractContent,
+        wbs.opening_balance balance,
+        wbs.debit_amount debit,
+        wbs.credit_amount credit
+        from
+        wd_balance_subject_auxiliary wbs
+        where
+        1=1
+        <if test="auxiliaryAccountingQueryDto.subjectIdList !=null and auxiliaryAccountingQueryDto.subjectIdList.size() != 0">
+            and wbs.account_subject_id in
+            <foreach collection="auxiliaryAccountingQueryDto.subjectIdList" item="subjectId" index="index" open="(" separator="," close=")">
+                #{subjectId}
+            </foreach>
+        </if>
+        <if test="auxiliaryAccountingQueryDto.accountBookIds !=null and auxiliaryAccountingQueryDto.accountBookIds.size() != 0">
+            and wbs.account_book_id in
+            <foreach collection="auxiliaryAccountingQueryDto.accountBookIds" item="accountBookId" index="index" open="(" separator="," close=")">
+                #{accountBookId}
+            </foreach>
+        </if>
+        <if test="auxiliaryAccountingQueryDto.accountBookEntityIds !=null and auxiliaryAccountingQueryDto.accountBookEntityIds.size() != 0">
+            and wbs.account_book_entity_id in
+            <foreach collection="auxiliaryAccountingQueryDto.accountBookEntityIds" item="accountBookEntityId" index="index" open="(" separator="," close=")">
+                #{accountBookEntityId}
+            </foreach>
+        </if>
+        <if test="auxiliaryAccountingQueryDto.auxiliaryIdList !=null and auxiliaryAccountingQueryDto.auxiliaryIdList.size() != 0">
+            and wbs.id in
+            <foreach collection="auxiliaryAccountingQueryDto.auxiliaryIdList" item="id" index="index" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        </if>
+        and  wbs.period_year_num  =  #{auxiliaryAccountingQueryDto.periodNum}
+    </select>
+
+    <!-- 查询辅助核算明细制单日期内id -->
+    <select id="findDetailInDataIds" parameterType="com.njwd.entity.ledger.dto.AuxiliaryAccountingQueryDto" resultType="com.njwd.entity.ledger.vo.GeneralReturnAuxiliaryVo">
+        select v.id voucherId,CONCAT(MIN(v.posting_period_year),'00') periodYearNum1,MAX(v.period_year_num) periodYearNum2
+        from wd_voucher_%s v
+        left join wd_voucher_entry_%s ve on v.id = ve.voucher_id
+        where
+        v.voucher_date between #{auxiliaryAccountingQueryDto.voucherDates[0]} and #{auxiliaryAccountingQueryDto.voucherDates[1]}
+        and v.is_del = 0
+        <if test="auxiliaryAccountingQueryDto.accountBookEntityList != null and auxiliaryAccountingQueryDto.accountBookEntityList.size() > 0">
+            and v.account_book_entity_id in (
+            <foreach collection="auxiliaryAccountingQueryDto.accountBookEntityList" item="item" index="index"
+                     separator=",">
+                #{item.id}
+            </foreach>
+            )
+        </if>
+        <if test="auxiliaryAccountingQueryDto.subjectIdList != null and auxiliaryAccountingQueryDto.subjectIdList.size()>0">
+            and ve.account_subject_id in
+            <foreach collection="auxiliaryAccountingQueryDto.subjectIdList" item="subjectId" index="index" open="(" separator="," close=")">
+                #{subjectId}
+            </foreach>
+        </if>
+        <if test="auxiliaryAccountingQueryDto.isIncludeUnbooked == 0">
+            and v.posting_status != 0
+        </if>
+        <if test="auxiliaryAccountingQueryDto.isIncludeProfitAndLoss == 0">
+            and v.source_type != 2
+        </if>
+        <if test="auxiliaryAccountingQueryDto.rootEnterpriseId != null">
+            and v.root_enterprise_id = #{auxiliaryAccountingQueryDto.rootEnterpriseId}
+        </if>
+        GROUP BY v.id
+    </select>
+
+    <!--根据条件获取含有辅助核算项的明细账数据-->
+    <select id="getGeneralReturnAuxiliaryList" parameterType="com.njwd.entity.ledger.dto.AuxiliaryAccountingQueryDto" resultType="com.njwd.entity.ledger.vo.GeneralReturnAuxiliaryVo">
+        select
+        v.voucher_id voucherId,bs.account_book_id,bs.account_book_entity_id,bs.account_subject_id as subjectId,
+        v.voucher_date voucherDate,unix_timestamp(v.voucher_date) voucherDateTime,bs.period_year,bs.period_num,bs.period_year_num,
+        CONCAT(case v.credential_word when 1 then '记' when 2 then '收' when 3 then '付' when 4 then '转' end,'-',v.main_code) credentialWordCode,
+        v.main_code,v.abstract_content abstractContent,
+        case when bs.period_num != 0 then v.debit_amount else
+        <if test="auxiliaryAccountingQueryDto.isIncludeUnbooked == 1 and auxiliaryAccountingQueryDto.isIncludeProfitAndLoss == 1">
+            bs.debit_amount
+        </if>
+        <if test="auxiliaryAccountingQueryDto.isIncludeUnbooked == 1 and auxiliaryAccountingQueryDto.isIncludeProfitAndLoss == 0">
+            bs.debit_amount - bs.sy_debit_amount
+        </if>
+        <if test="auxiliaryAccountingQueryDto.isIncludeUnbooked == 0 and auxiliaryAccountingQueryDto.isIncludeProfitAndLoss == 1 ">
+            bs.post_debit_amount
+        </if>
+        <if test="auxiliaryAccountingQueryDto.isIncludeUnbooked == 0 and auxiliaryAccountingQueryDto.isIncludeProfitAndLoss == 0">
+            bs.post_debit_amount - bs.post_sy_debit_amount
+        </if>
+        end selfDebit,
+        case when bs.period_num != 0 then v.credit_amount else
+        <if test="auxiliaryAccountingQueryDto.isIncludeUnbooked == 1 and auxiliaryAccountingQueryDto.isIncludeProfitAndLoss == 1">
+            bs.credit_amount
+        </if>
+        <if test="auxiliaryAccountingQueryDto.isIncludeUnbooked == 1 and auxiliaryAccountingQueryDto.isIncludeProfitAndLoss == 0">
+            bs.credit_amount - bs.sy_credit_amount
+        </if>
+        <if test="auxiliaryAccountingQueryDto.isIncludeUnbooked == 0 and auxiliaryAccountingQueryDto.isIncludeProfitAndLoss == 1 ">
+            bs.post_credit_amount
+        </if>
+        <if test="auxiliaryAccountingQueryDto.isIncludeUnbooked == 0 and auxiliaryAccountingQueryDto.isIncludeProfitAndLoss == 0">
+            bs.post_credit_amount - bs.post_sy_credit_amount
+        </if>
+        end selfCredit,
+        bs.opening_balance
+        <choose>
+            <when test="tableName != null  and tableName != ''">
+                from ${tableName} bs
+            </when>
+            <otherwise>
+                from  wd_balance_subject bs
+            </otherwise>
+        </choose>
+        left join (
+        select
+        v.id,v.voucher_date,v.credential_word, ve.voucher_id,ve.abstract_content,v.account_book_entity_id,ve.account_subject_id,v.posting_period_year,v.posting_period_num,
+        v.voucher_date voucherDate,	unix_timestamp(v.voucher_date) voucherDateTime,ve.abstract_content summary,
+        ve.debit_amount,ve.credit_amount,v.main_code
+        from wd_voucher_%s v
+        left join wd_voucher_entry_%s ve on v.id = ve.voucher_id
+        LEFT JOIN wd_voucher_entry_auxiliary_%s wvea ON wvea.entry_id = ve.id and wvea.voucher_id = v.id
+        where
+        v.is_del = 0
+        <if test="auxiliaryAccountingQueryDto.sourceTableList != null and auxiliaryAccountingQueryDto.sourceTableList.size() > 0 and auxiliaryAccountingQueryDto.sourceTableAndValue != null and auxiliaryAccountingQueryDto.sourceTableAndValue.size() > 0">
+            and wvea.source_table in
+            <foreach collection="auxiliaryAccountingQueryDto.sourceTableList" item="sourceTables" index="index" open="(" close=")" separator=",">
+                #{sourceTables}
+            </foreach>
+            and  wvea.item_value_id in
+            <foreach collection="auxiliaryAccountingQueryDto.sourceTableAndValue" item="commonAuxiliary" index="index" open="(" close=")" separator=",">
+                #{commonAuxiliary.id}
+            </foreach>
+        </if>
+        <if test="auxiliaryAccountingQueryDto.isIncludeUnbooked == 0">
+            and v.posting_status != 0
+        </if>
+        <if test="auxiliaryAccountingQueryDto.isIncludeProfitAndLoss == 0">
+            and v.source_type != 2
+        </if>
+        )v
+        on v.account_book_entity_id = bs.account_book_entity_id
+        and v.posting_period_year = bs.period_year
+        and v.posting_period_num = bs.period_num
+        and v.account_subject_id = bs.account_subject_id
+        <if test="auxiliaryAccountingQueryDto.sourceTableList != null and auxiliaryAccountingQueryDto.sourceTableList.size() > 0 and auxiliaryAccountingQueryDto.sourceTableAndValue != null and auxiliaryAccountingQueryDto.sourceTableAndValue.size() > 0">
+            LEFT JOIN  wd_balance_subject_auxiliary_item wb
+            on  wb.account_book_id = bs.account_book_id
+            and wb.account_book_entity_id = bs.account_book_entity_id
+            and wb.	account_subject_id	 = bs .account_subject_id
+            and wb.source_table in
+            <foreach collection="auxiliaryAccountingQueryDto.sourceTableList" item="sourceTables" index="index" open="(" close=")" separator=",">
+                #{sourceTables}
+            </foreach>
+            and  wb.item_value_id in
+            <foreach collection="auxiliaryAccountingQueryDto.sourceTableAndValue" item="commonAuxiliary" index="index" open="(" close=")" separator=",">
+                #{commonAuxiliary.id}
+            </foreach>
+        </if>
+        <where>
+            <if test="auxiliaryAccountingQueryDto.accountBookEntityList != null and auxiliaryAccountingQueryDto.accountBookEntityList.size() > 0">
+                and bs.account_book_entity_id in
+                <foreach collection="auxiliaryAccountingQueryDto.accountBookEntityIds" item="accountBookEntityId" index="index" open="(" separator="," close=")">
+                    #{accountBookEntityId}
+                </foreach>
+
+            </if>
+            <!-- <if test=" auxiliaryAccountingQueryDto.periodOperator != null and auxiliaryAccountingQueryDto.periodOperator == 1">-->
+            <if test="auxiliaryAccountingQueryDto.periodYearNum != null and auxiliaryAccountingQueryDto.periodYearNum.size() != 0">
+                <!-- and bs.period_year_num >= #{auxiliaryAccountingQueryDto.periodYearNum[0]}
+                 and bs.period_year_num &lt;= #{auxiliaryAccountingQueryDto.periodYearNum[1]}-->
+                and  bs.period_year_num between CONCAT(left(#{auxiliaryAccountingQueryDto.periodYearNum[0]}, 4),'00') and #{auxiliaryAccountingQueryDto.periodYearNum[1]}
+            </if>
+
+            <if test="auxiliaryAccountingQueryDto.subjectIdList !=null and auxiliaryAccountingQueryDto.subjectIdList.size() != 0">
+                and bs.account_subject_id in
+                <foreach collection="auxiliaryAccountingQueryDto.subjectIdList" item="subjectId" index="index" open="(" separator="," close=")">
+                    #{subjectId}
+                </foreach>
+            </if>
+            <if test="tableName != null  and tableName != ''">
+                AND wb.balance_auxiliary_id = bs.id
+            </if>
+        </where>
+        order by
+        account_book_entity_id,
+        bs.account_subject_id,
+        period_year,
+        period_num,
+        main_code,
+        voucherDate
+    </select>
+
+    <select id="getOpeningAccount" parameterType="com.njwd.entity.ledger.dto.AuxiliaryAccountingQueryDto" resultType="com.njwd.entity.ledger.vo.GeneralReturnAuxiliaryVo">
+        select
+        res.sortNum ,
+        res.id ,
+        res.periodYearNum ,
+        res.accountBookId ,
+        res.accountBookEntityId ,
+        res.subjectId ,
+        res.periodYear ,
+        res.periodNum ,
+        res.abstractContent ,
+        res.balance,
+        sum(res.debit) debit,
+        sum(res.credit) credit
+        from(
+        select
+        0 sortNum,
+        wbsa.id ,
+        wbsa.period_year_num periodYearNum,
+        wbsa.account_book_id accountBookId,
+        wbsa.account_book_entity_id accountBookEntityId,
+        wbsa.account_subject_id subjectId,
+        wbsa.period_year periodYear,
+        wbsa.period_num periodNum,
+        "期初余额"  abstractContent,
+        <if test="auxiliaryAccountingQueryDto.isIncludeUnbooked == 0 and auxiliaryAccountingQueryDto.isIncludeProfitAndLoss == 1">
+            wbsa.post_debit_amount as debit,
+            wbsa.post_credit_amount as credit,
+        </if>
+        <if test="auxiliaryAccountingQueryDto.isIncludeUnbooked == 0 and auxiliaryAccountingQueryDto.isIncludeProfitAndLoss == 0">
+            wbsa.post_debit_amount - wbsa.sy_debit_amount as debit,
+            wbsa.post_credit_amount - wbsa.sy_credit_amount as credit,
+        </if>
+        <if test="auxiliaryAccountingQueryDto.isIncludeUnbooked == 1 and auxiliaryAccountingQueryDto.isIncludeProfitAndLoss == 1">
+            wbsa.debit_amount  as debit,
+            wbsa.credit_amount  as credit,
+        </if>
+        <if test="auxiliaryAccountingQueryDto.isIncludeUnbooked == 1 and auxiliaryAccountingQueryDto.isIncludeProfitAndLoss == 0">
+            wbsa.debit_amount - wbsa.sy_debit_amount as  debit,
+            wbsa.credit_amount - wbsa.sy_credit_amount as credit,
+        </if>
+        wbsa.opening_balance  balance
+        from
+        wd_balance_subject_auxiliary wbsa
+            ,  wd_account_book_period wabp2
+        where
+        1=1
+        <if test="auxiliaryAccountingQueryDto.accountBookIds !=null and auxiliaryAccountingQueryDto.accountBookIds.size() != 0">
+            and wbsa.account_book_id in
+            <foreach collection="auxiliaryAccountingQueryDto.accountBookIds" item="accountBookId" index="index" open="(" separator="," close=")">
+                #{accountBookId}
+            </foreach>
+        </if>
+        <if test="auxiliaryAccountingQueryDto.accountBookEntityIds !=null and auxiliaryAccountingQueryDto.accountBookEntityIds.size() != 0">
+            and wbsa.account_book_entity_id in
+            <foreach collection="auxiliaryAccountingQueryDto.accountBookEntityIds" item="accountBookEntityId" index="index" open="(" separator="," close=")">
+                #{accountBookEntityId}
+            </foreach>
+        </if>
+        <if test="auxiliaryAccountingQueryDto.subjectIdList !=null and auxiliaryAccountingQueryDto.subjectIdList.size() != 0">
+            and wbsa.account_subject_id in
+            <foreach collection="auxiliaryAccountingQueryDto.subjectIdList" item="subjectId" index="index" open="(" separator="," close=")">
+                #{subjectId}
+            </foreach>
+        </if>
+        and  wbsa.period_year_num  >=  (select min(wabp1.period_year_num) from wd_account_book_period wabp1 where wabp1.root_enterprise_id = #{auxiliaryAccountingQueryDto.rootEnterpriseId}
+        and  wbsa.account_book_id = wabp1.account_book_id and wabp1.system_sign = 'ledger')
+        and wbsa.account_book_id = wabp2.account_book_id
+        and wabp2.root_enterprise_id = #{auxiliaryAccountingQueryDto.rootEnterpriseId}
+        and wabp2.system_sign = 'ledger'
+        <if test=" auxiliaryAccountingQueryDto.periodOperator != null and auxiliaryAccountingQueryDto.periodOperator == 1">
+            <if test="auxiliaryAccountingQueryDto.periodYearNum != null and auxiliaryAccountingQueryDto.periodYearNum.size() != 0">
+                and wabp2.period_year_num = #{auxiliaryAccountingQueryDto.periodYearNum[1]}
+            </if>
+        </if>
+        <if test="auxiliaryAccountingQueryDto.periodOperator != null and auxiliaryAccountingQueryDto.periodOperator == 0">
+            <if test="auxiliaryAccountingQueryDto.voucherDates != null and auxiliaryAccountingQueryDto.voucherDates.size() != 0">
+                and  #{auxiliaryAccountingQueryDto.voucherDates[1]} between wabp2.start_date and wabp2.end_date
+            </if>
+        </if>
+        <if test="auxiliaryAccountingQueryDto.auxiliaryIdList !=null and auxiliaryAccountingQueryDto.auxiliaryIdList.size() != 0">
+            and wbsa.id in
+            <foreach collection="auxiliaryAccountingQueryDto.auxiliaryIdList" item="id" index="index" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        </if>
+        and  wbsa.period_year_num &lt; wabp2.period_year_num
+        order by accountBookId,accountBookEntityId,subjectId,periodYearNum
+        ) res group by
+        res.accountBookId,res.accountBookEntityId,res.subjectId
+    </select>
+
+    <select id="getDetailAccount" parameterType="com.njwd.entity.ledger.dto.AuxiliaryAccountingQueryDto" resultType="com.njwd.entity.ledger.vo.GeneralReturnAuxiliaryVo">
+        select
+        1 sortNum,
+        wve.id entryId,
+        wve.voucher_id voucherId,
+        wv.period_year_num periodYearNum,
+        wv.account_book_id accountBookId,
+        wv.account_book_name accountBookName,
+        wv.account_book_entity_id accountBookEntityId,
+        wv.account_book_entity_name accountBookEntityName,
+        wve.account_subject_id subjectId,
+        wv.voucher_date voucherDate,
+        wv.posting_period_year periodYear,
+        wv.posting_period_num periodNum,
+        wv.credential_word  credentialWord,
+        wv.main_code  mainCode,
+        wv.child_code  childCode,
+        wve.row_num rowNum,
+        wve.abstract_content abstractContent,
+        wve.debit_amount debit,
+        wve.credit_amount credit
+        from
+        wd_voucher_%s wv,
+        wd_voucher_entry_%s wve
+        where
+        1=1
+        <if test="auxiliaryAccountingQueryDto.accountBookIds !=null and auxiliaryAccountingQueryDto.accountBookIds.size() != 0">
+            and wv.account_book_id in
+            <foreach collection="auxiliaryAccountingQueryDto.accountBookIds" item="accountBookId" index="index" open="(" separator="," close=")">
+                #{accountBookId}
+            </foreach>
+        </if>
+        <if test="auxiliaryAccountingQueryDto.accountBookEntityIds !=null and auxiliaryAccountingQueryDto.accountBookEntityIds.size() != 0">
+            and wv.account_book_entity_id in
+            <foreach collection="auxiliaryAccountingQueryDto.accountBookEntityIds" item="accountBookEntityId" index="index" open="(" separator="," close=")">
+                #{accountBookEntityId}
+            </foreach>
+        </if>
+        <if test="auxiliaryAccountingQueryDto.periodOperator != null and auxiliaryAccountingQueryDto.periodOperator == 1">
+            <if test="auxiliaryAccountingQueryDto.periodYearNum != null and auxiliaryAccountingQueryDto.periodYearNum.size() != 0">
+                and  wv.period_year_num between  #{auxiliaryAccountingQueryDto.periodYearNum[0]}
+                and  #{auxiliaryAccountingQueryDto.periodYearNum[1]}
+            </if>
+        </if>
+        <if test="auxiliaryAccountingQueryDto.periodOperator != null and auxiliaryAccountingQueryDto.periodOperator == 0">
+            <if test="auxiliaryAccountingQueryDto.voucherDates != null and auxiliaryAccountingQueryDto.voucherDates.size() != 0">
+                and wv.voucher_date between #{auxiliaryAccountingQueryDto.voucherDates[0]} and #{auxiliaryAccountingQueryDto.voucherDates[1]}
+            </if>
+        </if>
+        <if test="auxiliaryAccountingQueryDto.subjectIdList !=null and auxiliaryAccountingQueryDto.subjectIdList.size() != 0">
+            and wve.account_subject_id in
+            <foreach collection="auxiliaryAccountingQueryDto.subjectIdList" item="subjectId" index="index" open="(" separator="," close=")">
+                #{subjectId}
+            </foreach>
+        </if>
+        <if test="auxiliaryAccountingQueryDto.isIncludeUnbooked == 0">
+            and wv.status = 2
+        </if>
+        <if test="auxiliaryAccountingQueryDto.isIncludeProfitAndLoss == 0">
+            and wv.source_type != 2
+        </if>
+        <if test="auxiliaryAccountingQueryDto.auxiliaryIdList !=null and auxiliaryAccountingQueryDto.auxiliaryIdList.size() != 0">
+            and wve.id in
+            <foreach collection="auxiliaryAccountingQueryDto.auxiliaryIdList" item="id" index="index" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        </if>
+        and wv.is_del = 0
+        and wv.id = wve.voucher_id
+        order by accountBookId,accountBookEntityId,subjectId,voucherDate,credentialWord,mainCode,rowNum
+    </select>
+
+    <select id="getPeriodNumAccount" parameterType="com.njwd.entity.ledger.dto.AuxiliaryAccountingQueryDto" resultType="com.njwd.entity.ledger.vo.GeneralReturnAuxiliaryVo">
+        select
+        2 as sortNum,
+        wbsa.id,
+        wbsa.period_year_num periodYearNum,
+        wbsa.account_book_id accountBookId,
+        wbsa.account_book_entity_id accountBookEntityId,
+        wbsa.account_subject_id subjectId,
+        wbsa.period_year periodYear,
+        wbsa.period_num periodNum,
+        <if test="auxiliaryAccountingQueryDto.isIncludeUnbooked == 0 and auxiliaryAccountingQueryDto.isIncludeProfitAndLoss == 1">
+            wbsa.post_debit_amount as debit,
+            wbsa.post_credit_amount as credit,
+        </if>
+        <if test="auxiliaryAccountingQueryDto.isIncludeUnbooked == 0 and auxiliaryAccountingQueryDto.isIncludeProfitAndLoss == 0">
+            wbsa.post_debit_amount - wbsa.sy_debit_amount as debit,
+            wbsa.post_credit_amount - wbsa.sy_credit_amount as credit,
+        </if>
+        <if test="auxiliaryAccountingQueryDto.isIncludeUnbooked == 1 and auxiliaryAccountingQueryDto.isIncludeProfitAndLoss == 1">
+            wbsa.debit_amount  as debit,
+            wbsa.credit_amount  as credit,
+        </if>
+        <if test="auxiliaryAccountingQueryDto.isIncludeUnbooked == 1 and auxiliaryAccountingQueryDto.isIncludeProfitAndLoss == 0">
+            wbsa.debit_amount - wbsa.sy_debit_amount as  debit,
+            wbsa.credit_amount - wbsa.sy_credit_amount as credit,
+        </if>
+        "本期合计"  abstractContent
+        from
+        wd_balance_subject_auxiliary wbsa
+        <if test="auxiliaryAccountingQueryDto.periodOperator != null and auxiliaryAccountingQueryDto.periodOperator == 0">
+            ,  wd_account_book_period wabp1
+            ,  wd_account_book_period wabp2
+        </if>
+        where
+        1=1
+        <if test="auxiliaryAccountingQueryDto.subjectIdList !=null and auxiliaryAccountingQueryDto.subjectIdList.size() != 0">
+            and wbsa.account_subject_id in
+            <foreach collection="auxiliaryAccountingQueryDto.subjectIdList" item="subjectId" index="index" open="(" separator="," close=")">
+                #{subjectId}
+            </foreach>
+        </if>
+        <if test="auxiliaryAccountingQueryDto.accountBookIds !=null and auxiliaryAccountingQueryDto.accountBookIds.size() != 0">
+            and wbsa.account_book_id in
+            <foreach collection="auxiliaryAccountingQueryDto.accountBookIds" item="accountBookId" index="index" open="(" separator="," close=")">
+                #{accountBookId}
+            </foreach>
+        </if>
+        <if test="auxiliaryAccountingQueryDto.accountBookEntityIds !=null and auxiliaryAccountingQueryDto.accountBookEntityIds.size() != 0">
+            and wbsa.account_book_entity_id in
+            <foreach collection="auxiliaryAccountingQueryDto.accountBookEntityIds" item="accountBookEntityId" index="index" open="(" separator="," close=")">
+                #{accountBookEntityId}
+            </foreach>
+        </if>
+        <if test="auxiliaryAccountingQueryDto.periodOperator != null and auxiliaryAccountingQueryDto.periodOperator == 1">
+            <if test="auxiliaryAccountingQueryDto.periodYearNum != null and auxiliaryAccountingQueryDto.periodYearNum.size() != 0">
+                and  wbsa.period_year_num between  #{auxiliaryAccountingQueryDto.periodYearNum[0]}
+                and  #{auxiliaryAccountingQueryDto.periodYearNum[1]}
+            </if>
+        </if>
+        <if test="auxiliaryAccountingQueryDto.periodOperator != null and auxiliaryAccountingQueryDto.periodOperator == 0">
+            <if test="auxiliaryAccountingQueryDto.voucherDates != null and auxiliaryAccountingQueryDto.voucherDates.size() != 0">
+                and  wabp1.root_enterprise_id = #{auxiliaryAccountingQueryDto.rootEnterpriseId}
+                and  wabp2.root_enterprise_id = #{auxiliaryAccountingQueryDto.rootEnterpriseId}
+                and  wbsa.account_book_id = wabp1.account_book_id
+                and  wbsa.account_book_id = wabp2.account_book_id
+                and  #{auxiliaryAccountingQueryDto.voucherDates[0]} between wabp1.start_date and wabp1.end_date
+                and  #{auxiliaryAccountingQueryDto.voucherDates[1]} between wabp2.start_date and wabp2.end_date
+                and  wbsa.period_year_num between wabp1.period_year_num and wabp2.period_year_num
+            </if>
+        </if>
+        <if test="auxiliaryAccountingQueryDto.auxiliaryIdList !=null and auxiliaryAccountingQueryDto.auxiliaryIdList.size() != 0">
+            and wbsa.id in
+            <foreach collection="auxiliaryAccountingQueryDto.auxiliaryIdList" item="id" index="index" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        </if>
+        group by accountBookId,accountBookEntityId,subjectId,periodYearNum
+    </select>
+
+    <select id="getPeriodYearAccount" parameterType="com.njwd.entity.ledger.dto.AuxiliaryAccountingQueryDto" resultType="com.njwd.entity.ledger.vo.GeneralReturnAuxiliaryVo">
+        select
+        3  sortNum,
+        wbsa.id,
+        wbsa.period_year_num periodYearNum,
+        wbsa.account_book_id accountBookId,
+        wbsa.account_book_entity_id accountBookEntityId,
+        wbsa.account_subject_id subjectId,
+        wbsa.period_year periodYear,
+        wbsa.period_num periodNum,
+        "本年累计"  abstractContent
+        from
+        wd_balance_subject_auxiliary wbsa
+        <if test="auxiliaryAccountingQueryDto.periodOperator != null and auxiliaryAccountingQueryDto.periodOperator == 0">
+            ,  wd_account_book_period wabp1
+            ,  wd_account_book_period wabp2
+        </if>
+        where
+        1=1
+        <if test="auxiliaryAccountingQueryDto.subjectIdList !=null and auxiliaryAccountingQueryDto.subjectIdList.size() != 0">
+            and wbsa.account_subject_id in
+            <foreach collection="auxiliaryAccountingQueryDto.subjectIdList" item="subjectId" index="index" open="(" separator="," close=")">
+                #{subjectId}
+            </foreach>
+        </if>
+        <if test="auxiliaryAccountingQueryDto.accountBookIds !=null and auxiliaryAccountingQueryDto.accountBookIds.size() != 0">
+            and wbsa.account_book_id in
+            <foreach collection="auxiliaryAccountingQueryDto.accountBookIds" item="accountBookId" index="index" open="(" separator="," close=")">
+                #{accountBookId}
+            </foreach>
+        </if>
+        <if test="auxiliaryAccountingQueryDto.accountBookEntityIds !=null and auxiliaryAccountingQueryDto.accountBookEntityIds.size() != 0">
+            and wbsa.account_book_entity_id in
+            <foreach collection="auxiliaryAccountingQueryDto.accountBookEntityIds" item="accountBookEntityId" index="index" open="(" separator="," close=")">
+                #{accountBookEntityId}
+            </foreach>
+        </if>
+        <if test="auxiliaryAccountingQueryDto.periodOperator != null and auxiliaryAccountingQueryDto.periodOperator == 1">
+            <if test="auxiliaryAccountingQueryDto.periodYearNum != null and auxiliaryAccountingQueryDto.periodYearNum.size() != 0">
+                and  wbsa.period_year_num between  #{auxiliaryAccountingQueryDto.periodYearNum[0]}
+                and  #{auxiliaryAccountingQueryDto.periodYearNum[1]}
+            </if>
+        </if>
+        <if test="auxiliaryAccountingQueryDto.periodOperator != null and auxiliaryAccountingQueryDto.periodOperator == 0">
+         <if test="auxiliaryAccountingQueryDto.voucherDates != null and auxiliaryAccountingQueryDto.voucherDates.size() != 0">
+            and  wabp1.root_enterprise_id = #{auxiliaryAccountingQueryDto.rootEnterpriseId}
+            and  wabp2.root_enterprise_id = #{auxiliaryAccountingQueryDto.rootEnterpriseId}
+            and  wbsa.account_book_id = wabp1.account_book_id
+            and  wbsa.account_book_id = wabp2.account_book_id
+            and  #{auxiliaryAccountingQueryDto.voucherDates[0]} between wabp1.start_date and wabp1.end_date
+            and  #{auxiliaryAccountingQueryDto.voucherDates[1]} between wabp2.start_date and wabp2.end_date
+            and  wbsa.period_year_num between wabp1.period_year_num and wabp2.period_year_num
+         </if>
+        </if>
+        <if test="auxiliaryAccountingQueryDto.auxiliaryIdList !=null and auxiliaryAccountingQueryDto.auxiliaryIdList.size() != 0">
+            and wbsa.id in
+            <foreach collection="auxiliaryAccountingQueryDto.auxiliaryIdList" item="id" index="index" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        </if>
+        group by accountBookId,accountBookEntityId,subjectId,periodYearNum
+    </select>
+
+    <select id="getOpeningLossInfo"  resultType="com.njwd.entity.ledger.vo.GeneralReturnAuxiliaryVo">
+        select
+        4 sortNum,
+        wve.id entryId,
+        wve.voucher_id voucherId,
+        wv.period_year_num periodYearNum,
+        wv.account_book_id accountBookId,
+        wv.account_book_name accountBookName,
+        wv.account_book_entity_id accountBookEntityId,
+        wv.account_book_entity_name accountBookEntityName,
+        wve.account_subject_id subjectId,
+        wv.voucher_date voucherDate,
+        wv.posting_period_year periodYear,
+        wv.posting_period_num periodNum,
+        wv.credential_word as credentialWord,
+        wv.main_code as mainCode,
+        wv.child_code as childCode,
+        wve.abstract_content abstractContent,
+        sum(wve.debit_amount) debit,
+        sum(wve.credit_amount) credit
+        from
+        wd_voucher_%s wv,
+        wd_voucher_entry_%s wve
+        where 1=1
+        <if test="auxiliaryAccountingQueryDto.dtoList != null and auxiliaryAccountingQueryDto.dtoList.size() != 0">
+            and ( 1=2
+            <foreach collection="auxiliaryAccountingQueryDto.dtoList" item="dto" index="index" separator="">
+                or ( wv.account_book_id = #{dto.accountBookId}
+                and wv.account_book_entity_id = #{dto.accountBookEntityId}
+                and wve.account_subject_id = #{dto.accountSubjectId}
+                <if test="dto.voucherDates != null and dto.voucherDates.size() != 0">
+                    and wv.voucher_date &lt; #{dto.voucherDates[0]}
+                </if>
+                <if test="dto.isIncludeUnbooked == 0">
+                    and wv.status = 2
+                </if>
+                <if test="dto.isIncludeProfitAndLoss == 0">
+                    and wv.source_type != 2
+                </if>
+                and wv.period_year_num = #{dto.periodYearAndNum}
+                )
+            </foreach>
+            )
+        </if>
+        <if test="auxiliaryAccountingQueryDto.auxiliaryIdList !=null and auxiliaryAccountingQueryDto.auxiliaryIdList.size() != 0">
+            and wve.id in
+            <foreach collection="auxiliaryAccountingQueryDto.auxiliaryIdList" item="id" index="index" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        </if>
+        and wv.is_del = 0
+        and wv.id = wve.voucher_id
+        group by accountBookId,accountBookEntityId,subjectId
+    </select>
+</mapper>

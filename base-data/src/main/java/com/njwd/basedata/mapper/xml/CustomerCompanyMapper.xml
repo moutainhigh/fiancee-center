@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.basedata.mapper.CustomerCompanyMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.basedata.CustomerCompany">
+        <!--@mbg.generated-->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="customer_id" jdbcType="BIGINT" property="customerId"/>
+        <result column="company_id" jdbcType="BIGINT" property="companyId"/>
+        <result column="is_del" jdbcType="BOOLEAN" property="isDel"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="creator_id" jdbcType="BIGINT" property="creatorId"/>
+        <result column="creator_name" jdbcType="VARCHAR" property="creatorName"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+        <result column="updator_id" jdbcType="BIGINT" property="updatorId"/>
+        <result column="updator_name" jdbcType="VARCHAR" property="updatorName"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        id, customer_id, company_id, business_address,
+        linkman, contact_number, is_enable, is_del, create_time, creator_id, creator_name, update_time,
+        updator_id, updator_name, version
+    </sql>
+    <select id="selectCustomerIdForCheckUseCompany" resultType="java.lang.Long">
+        select
+        id
+        from
+        wd_customer_company
+        where
+        is_del = 0
+        and company_id = #{companyId,jdbcType=BIGINT}
+        and customer_id = #{customerId}
+    </select>
+
+    <update id="updateCustomerFromMain">
+        update wd_customer_company
+        set
+        version = version +1,
+        <if test="flag == 0">
+            is_del = 1
+        </if>
+        <if test="flag == 1">
+            is_enable = 1
+        </if>
+        <if test="flag == 2">
+            is_enable = 0
+        </if>
+        where
+        is_del = 0
+        and customer_id in
+        <foreach item="id" open="(" separator="," close=")" collection="idList">
+            #{id,jdbcType=BIGINT}
+        </foreach>
+    </update>
+
+    <select id="selectAllCompaniesByCustomerIds" resultType="com.njwd.entity.basedata.CustomerCompany">
+        SELECT
+        t1.id,
+        t1.customer_id customerId,
+        t1.company_id companyId
+        FROM
+        wd_customer_company t1
+        <where>
+            AND t1.is_del = 0
+            AND t1.is_enable = 1
+            <if test="dto.customerIds != null and dto.customerIds.size() > 0">
+                AND t1.customer_id IN
+                <foreach collection="dto.customerIds" item="customerId" open="(" separator="," close=")">
+                    #{customerId}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="checkCustomerUseCompanys" resultType="com.njwd.entity.basedata.CustomerCompany">
+        SELECT
+        t1.id,
+        t1.customer_id customerId,
+        t1.company_id companyId
+        FROM
+        wd_customer_company t1
+        <where>
+            AND t1.is_del = 0
+            AND t1.is_enable = 1
+            <if test="dto.companyList != null and dto.companyList.size() > 0">
+                AND t1.company_id IN
+                <foreach collection="dto.companyList" item="companyId" open="(" separator="," close=")">
+                    #{companyId}
+                </foreach>
+            </if>
+            <if test="dto.idS != null and dto.idS.size() > 0">
+                AND t1.customer_id IN
+                <foreach collection="dto.idS" item="customerId" open="(" separator="," close=")">
+                    #{customerId}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <update id="deleteByCustomerIdAndCompanyId">
+        UPDATE wd_customer_company t1
+        SET t1.is_del = #{dto.isDel}
+        <where>
+            <if test="dto.customerId != null">
+                AND t1.customer_id = #{dto.customerId}
+            </if>
+            <if test="dto.companyId != null">
+                AND t1.company_id = #{dto.companyId}
+            </if>
+            <if test="dto.customerIds != null and dto.customerIds.size() > 0">
+                AND t1.customer_id IN
+                <foreach collection="dto.customerIds" index="index" item="customerId" open="(" separator="," close=")">
+                    #{customerId}
+                </foreach>
+            </if>
+        </where>
+    </update>
+
+    <!-- 根据客户ids查询分配的使用公司列表 -->
+    <select id="findCustomerUseCompanysByCustomerIds" resultType="com.njwd.entity.basedata.vo.CustomerCompanyVo"
+            parameterType="com.njwd.entity.basedata.dto.CustomerSupplierCompanyDto">
+        SELECT
+        t1.id,
+        t1.customer_id,
+        GROUP_CONCAT(t1.company_id) AS useCompanyIdString,
+        GROUP_CONCAT(t2.`name`) AS useCompanyName
+        FROM
+        wd_customer_company t1
+        LEFT JOIN wd_company t2 ON t1.company_id = t2.id
+        <where>
+            t1.is_del = 0
+            <if test="dto.customerIds != null and dto.customerIds.size()>0">
+                AND t1.customer_id IN
+                <foreach collection="dto.customerIds" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            GROUP BY t1.customer_id
+        </where>
+    </select>
+
+    <!-- 根据使用公司id查询包含指定使用公司的客户id -->
+    <select id="findCustomerCompanyInfos" resultType="Long">
+        select distinct (customer_id) customer_id
+        from
+        wd_customer_company
+        where
+        is_del = 0
+        and company_id in
+        <foreach collection="dto.companyList" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <!-- 根据客户、创建公司查询除本身外的使用公司信息 -->
+    <select id="findCustomerCompanyInfosWithOutSelf" resultType="java.lang.Integer">
+        select COUNT(1)
+        from
+        wd_customer_company
+        WHERE
+        is_del = 0
+        <if test="dto.customerId != null">
+            and customer_id = #{dto.customerId}
+        </if>
+        <if test="dto.companyId != null">
+            and company_id != #{dto.companyId}
+        </if>
+    </select>
+
+    <!-- 根据id查询未删除的使用公司信息 -->
+    <select id="selectCustomerCompanyByParams" resultType="com.njwd.entity.basedata.vo.CustomerCompanyVo">
+        SELECT
+        wcc.id,
+        wcc.customer_id,
+        wcc.company_id,
+        wcc.id_card_num,
+        wcc.business_address,
+        wcc.linkman,
+        wcc.contact_number,
+        wcc.is_del,
+        wcc.create_time,
+        wcc.creator_id,
+        wcc.creator_name,
+        wcc.update_time,
+        wcc.updator_id,
+        wcc.updator_name
+        FROM
+        wd_customer_company wcc
+        left join wd_customer wc on wc.id = wcc.customer_id
+        WHERE
+        wcc.is_del = 0
+        and wc.is_del = 0
+        <if test="dto.ids != null and dto.ids.size() > 0">
+            and wc.id IN
+            <foreach collection="dto.ids" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+    <select id="selectForFilterFp" resultType="java.lang.Long">
+        select wc.id from wd_customer wc
+        left join (
+        select
+        wcc.customer_id,
+        wcc.company_id,
+        count(1) total
+        from
+        wd_customer_company wcc
+        inner join wd_customer wc1 on wcc.customer_id = wc1.id and wcc.company_id != wc1.company_id
+        where
+        wcc.is_del = 0
+        <if test="list != null and list.size() != 0">
+            and wcc.customer_id in
+            (<foreach collection="list" separator="," item="id">
+            #{id,jdbcType=BIGINT}
+        </foreach>)
+        </if>
+        group by wcc.customer_id) wccc on wc.id = wccc.customer_id
+        where wc.is_del = 0 and wccc.total > 0
+    </select>
+
+    <select id="findCustomerCompanyList" resultType="com.njwd.entity.basedata.vo.CustomerCompanyVo">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_customer_company
+        where is_del = 0 and is_enable = 1
+        <if test="dto.id != null">
+            and customer_id = #{dto.id}
+        </if>
+    </select>
+
+</mapper>

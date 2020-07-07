@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.CurrencyMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.platform.vo.CurrencyVo">
+        <id column="id" jdbcType="BIGINT" property="id" />
+        <result column="code" jdbcType="VARCHAR" property="code" />
+        <result column="name" jdbcType="VARCHAR" property="name" />
+        <result column="iso_code" jdbcType="VARCHAR" property="isoCode" />
+        <result column="symbol" jdbcType="VARCHAR" property="symbol" />
+        <result column="precision" jdbcType="TINYINT" property="precision" />
+        <result column="rounding_type" jdbcType="TINYINT" property="roundingType" />
+        <result column="is_del" jdbcType="TINYINT" property="isDel" />
+        <result column="is_enable" jdbcType="TINYINT" property="isEnable" />
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+        <result column="creator_id" jdbcType="BIGINT" property="creatorId" />
+        <result column="creator_name" jdbcType="VARCHAR" property="creatorName" />
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+        <result column="updator_id" jdbcType="BIGINT" property="updatorId" />
+        <result column="updator_name" jdbcType="VARCHAR" property="updatorName" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, code, `name`, iso_code, symbol, `precision`, rounding_type, `is_del`, is_enable,
+    create_time, creator_id, creator_name, update_time, updator_id, updator_name
+    </sql>
+    <sql id="new_column_list">
+            wc.`code`,
+            wc.`name`,
+            wc.`iso_code`,
+            wc.`symbol`,
+            wc.`precision`,
+            wc.`unit_precision`,
+            wc.`rounding_type`,
+            wc.`is_enable`,
+            wc.`is_approved`,
+            wc.`is_released`,
+            wc.`manage_info`,
+            wc.`root_enterprise_id`,
+            wc.`platform_id`,
+            wc.`id`,
+            wc.`create_time`,
+            wc.`creator_id`,
+            wc.`creator_name`,
+            wc.`update_time`,
+            wc.`updator_id`,
+            wc.`updator_name`,
+            wc.`is_del`,
+            wc.`version`
+    </sql>
+    <!-- 查询币种 -->
+    <select id="findCurrency" resultType="com.njwd.entity.platform.vo.CurrencyVo">
+        select c.id,
+        c.code,
+        c.iso_code,
+        c.name,
+        c.symbol,
+        c.`precision`,
+        c.unit_precision,
+        c.rounding_type,
+        c.is_approved,
+        c.is_released,
+        c.is_enable,
+        c.is_del,
+        c.version
+        from wd_currency c
+        <where>
+            <if test="currencyDto.isDel != null">
+                and c.is_del = #{currencyDto.isDel }
+            </if>
+            <if test="currencyDto.name != null and currencyDto.name != ''">
+                and c.name = #{currencyDto.name}
+            </if>
+            <if test="currencyDto.id != null">
+                and c.id = #{currencyDto.id}
+            </if>
+        </where>
+        limit 1
+    </select>
+
+    <!-- 查询币种分页 -->
+    <select id="findCurrencyPage" resultType="com.njwd.entity.platform.vo.CurrencyVo">
+        select c.id,
+        c.code,
+        c.iso_code,
+        c.name,
+        c.symbol,
+        c.`precision`,
+        c.unit_precision,
+        c.rounding_type,
+        c.is_approved,
+        c.is_released,
+        c.is_enable,
+        c.is_del,
+        c.create_time,
+        c.creator_id,
+        c.creator_name,
+        c.update_time,
+        c.updator_id,
+        c.updator_name,
+        c.manage_info,
+        c.version
+        from wd_currency c
+        <where>
+            <if test="currencyDto.codeOrName != null and currencyDto.codeOrName != ''">
+                and (c.code like concat('%', #{currencyDto.codeOrName}, '%')
+                or c.name like concat('%', #{currencyDto.codeOrName}, '%')
+                or c.iso_code like concat('%', #{currencyDto.codeOrName}, '%'))
+            </if>
+            and c.is_enable = 1
+            and c.is_del = 0
+            <if test="currencyDto.isReleased != null">
+                and c.is_released = #{currencyDto.isReleased}
+            </if>
+            <if test="currencyDto.isApproved != null">
+                and c.is_approved = #{currencyDto.isApproved}
+            </if>
+        </where>
+        order by substring(c.code,3) * 1
+    </select>
+
+    <!-- 查询币种列表 -->
+    <select id="findCurrencyList" resultType="com.njwd.entity.platform.vo.CurrencyVo">
+        select c.id,
+        c.code,
+        c.iso_code,
+        c.name,
+        c.symbol,
+        c.`precision`,
+        c.unit_precision,
+        c.rounding_type,
+        c.is_approved,
+        c.is_released,
+        c.is_enable,
+        c.is_del,
+        c.create_time,
+        c.creator_id,
+        c.creator_name,
+        c.update_time,
+        c.updator_id,
+        c.updator_name,
+        c.manage_info,
+        c.version
+        from wd_currency c
+        <where>
+            and c.is_approved = 1
+            and c.is_released = 1
+            and c.is_del = 0
+            <if test="currencyDto.codeOrName != null and currencyDto.codeOrName != ''">
+                and (c.code like concat('%', #{currencyDto.codeOrName}, '%')
+                or c.name like concat('%', #{currencyDto.codeOrName}, '%')
+                or c.iso_code like concat('%', #{currencyDto.codeOrName}, '%'))
+            </if>
+            <if test="currencyDto.platformIds != null">
+                and c.id not in
+                <foreach collection="currencyDto.platformIds" item="id" index="index" open="(" close=")" separator=",">
+                    #{id}
+                </foreach>
+            </if>
+        </where>
+        order by substring(c.code,3) * 1
+    </select>
+
+    <select id="findAccSubjectCurrencyList" resultMap="BaseResultMap">
+        select
+        <include refid="new_column_list"/>
+        from wd_currency wc
+        inner join wd_account_subject_currency wasc on wasc.currency_id = wc.id
+        where wasc.account_subject_id = #{accSubjectId}
+        and wc.is_released = 1
+        and wc.is_del = 0
+    </select>
+</mapper>

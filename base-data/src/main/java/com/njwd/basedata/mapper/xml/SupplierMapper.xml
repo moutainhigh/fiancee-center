@@ -1,0 +1,519 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.basedata.mapper.SupplierMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.basedata.Supplier">
+        <!--@mbg.generated-->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="root_enterprise_id" jdbcType="BIGINT" property="rootEnterpriseId"/>
+        <result column="company_id" jdbcType="BIGINT" property="companyId"/>
+        <result column="global_id" jdbcType="BIGINT" property="globalId"/>
+        <result column="code_type" jdbcType="TINYINT" property="codeType"/>
+        <result column="code" jdbcType="VARCHAR" property="code"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="supplier_type" jdbcType="TINYINT" property="supplierType"/>
+        <result column="is_internal_supplier" jdbcType="TINYINT" property="isInternalSupplier"/>
+        <result column="unified_social_credit_code" jdbcType="VARCHAR" property="unifiedSocialCreditCode"/>
+        <result column="id_card_num" jdbcType="VARCHAR" property="idCardNum"/>
+        <result column="business_address" jdbcType="VARCHAR" property="businessAddress"/>
+        <result column="linkman" jdbcType="VARCHAR" property="linkman"/>
+        <result column="contact_number" jdbcType="VARCHAR" property="contactNumber"/>
+        <result column="is_enable" jdbcType="TINYINT" property="isEnable"/>
+        <result column="is_del" jdbcType="TINYINT" property="isDel"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="creator_id" jdbcType="BIGINT" property="creatorId"/>
+        <result column="creator_name" jdbcType="VARCHAR" property="creatorName"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+        <result column="updator_id" jdbcType="BIGINT" property="updatorId"/>
+        <result column="updator_name" jdbcType="VARCHAR" property="updatorName"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        wcs.id,
+        wcs.root_enterprise_id,
+        wcs.company_id,
+        co.name companyName,
+        wcs.global_id,
+        wcs.code_type,
+        wcs.code,
+        wcs.name,
+        wcs.supplier_type,
+        wcs.data_types,
+        wcs.is_internal_supplier,
+        wcs.unified_social_credit_code,
+        wcs.id_card_num,
+        wcs.business_address,
+        wcs.linkman,
+        wcs.contact_number,
+        wcs.is_enable,
+        wcs.is_del,
+        wcs.create_time,
+        wcs.creator_id,
+        wcs.creator_name,
+        wcs.update_time,
+        wcs.updator_id,
+        wcs.updator_name,
+        wcs.inner_company_id,
+        wcs.manage_info,
+        wcs.version
+    </sql>
+    <sql id="Son_Base_Column_List">
+        wcs.code,
+        wcs.company_id,
+        co2.name companyName,
+        wcs.name,
+        wcs.root_enterprise_id,
+        wcs.global_id,
+        wcs.code_type,
+        wcsc.id,
+        wcs.is_internal_supplier,
+        wcs.supplier_type,
+        wcs.data_types,
+        wcs.unified_social_credit_code,
+        wcs.id_card_num,
+        wcs.company_id use_company_id,
+        case wcs.company_id when 0 then "全部" else co1.name end use_company_name,
+        wcs.business_address,
+        wcs.linkman,
+        wcs.contact_number,
+        wcsc.create_time,
+        wcsc.creator_id,
+        wcsc.creator_name,
+        wcsc.update_time,
+        wcsc.updator_id,
+        wcsc.updator_name,
+        wcsc.is_enable,
+        wcsc.is_del,
+        wcs.inner_company_id,
+        wcs.manage_info,
+        wcs.version
+    </sql>
+
+    <select id="selectSupplierListForCheckDuplicate" resultMap="BaseResultMap">
+        select
+        code,
+        name,
+        id_card_num,
+        supplier_type,
+        unified_social_credit_code,
+        company_id
+        from wd_supplier
+        where
+        is_del = 0
+        and root_enterprise_id = #{rootEnterpriseId,jdbcType=BIGINT}
+        <if test="supplierType != null and supplierType != ''">
+            and supplier_type = #{supplierType}
+        </if>
+        and (
+        false
+        <if test="code != null and code != ''">
+            or code = #{code,jdbcType=VARCHAR}
+        </if>
+        <if test="name != null and name != ''">
+            or (name = #{name,jdbcType=VARCHAR}
+            and company_id != 0)
+        </if>
+        <if test="unifiedSocialCreditCode != null and unifiedSocialCreditCode != ''">
+            or unified_social_credit_code = #{unifiedSocialCreditCode,jdbcType=VARCHAR}
+        </if>
+        <if test="idCardNum != null and idCardNum != ''">
+            or id_card_num = #{idCardNum,jdbcType=VARCHAR}
+        </if>
+        )
+    </select>
+
+    <select id="selectSupplierOneByNameForCite" resultType="long">
+        select
+            wcs.id
+        from wd_supplier_company wcsc
+        inner join wd_supplier wcs on wcsc.supplier_id = wcs.id and wcsc.company_id = wcs.company_id
+        where
+            wcs.is_del = 0
+            and wcsc.company_id not in (0, #{companyId})
+            and wcs.name = #{name,jdbcType=VARCHAR}
+        limit 0,1
+    </select>
+
+    <select id="selectSupplierCountByNameForCite" resultType="int">
+        select
+            count(1)
+        from wd_supplier
+        where
+            is_del = 0
+            and root_enterprise_id = #{rootEnterpriseId,jdbcType=BIGINT}
+            and supplier_type = 0
+            and name = #{name,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectSupplierIdForInsert" resultType="long">
+        select
+            id
+        from wd_supplier
+        where
+            is_del = 0
+            and root_enterprise_id = #{rootEnterpriseId,jdbcType=BIGINT}
+            and name = #{name,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectSupplierCountForCheckUscc" resultType="int">
+        select
+        count(1)
+        from wd_supplier
+        where
+        is_del = 0
+        and root_enterprise_id = #{rootEnterpriseId,jdbcType=BIGINT}
+        and supplier_type = 0
+        and unified_social_credit_code = #{unifiedSocialCreditCode,jdbcType=VARCHAR}
+        <if test="id != null">
+            and id != #{id,jdbcType=BIGINT}
+        </if>
+        <if test="companyId != 0">
+            and (company_id = 0 or company_id = #{companyId,jdbcType=BIGINT})
+        </if>
+    </select>
+    <select id="selectSupplierCountForCheckIdCard" resultType="int">
+        select
+        count(1)
+        from wd_supplier
+        where
+        is_del = 0
+        and root_enterprise_id = #{rootEnterpriseId,jdbcType=BIGINT}
+        and supplier_type = 1
+        and id_card_num = #{idCardNum,jdbcType=VARCHAR}
+        and company_id = #{companyId,jdbcType=BIGINT}
+        <if test="id != null">
+            and id != #{id,jdbcType=BIGINT}
+        </if>
+    </select>
+
+    <select id="selectSupplierCountForCheckName" resultType="int">
+        select
+        count(1)
+        from wd_supplier
+        where
+        is_del = 0
+        and root_enterprise_id = #{rootEnterpriseId,jdbcType=BIGINT}
+        <if test="id != null">
+            and id != #{id,jdbcType=BIGINT}
+        </if>
+        <!--<if test="companyId != 0">-->
+        <!--and (company_id = 0 or company_id = #{companyId,jdbcType=BIGINT})-->
+        <!--</if>-->
+        and name = #{name,jdbcType=VARCHAR}
+    </select>
+    <select id="selectSupplierCountForCheckCode" resultType="int">
+        select
+        count(1)
+        from wd_supplier
+        where
+        is_del = 0
+        and root_enterprise_id = #{rootEnterpriseId,jdbcType=BIGINT}
+        <if test="id != null">
+            and id != #{id,jdbcType=BIGINT}
+        </if>
+        <if test="companyId != 0">
+            and (company_id = 0 or company_id = #{companyId,jdbcType=BIGINT})
+        </if>
+        and code = #{code,jdbcType=VARCHAR}
+    </select>
+
+    <select id="selectSupplierById" resultType="com.njwd.entity.basedata.vo.CustomerSupplierVo">
+        select
+        <include refid="Base_Column_List"/>,
+        wc.name inner_company_name
+        from wd_supplier wcs
+        left join wd_company co on wcs.company_id = co.id
+        left join wd_company wc on wcs.inner_company_id = wc.id
+        where
+        wcs.id = #{id,jdbcType=BIGINT}
+    </select>
+
+    <select id="selectSupplierCoById" resultType="com.njwd.entity.basedata.vo.CustomerSupplierVo">
+        select
+        wcs.code,
+        wcs.company_id,
+        co2.name companyName,
+        wcs.name,
+        wcs.root_enterprise_id,
+        wcs.global_id,
+        wcs.code_type,
+        IFNULL(wcsc.supplier_id, wcs.id) id,
+        wcs.is_internal_supplier,
+        wcs.supplier_type,
+        wcs.data_types,
+        wcs.unified_social_credit_code,
+        wcs.id_card_num,
+        wcs.company_id use_company_id,
+        CASE WHEN wcs.company_id = 0 AND wcs.data_types = '1' THEN "全部" else co1.name END use_company_name,
+        CASE wcs.company_id WHEN 0 THEN wcs.business_address ELSE wcsc.business_address END AS business_address,
+        CASE wcs.company_id WHEN 0 THEN wcs.linkman ELSE wcsc.linkman END AS linkman,
+        CASE wcs.company_id WHEN 0 THEN wcs.contact_number ELSE wcsc.contact_number END AS contact_number,
+        wcsc.create_time,
+        wcsc.creator_id,
+        wcsc.creator_name,
+        wcsc.update_time,
+        wcsc.updator_id,
+        wcsc.updator_name,
+        IFNULL(wcsc.is_enable,wcs.is_enable) is_enable,
+        IFNULL(wcsc.is_del, wcs.is_del) is_del,
+        wcs.inner_company_id,
+        wcs.manage_info,
+        IFNULL(wcsc.version, wcs.version) version,
+        wc.name inner_company_name
+        from wd_supplier_company wcsc
+        left join wd_company co1 on wcsc.company_id = co1.id
+        right join wd_supplier wcs on wcs.is_del = 0 and wcsc.supplier_id = wcs.id
+        left join wd_company co2 on wcs.company_id = co2.id
+        left join wd_company wc on wcs.inner_company_id = wc.id
+        where
+        wcs.id = #{id,jdbcType=BIGINT}
+    </select>
+
+    <select id="selectSupplierCoPage" resultType="com.njwd.entity.basedata.vo.CustomerSupplierVo">
+        select r.* from (
+        select
+        wcs.code,
+        wcs.company_id,
+        co2.name companyName,
+        wcs.name,
+        wcs.root_enterprise_id,
+        wcs.global_id,
+        wcs.code_type,
+        wcs.id,
+        wcs.is_internal_supplier,
+        wcs.supplier_type,
+        wcs.data_types,
+        wcs.unified_social_credit_code,
+        wcs.id_card_num,
+        co1.id use_company_id,
+        CASE WHEN wcs.company_id = 0 AND wcs.data_types = '1' THEN "全部" else co1.name END use_company_name,
+        wcs.business_address,
+        wcs.linkman,
+        wcs.contact_number,
+        wcs.create_time,
+        wcs.creator_id,
+        wcs.creator_name,
+        wcs.update_time,
+        wcs.updator_id,
+        wcs.updator_name,
+        wcs.is_enable,
+        wcs.is_del,
+        wcs.inner_company_id,
+        wcs.manage_info,
+        wcs.version,
+        wc.name inner_company_name
+        from wd_supplier_company wcsc
+        left join wd_company co1 on wcsc.company_id = co1.id
+        right join wd_supplier wcs on wcsc.supplier_id = wcs.id
+        left join wd_company co2 on wcs.company_id = co2.id
+        left join wd_company wc on wcs.inner_company_id = wc.id
+        where
+        wcsc.is_del = 0
+        and wcs.is_del = 0
+        and wcs.root_enterprise_id = #{csd.rootEnterpriseId,jdbcType=BIGINT}
+        <if test="csd.companyList != null and csd.companyList.size() != 0">
+            and wcsc.company_id in
+            <foreach collection="csd.companyList" item="company" separator="," open="(" close=")">
+                #{company,jdbcType=BIGINT}
+            </foreach>
+            OR (wcs.data_types = '1' AND wcs.company_id = 0 AND wcs.is_del = 0 AND wcs.root_enterprise_id =
+            #{csd.rootEnterpriseId,jdbcType=BIGINT})
+        </if>
+        ) r
+        where 1=1
+        <if test="csd.idS != null and csd.idS.size() > 0">
+            and r.id in
+            <foreach collection="csd.idS" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="csd.supplierType != null and  csd.supplierType != ''">
+            and r.supplier_type = #{csd.supplierType}
+        </if>
+        <if test="csd.isEnable != null">
+            and r.is_enable = #{csd.isEnable,jdbcType=TINYINT}
+        </if>
+        <if test="csd.codeName != null and csd.codeName != ''">
+            and(
+            r.code like concat("%", #{csd.codeName,jdbcType=VARCHAR}, "%")
+            or r.name like concat("%", #{csd.codeName,jdbcType=VARCHAR}, "%")
+            )
+        </if>
+        <if test="csd.isInternalSupplier != null and csd.isInternalSupplier != ''">
+            and r.is_internal_supplier = #{csd.isInternalSupplier}
+        </if>
+    </select>
+
+    <!--根据条件查询列表数据（含分页）-->
+    <select id="selectSupplierVoPage" resultType="com.njwd.entity.basedata.vo.CustomerSupplierVo">
+        select
+        <include refid="Base_Column_List"/>,
+        wc.name inner_company_name
+        from wd_supplier wcs
+        left join wd_company co on wcs.company_id = co.id
+        left join wd_company wc on wcs.inner_company_id = wc.id
+        where
+        wcs.is_del = 0
+        and wcs.root_enterprise_id = #{csd.rootEnterpriseId,jdbcType=BIGINT}
+        <if test="csd.idS != null and csd.idS.size() > 0">
+            and wcs.id in
+            <foreach collection="csd.idS" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="csd.supplierType != null and csd.supplierType != ''">
+            and wcs.supplier_type = #{csd.supplierType}
+        </if>
+        <if test="csd.isEnable != null">
+            and wcs.is_enable = #{csd.isEnable,jdbcType=TINYINT}
+        </if>
+        <if test="csd.codeName != null and csd.codeName != ''">
+            and(
+            wcs.code like concat("%", #{csd.codeName,jdbcType=VARCHAR}, "%")
+            or wcs.name like concat("%", #{csd.codeName,jdbcType=VARCHAR}, "%")
+            )
+        </if>
+        <if test="csd.isInternalSupplier != null and csd.isInternalSupplier != ''">
+            and wcs.is_internal_supplier = #{csd.isInternalSupplier}
+        </if>
+        <if test="csd.companyList != null and csd.companyList.size() != 0">
+            and (wcs.company_id = 0
+            or wcs.company_id in
+            <foreach collection="csd.companyList" item="company" separator="," open="(" close=")">
+                #{company,jdbcType=BIGINT}
+            </foreach>)
+        </if>
+    </select>
+    <update id="deleteSupplierByIds">
+        update wd_supplier
+        set
+        updator_id = #{csd.updatorId,jdbcType=BIGINT},
+        updator_name = #{csd.updatorName,jdbcType=VARCHAR},
+        is_del = 1
+        where
+        is_del = 0
+        and id in
+        <foreach collection="csd.idS" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=BIGINT}
+        </foreach>
+    </update>
+
+    <update id="deleteSupplierCoByIds">
+        update wd_supplier_company
+        set
+        updator_id = #{csd.updatorId,jdbcType=BIGINT},
+        updator_name = #{csd.updatorName,jdbcType=VARCHAR},
+        is_del = 1
+        where
+        is_del = 0
+        and id in
+        <foreach collection="csd.idS" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=BIGINT}
+        </foreach>
+    </update>
+
+    <update id="updateSupplierCoStatusByIds">
+        update wd_supplier_company
+        set
+        updator_id = #{csd.updatorId,jdbcType=BIGINT},
+        updator_name = #{csd.updatorName,jdbcType=VARCHAR},
+        is_enable = #{csd.isEnable,jdbcType=TINYINT}
+        where
+        id in
+        <foreach collection="csd.idS" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=BIGINT}
+        </foreach>
+    </update>
+
+    <update id="updateSupplierStatusByIds">
+        update wd_supplier
+        set
+        updator_id = #{csd.updatorId,jdbcType=BIGINT},
+        updator_name = #{csd.updatorName,jdbcType=VARCHAR},
+        is_enable = #{csd.isEnable,jdbcType=TINYINT}
+        where
+        id in
+        <foreach collection="csd.idS" item="id" open="(" separator="," close=")">
+            #{id,jdbcType=BIGINT}
+        </foreach>
+    </update>
+
+    <select id="getSupplierIdByCompany" resultType="java.lang.Long">
+        select wcs.id
+        from wd_supplier_company wcsc
+        left join wd_supplier wcs on wcs.id = wcsc.supplier_id
+        where
+            wcs.is_del = 0
+            and wcsc.id = #{id,jdbcType=BIGINT}
+            and wcsc.company_id = wcs.company_id
+    </select>
+
+    <select id="selectSupplierIdsForUpdateMain" resultType="java.lang.Long">
+        select wcs.id
+        from wd_supplier_company wcsc
+        left join wd_supplier wcs on wcs.id = wcsc.supplier_id
+        where
+        wcs.is_del = 0
+        and wcsc.company_id = wcs.company_id
+        <if test="list != null and list.size() != 0">
+            and wcsc.id in
+            <foreach item="id" index="index" collection="list" open="(" separator="," close=")">
+                #{id,jdbcType=BIGINT}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="selectSupplierListForUpdate" resultType="java.lang.Long">
+        select wcsc.id
+        from wd_supplier_company wcsc
+        inner join wd_supplier wcs on wcs.id = wcsc.supplier_id and wcs.company_id = wcsc.company_id
+        where
+        wcs.id in
+        <foreach item="id" open="(" separator="," close=")" collection="list">
+            #{id,jdbcType=BIGINT}
+        </foreach>
+    </select>
+
+    <select id="selectSupplierByParams" resultType="com.njwd.entity.basedata.vo.CustomerSupplierVo">
+        SELECT
+        t1.id id,
+        t1.code code,
+        t1.root_enterprise_id rootEnterpriseId,
+        t1.company_id companyId,
+        t1.business_address businessAddress,
+        t1.linkman linkman,
+        t1.contact_number contactNumber,
+        t1.is_del isDel,
+        t1.is_enable isEnable,
+        t1.data_types
+        FROM
+        wd_supplier t1
+        <where>
+            t1.is_del = 0
+            <if test="dto.rootEnterpriseId != null">
+                AND t1.root_enterprise_id = #{dto.rootEnterpriseId}
+            </if>
+            <if test="dto.idS != null and dto.idS.size() > 0">
+                AND t1.id IN
+                <foreach collection="dto.idS" item="supplierId" open="(" separator="," close=")">
+                    #{supplierId}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <select id="findSupplierInfos" resultType="Long">
+        SELECT DISTINCT (id) id
+        FROM
+        wd_supplier
+        <where>
+            <if test="dto.companyList != null and dto.companyList.size() > 0">
+                and company_id IN
+                <foreach collection="dto.companyList" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            OR (data_types = '1' AND root_enterprise_id = #{dto.rootEnterpriseId})
+            AND is_del = '0'
+        </where>
+    </select>
+
+</mapper>

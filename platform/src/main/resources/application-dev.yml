@@ -1,0 +1,98 @@
+# server配置
+server:
+  port: 8184
+  tomcat:
+    uri-encoding: UTF-8
+  servlet:
+    context-path: /platform
+# spring配置
+spring:
+  profiles:
+    active: dev
+  application:
+    name: platform
+  cloud:
+    nacos:
+      config:
+        server-addr: 192.168.1.161:8848
+        file-extension: yaml
+      discovery:
+        server-addr: 192.168.1.161:8848
+        enabled: true
+        namespace: libao
+  # 数据库配置
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://192.168.1.160:3306/njwd_finance_platform_191111?useUnicode=true&characterEncoding=utf-8&autoReconnect=true&autoReconnectForPools=true&failOverReadOnly=false&useSSL=false&tinyInt1isBit=false&serverTimezone=Asia/Shanghai&allowMultiQueries=true
+    username: root
+    password: sys8888
+    type: com.zaxxer.hikari.HikariDataSource
+    hikari:
+      maximum-pool-size: 50
+      minimum-idle: 8
+    tomcat:
+      initialSize: 5
+      minIdle: 5
+      maxActive: 20
+      maxWait: 60000
+      timeBetweenEvictionRunsMillis: 60000
+      minEvictableIdleTimeMillis: 300000
+      validationQuery: SELECT1FROMDUAL
+      testWhileIdle: true
+      testOnBorrow: false
+      testOnReturn: false
+  redis:
+    database: 3
+    host: 192.168.1.160
+    port: 6379
+    password: sys1234
+    lettuce:
+      pool:
+        max-active: 8
+        max-idle: 8
+        min-idle: 0
+  #  rabbitmq:
+  #    host: 192.168.1.160
+  #    port: 5672
+  #    username: guest
+  #    password: guest
+  #    publisher-confirms: true    #  消息发送到交换机确认机制,是否确认回调
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    timezone: GMT+8
+    serialization:
+      # false:不使用 true:使用 时间戳
+      write-dates-as-timestamps: true
+
+logging:
+  config: classpath:logback.xml
+
+mybatis-plus:
+  mapper-locations: classpath*:/com/njwd/**/mapper/xml/*.xml
+  typeAliasesPackage: com.njwd.platform.entity
+  global-config:
+    db-config:
+      id-type: auto
+      field-strategy: not_null
+      table-prefix: wd_
+  configuration:
+    map-underscore-to-camel-case: true
+    cache-enabled: false
+
+system:
+  properties:
+    profileActive: dev
+    njwdCoreUrl: 'http://192.168.1.160:8188/njwd_core/'
+    checkInterfaceFlag: false
+ribbon:
+  ReadTimeout: 120000
+  #请求连接的超时时间
+  ConnectTimeout: 30000
+#自定义常量
+constant:
+  file:
+    #服务端excel的保存路径,模版在该路径下,上传的excle文件在对应文件夹下
+    excelRootPath: E:/tmp/excelRootPath
+  message:
+     baseDataIps: 127.0.0.1
+     baseDataPort: 8183

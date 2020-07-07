@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.financeback.mapper.AccountBookCategoryMapper">
+
+    <insert id="addBatch">
+        INSERT INTO `wd_account_book_category` (
+            `code`
+            ,`name`
+            ,`account_type_id`
+            ,`acc_standard_id`
+            ,`type_code`
+            ,`subject_id`
+            ,`acc_calendar_id`
+            ,`cash_flow_item_id`
+            ,`currency_id`
+            ,`tax_system_id`
+            ,`share_status`
+            ,`is_approved`
+            ,`is_released`
+            ,`creator_id`
+            ,`creator_name`
+            ,`root_enterprise_id`
+            ,`platform_id`
+            )
+        VALUES
+        <foreach collection="list" item="p" separator=",">
+            (
+              #{p.code} ,
+              #{p.name} ,
+              #{p.accountTypeId} ,
+              #{p.accStandardId} ,
+              #{p.typeCode} ,
+              #{p.subjectId} ,
+              #{p.accCalendarId} ,
+              #{p.cashFlowItemId} ,
+              #{p.currencyId} ,
+              #{p.taxSystemId} ,
+              #{p.shareStatus} ,
+            #{p.isApproved} ,
+            #{p.isReleased} ,
+            #{p.creatorId} ,
+            #{p.creatorName} ,
+            #{p.rootEnterpriseId} ,
+            #{p.platformId}
+            )
+        </foreach>
+    </insert>
+</mapper>

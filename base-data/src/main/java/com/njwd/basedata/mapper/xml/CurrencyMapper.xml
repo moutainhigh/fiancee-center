@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.basedata.mapper.CurrencyMapper">
+
+    <!-- 批量新增 -->
+    <insert id="addBatch" useGeneratedKeys="true" keyProperty="id">
+        insert into `wd_currency` (
+        `code`
+        ,`name`
+        ,`iso_code`
+        ,`symbol`
+        ,`precision`
+        ,`rounding_type`
+        ,`is_approved`
+        ,`is_released`
+        ,`creator_id`
+        ,`creator_name`
+        ,`root_enterprise_id`
+        ,`platform_id`
+        ,`version`
+        )
+        values
+        <foreach collection="list" item="p" separator=",">
+            (
+            #{p.code} ,
+            #{p.name} ,
+            #{p.isoCode} ,
+            #{p.symbol} ,
+            #{p.precision} ,
+            #{p.roundingType} ,
+            #{p.isApproved} ,
+            #{p.isReleased} ,
+            #{p.creatorId} ,
+            #{p.creatorName} ,
+            #{p.rootEnterpriseId} ,
+            #{p.platformId},
+            #{p.version}
+            )
+        </foreach>
+    </insert>
+
+    <!-- 批量更新 -->
+    <update id="batchProcess">
+        update wd_currency t
+        <set>
+            t.version = t.version + 1,
+            <choose>
+                <when test="type == 0">
+                    t.is_del = 1,
+                </when>
+                <when test="type == 1">
+                    t.is_enable = 1,
+                </when>
+                <when test="type == 2">
+                    t.is_enable = 0,
+                </when>
+            </choose>
+            t.manage_info =
+            JSON_SET(ifnull(t.manage_info,'{}'),
+            <choose>
+                <when test="type == 0">
+                    "$.deletedUserId", #{operator.userId},
+                    "$.deletedUserName", #{operator.name},
+                    "$.deletedTime",
+                </when>
+                <when test="type == 1">
+                    "$.enabledUserId", #{operator.userId},
+                    "$.enabledUserName", #{operator.name},
+                    "$.enabledTime",
+                </when>
+                <when test="type == 2">
+                    "$.disabledUserId", #{operator.userId},
+                    "$.disabledUserName", #{operator.name},
+                    "$.disabledTime",
+                </when>
+            </choose>
+            UNIX_TIMESTAMP(NOW()) * 1000)
+        </set>
+        where t.id in
+        <foreach collection="idList" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </update>
+
+    <!-- 查询币种 -->
+    <select id="findCurrency" resultType="com.njwd.entity.basedata.vo.CurrencyVo">
+        select c.id,
+        c.code,
+        c.name,
+        c.iso_code,
+        c.symbol,
+        c.`precision`,
+        c.unit_precision,
+        c.rounding_type,
+        c.is_enable,
+        c.manage_info,
+        c.root_enterprise_id,
+        c.is_del,
+        c.version
+        from wd_currency c
+        <where>
+            <if test="currencyDto.isDel != null">
+                and c.is_del = #{currencyDto.isDel }
+            </if>
+            <if test="currencyDto.name != null and currencyDto.name != ''">
+                and c.name = #{currencyDto.name}
+            </if>
+            <if test="currencyDto.id != null">
+                and c.id = #{currencyDto.id}
+            </if>
+        </where>
+        limit 1
+    </select>
+
+    <!-- 查询币种分页 -->
+    <select id="findCurrencyPage" resultType="com.njwd.entity.basedata.vo.CurrencyVo">
+        select c.id,
+        c.code,
+        c.name,
+        c.iso_code,
+        c.symbol,
+        c.`precision`,
+        c.unit_precision,
+        c.rounding_type,
+        c.is_enable,
+        c.create_time,
+        c.creator_id,
+        c.creator_name,
+        c.update_time,
+        c.updator_id,
+        c.updator_name,
+        c.manage_info,
+        c.root_enterprise_id,
+        c.version
+        from wd_currency c
+        <where>
+            and c.is_del = 0
+            <if test="currencyDto.codeOrName != null and currencyDto.codeOrName != ''">
+                and (c.code like concat('%', #{currencyDto.codeOrName}, '%')
+                or c.name like concat('%', #{currencyDto.codeOrName}, '%')
+                or c.iso_code like concat('%', #{currencyDto.codeOrName}, '%'))
+            </if>
+            <if test="currencyDto.isEnable != null">
+                and c.is_enable = #{currencyDto.isEnable}
+            </if>
+        </where>
+        order by c.code * 0 desc
+    </select>
+
+    <!-- 查询存在的平台币种 -->
+    <select id="findCurrencyPlatformIds" resultType="long">
+        select platform_id
+        from wd_currency c
+        <where>
+            and c.is_del = 0
+            and c.root_enterprise_id = #{currencyDto.rootEnterpriseId}
+        </where>
+    </select>
+
+    <!-- 查询存在的币种状态 -->
+    <select id="findCurrencyListStatus" resultType="com.njwd.entity.basedata.vo.CurrencyVo">
+        select c.id,
+        c.is_enable,
+        c.is_del,
+        c.is_approved,
+        c.is_released,
+        c.version,
+        count(ab.id)  accountBookCount,
+        count(asu.id) accountSubjectCount
+        from wd_currency c
+        left join wd_account_book_category abc on c.id = abc.currency_id
+        left join wd_account_book ab on abc.id = ab.account_book_type_id and ab.is_del = 0
+        left join wd_account_subject_currency ascu on c.id = ascu.currency_id
+        left join wd_account_subject asu on ascu.account_subject_id = asu.id and asu.is_del = 0
+        <where>
+            <if test="currencyDto.changeList != null and currencyDto.changeList.size() > 0">
+                and c.id in
+                <foreach collection="currencyDto.changeList" item="currency" index="index" open="(" close=")" separator=",">
+                    #{currency.id}
+                </foreach>
+            </if>
+        </where>
+        group by c.id
+    </select>
+
+</mapper>

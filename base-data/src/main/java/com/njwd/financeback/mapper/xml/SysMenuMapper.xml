@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.financeback.mapper.SysMenuMapper">
+    <sql id="Base_Column_List">
+            wsm.`menu_id`,
+            wsm.`type`,
+            wsm.`type_name`,
+            wsm.`name`,
+            wsm.`sort`,
+            wsm.`code`,
+            wsm.`parent_id`,
+            wsm.`is_child`,
+            wsm.`permission`,
+            wsm.`remark`,
+            wsm.`is_default_select`,
+            wsm.`creator_id`,
+            wsm.`creator_name`,
+            wsm.`create_time`,
+            wsm.`updator_id`,
+            wsm.`updator_name`,
+            wsm.`update_time`,
+            wsm.`is_del`
+    </sql>
+    <resultMap id="BaseResultMap" type="com.njwd.entity.basedata.vo.SysMenuVo">
+    </resultMap>
+    <select id="checkDuplication" resultType="int">
+        select count(1) from wd_sys_menu wsm
+        <where>
+            <if test="sysMenu.menuId != null">
+                and wsm.menu_id &lt;&gt; #{sysMenu.menuId}
+            </if>
+            and (1=2
+            <if test="sysMenu.permission != null and sysMenu.permission != ''">
+                or wsm.permission = #{sysMenu.permission}
+            </if>
+            )
+            and wsm.is_del = 0
+        </where>
+    </select>
+    <!--查询用户关联的权限定义集合,无id时返回所有-->
+    <sql id="IF_VALID_USER_ID">
+        <if test="userId != null">
+            and wsur.user_id = #{userId}
+            and wsur.root_enterprise_id = #{rootEnterpriseId}
+            and wsr.is_del = 0
+            and wsr.is_enable = 1
+        </if>
+    </sql>
+    <select id="getPermissionDefinitionsByUserId" resultType="java.lang.String">
+        select
+        distinct concat(wsm.permission,':',wsur.company_id)
+        from wd_sys_menu wsm
+        left join wd_sys_role_menu wsrm on wsrm.menu_id = wsm.menu_id
+        left join wd_sys_role wsr on wsr.role_id = wsrm.role_id
+        left join wd_sys_user_role wsur on wsur.role_id = wsrm.role_id
+        <where>
+            <include refid="IF_VALID_USER_ID"/>
+            <!-- 仅获取类型为租户用户的角色权限 -->
+            and wsm.permission != ''
+            and wsm.is_del = 0
+            <!-- 仅获取全选 -->
+            and wsrm.is_half = 0
+        </where>
+    </select>
+    <select id="findPage" resultMap="BaseResultMap">
+        select
+        wsm2.name parentName,
+        <include refid="Base_Column_List"/>
+        from wd_sys_menu wsm
+        left join wd_sys_menu wsm2 on wsm2.menu_id = wsm.parent_id
+        <where>
+            <if test="sysMenuDto.type != null">
+                and wsm.type = #{sysMenuDto.type}
+            </if>
+            <if test="sysMenuDto.name != null and sysMenuDto.name != ''">
+                and wsm.name like concat('%',#{sysMenuDto.name} ,'%')
+            </if>
+            <if test="sysMenuDto.isAdminMenu != null">
+                and wsm.is_admin_menu = #{sysMenuDto.isAdminMenu}
+            </if>
+            and wsm.is_del = 0
+        </where>
+        order by wsm.sort, wsm.menu_id
+    </select>
+    <!--查询角色关联的菜单列表,无角色id则查所有未停用的菜单树-->
+    <select id="findList" resultMap="BaseResultMap">
+        select
+        <if test="roleId != null">
+            wsrm.is_half,
+        </if>
+        <include refid="Base_Column_List"/>
+        from wd_sys_menu wsm
+        <if test="roleId != null">
+            left join wd_sys_role_menu wsrm on wsrm.menu_id = wsm.menu_id
+        </if>
+        <where>
+            <choose>
+                <when test="roleId != null">
+                    and wsrm.role_id = #{roleId}
+                </when>
+                <when test="parentId != null">
+                    and wsm.parent_id = #{parentId}
+                </when>
+                <otherwise>
+                    and (wsm.parent_id IS NULL or wsm.parent_id = 0)
+                </otherwise>
+            </choose>
+            <!-- 该接口仅查询用户端接口的权限  -->
+            and wsm.is_admin_menu = 0
+            and wsm.is_del = 0
+        </where>
+        order by wsm.sort,wsm.menu_id
+    </select>
+    <!--无userId查所有-->
+    <select id="findListByUserId" resultMap="BaseResultMap">
+        select
+        <if test="userId != null">
+            wsrm.is_half,
+            wsur.company_id,
+        </if>
+        <include refid="Base_Column_List"/>
+        from wd_sys_menu wsm
+        left join wd_sys_role_menu wsrm on wsrm.menu_id = wsm.menu_id
+        left join wd_sys_role wsr on wsr.role_id = wsrm.role_id
+        left join wd_sys_user_role wsur on wsur.role_id = wsrm.role_id
+        <where>
+            <include refid="IF_VALID_USER_ID"/>
+            <!-- 该接口仅查询用户端接口的权限  -->
+            and wsm.is_admin_menu = 0
+            and wsm.is_del = 0
+        </where>
+        group by
+        <if test="userId != null">
+            wsrm.is_half,
+            wsur.company_id,
+        </if>
+        <include refid="Base_Column_List"/>
+        order by wsm.sort, wsm.menu_id,wsur.company_id
+    </select>
+    <select id="findListByCompanyAndUser" resultType="java.lang.Long">
+        select distinct wsrm.menu_id
+        from wd_sys_user_role wsur
+                 inner join wd_sys_role_menu wsrm on wsrm.role_id = wsur.role_id
+        where wsur.user_id = #{sysUserRole.userId}
+          and wsur.company_id = #{sysUserRole.companyId}
+          and wsur.root_enterprise_id = #{sysUserRole.rootEnterpriseId}
+          and wsrm.is_half = 0
+        <if test="sysUserRole.roleId != null">
+            and wsur.role_id = #{sysUserRole.roleId}
+        </if>
+    </select>
+    <select id="findNameByMenuParentId" resultType="java.lang.String">
+        select wsm2.name
+        from wd_sys_menu wsm
+                 left join wd_sys_menu wsm2 on wsm.parent_id = wsm2.menu_id
+        where wsm.menu_id = #{parentId}
+    </select>
+    <!-- 可选择子系统列表 -->
+    <select id="findEnableSysList" parameterType="com.njwd.entity.basedata.dto.SysMenuDto"
+            resultType="com.njwd.entity.basedata.vo.SysMenuVo">
+        SELECT
+          m.type_name
+        FROM
+            wd_sys_user AS u
+            JOIN wd_sys_user_role AS ur ON u.user_id = ur.user_id
+            JOIN wd_sys_role AS r ON r.role_id = ur.role_id
+            JOIN wd_sys_role_menu AS rm ON r.role_id = rm.role_id
+            JOIN wd_sys_menu AS m ON m.menu_id = rm.menu_id
+            JOIN wd_company AS c ON c.id = ur.company_id
+        WHERE
+            r.is_enable = 1
+            AND m.type = 3
+            <!-- 该接口仅查询用户端接口的权限  -->
+            and m.is_admin_menu = 0
+            AND m.is_del = 0
+            AND ur.root_enterprise_id = #{sysMenuDto.rootEnterpriseId}
+        <if test="sysMenuDto.typeName != null">
+            AND m.type_name like concat('%',#{sysMenuDto.typeName},'%')
+        </if>
+        GROUP BY m.type_name
+        ORDER BY m.type_name
+    </select>
+    <!-- 可选择菜单列表 -->
+    <select id="findEnableMenuList" parameterType="com.njwd.entity.basedata.dto.SysMenuDto"
+            resultType="com.njwd.entity.basedata.vo.SysMenuVo">
+        SELECT
+            m.menu_id,
+            m.type_name,
+            m.code ,
+            m.name
+        FROM
+            wd_sys_user AS u
+            JOIN wd_sys_user_role AS ur ON u.user_id = ur.user_id
+            JOIN wd_sys_role AS r ON r.role_id = ur.role_id
+            JOIN wd_sys_role_menu AS rm ON r.role_id = rm.role_id
+            JOIN wd_sys_menu AS m ON m.menu_id = rm.menu_id
+            JOIN wd_company AS c ON c.id = ur.company_id
+        WHERE
+            r.is_enable = 1
+            <!-- 该接口仅查询用户端接口的权限  -->
+            and m.is_admin_menu = 0
+            AND m.is_del = 0
+            AND m.type = 3 -- 3 菜单
+            AND ur.root_enterprise_id = #{sysMenuDto.rootEnterpriseId}
+        <if test="sysMenuDto.codeOrName != null">
+            AND (m.code like concat('%',#{sysMenuDto.codeOrName},'%')
+            OR m.name like concat('%',#{sysMenuDto.codeOrName},'%'))
+        </if>
+        GROUP BY m.code
+        ORDER BY m.code
+    </select>
+</mapper>

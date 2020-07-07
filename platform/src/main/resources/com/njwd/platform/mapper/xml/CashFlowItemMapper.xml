@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.CashFlowItemMapper">
+  <resultMap id="BaseResultMap" type="com.njwd.entity.platform.vo.CashFlowItemVo">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="up_code" jdbcType="VARCHAR" property="upCode" />
+    <result column="code" jdbcType="VARCHAR" property="code" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="full_name" jdbcType="VARCHAR" property="fullName" />
+    <result column="cash_flow_direction" jdbcType="TINYINT" property="cashFlowDirection" />
+    <result column="cash_flow_id" jdbcType="BIGINT" property="cashFlowId" />
+    <result column="is_interior_contact" jdbcType="TINYINT" property="isInteriorContact"/>
+    <result column="level" jdbcType="TINYINT" property="level" />
+    <result column="is_del" jdbcType="TINYINT" property="isDel" />
+    <result column="is_released" jdbcType="TINYINT" property="isReleased" />
+    <result column="is_approved" jdbcType="TINYINT" property="isApproved" />
+    <result column="is_enable" jdbcType="TINYINT" property="isEnable" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="creator_id" jdbcType="BIGINT" property="creatorId" />
+    <result column="creator_name" jdbcType="VARCHAR" property="creatorName" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="updator_id" jdbcType="BIGINT" property="updatorId" />
+    <result column="updator_name" jdbcType="VARCHAR" property="updatorName" />
+    <result column="is_exist_next_init" jdbcType="TINYINT" property="isExistNextInit" />
+    <result column="version" jdbcType="INTEGER" property="version" />
+    <result column="remark" jdbcType="VARCHAR" property="remark" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    wcfi.id,wcfi.up_code,wcfi.full_name, wcfi.code, wcfi.cash_flow_id, wcfi.`name`, wcfi.cash_flow_direction, wcfi.is_interior_contact,wcfi.`level`, wcfi.is_del,
+    wcfi.is_released,wcfi.is_approved, wcfi.is_enable, wcfi.create_time, wcfi.creator_id, wcfi.creator_name, wcfi.update_time, wcfi.updator_id,
+    wcfi.updator_name,wcfi.is_exist_next_init,wcfi.version,wcfi.remark
+  </sql>
+  <select id="findCashFlowItemPageNew" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List"/>,
+    wcf.name cashFlowName,
+    wcfii.name upName
+    from wd_cash_flow_item wcfi
+    left join wd_cash_flow wcf on wcf.id=wcfi.cash_flow_id
+    left join wd_cash_flow_item wcfii on wcfii.code=wcfi.up_code and wcfii.is_del=0 and wcfii.cash_flow_id=wcfi.cash_flow_id
+    <where>
+      wcfi.is_del=0
+      <if test="cashFlowItemDto.cashFlowId != null">
+       and wcfi.cash_flow_id=#{cashFlowItemDto.cashFlowId}
+      </if>
+      <if test="cashFlowItemDto.isFinal != null">
+        and wcfi.is_final=#{cashFlowItemDto.isFinal}
+      </if>
+      <if test="cashFlowItemDto.isApproved != null">
+       and wcfi.is_approved=#{cashFlowItemDto.isApproved}
+      </if>
+      <if test="cashFlowItemDto.cashFlowDirection != null">
+        and wcfi.cash_flow_direction=#{cashFlowItemDto.cashFlowDirection}
+      </if>
+      <if test="cashFlowItemDto.isReleased != null">
+        and wcfi.is_released=#{cashFlowItemDto.isReleased}
+      </if>
+      <if test="cashFlowItemDto.codeOrName != null and cashFlowItemDto.codeOrName != ''">
+        and (wcfi.code like concat('%',#{cashFlowItemDto.codeOrName} ,'%') or wcfi.name like concat('%',#{cashFlowItemDto.codeOrName}
+        ,'%'))
+      </if>
+      <if test="cashFlowItemDto.platformIds != null">
+        and wcfi.id not in
+        <foreach collection="cashFlowItemDto.platformIds" item="id" index="index" open="(" close=")" separator=",">
+          #{id}
+        </foreach>
+      </if>
+    </where>
+      order by RPAD( wcfi.code, 14, 0 )
+  </select>
+
+  <select id="findCashFlowItemList" resultMap="BaseResultMap">
+      select <include refid="Base_Column_List"/>,
+        CASE
+        wcfi.cash_flow_direction
+        WHEN 0 THEN
+        '流出'
+        WHEN 1 THEN
+        '流入'
+        END as cashFlowDirectionName,
+        wcfi.cash_flow_id as templateCashFlowId,
+        wcf.name as templateCashFlowName,
+        wcfi.cash_flow_id,
+        wcf.`name` cashFlowName,
+         wcf.max_level  maxLevel,
+        wcf.account_type_id  accountBookTypeId,
+        abt.name accountBookTypeName,
+        wcf.acc_standard_id accStandardId,
+        was.name accStandardName,
+         wcfi.is_final isFinal,
+         wcfii.name upName
+      from wd_cash_flow_item wcfi
+      left join wd_cash_flow wcf on wcf.id=wcfi.cash_flow_id
+      left join wd_account_book_type abt on abt.id=wcf.account_type_id
+      left join wd_accounting_standard was on was.id=wcf.acc_standard_id
+      left join wd_cash_flow_item wcfii on wcfii.code=wcfi.up_code and wcfii.is_del=0 and wcfii.cash_flow_id=wcfi.cash_flow_id
+      <where>
+          <if test="cashFlowId != null">
+            wcfi.cash_flow_id=#{cashFlowId}
+          </if>
+          <if test="cashFlowDirection != null">
+            and wcfi.cash_flow_direction=#{cashFlowDirection}
+          </if>
+          <if test="codeOrName != null and codeOrName != ''">
+            and (wcfi.code like concat('%',#{codeOrName} ,'%') or wcfi.name like concat('%',#{codeOrName}
+            ,'%'))
+          </if>
+          <if test="platformIds != null">
+            and wcfi.id not in
+            <foreach collection="platformIds" item="id" index="index" open="(" close=")" separator=",">
+              #{id}
+            </foreach>
+          </if>
+          <if test="rootEnterpriseId != null">
+            and wcfi.cash_flow_id in (select abc.cash_flow_item_id from wd_account_book_category abc
+            where
+            abc.is_del=0
+            and abc.is_enable=1
+            and abc.is_released=1
+            and (abc.share_status=0 or(abc.share_status=1 and exists (select 1 from wd_account_book_enterprise abe where abe.account_book_category_id=abc.id and abe.root_enterprise_id=#{rootEnterpriseId} ) )))
+          </if>
+          and wcfi.is_enable=1 and wcfi.is_del=0
+          and wcfi.is_released=1
+      </where>
+        order by RPAD( wcfi.code, 14, 0 )
+  </select>
+  <select id="findCashFlowItemPage" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List"/>,
+      CASE
+      wcfi.cash_flow_direction
+      WHEN 0 THEN
+      '流出'
+      WHEN 1 THEN
+      '流入'
+      END as cashFlowDirectionName,
+      wcfi.cash_flow_id as templateCashFlowId,
+      wcf.name as templateCashFlowName,
+      case when wcf.parent_id=0 then
+      wcfi.cash_flow_id else wcf.parent_id end cash_flow_id,
+      case when wcf.parent_id=0 then
+      wcf.`name` else (select e.NAME from wd_cash_flow e where e.id =wcf.parent_id) end cashFlowName,
+      wcf.max_level  maxLevel,
+      wcf.account_type_id  accountBookTypeId,
+      abt.name accountBookTypeName,
+      wcf.acc_standard_id accStandardId,
+      was.name accStandardName,
+      wcfi.is_final isFinal
+    from wd_cash_flow_item wcfi
+    left join wd_cash_flow wcf on wcf.id=wcfi.cash_flow_id
+    left join wd_account_book_type abt on abt.id=wcf.account_type_id
+    left join wd_accounting_standard was on was.id=wcf.acc_standard_id
+    <where>
+      <if test="cashFlowItemDto.cashFlowId != null">
+        wcfi.cash_flow_id=#{cashFlowItemDto.cashFlowId}
+      </if>
+      <if test="cashFlowItemDto.rootEnterpriseId != null">
+        and wcfi.cash_flow_id in (select abc.cash_flow_item_id from wd_account_book_category abc
+        where
+        abc.is_del=0
+        and abc.is_enable=1
+        and abc.is_released=1
+        and (abc.share_status=0 or(abc.share_status=1 and exists (select 1 from wd_account_book_enterprise abe where abe.account_book_category_id=abc.id and abe.root_enterprise_id=#{cashFlowItemDto.rootEnterpriseId} ) )))
+      </if>
+      and wcfi.is_enable=1 and wcfi.is_del=0
+      and wcfi.is_released=1
+    </where>
+  </select>
+    <select id="findIsExistNextCashFlowItem" resultType="java.lang.Integer">
+      select
+      count(1)
+      from wd_cash_flow_item t
+      <where>
+        t.is_del = 0
+        and t.up_code = #{cashFlowItemDto.upCode}
+        and t.cash_flow_id = #{cashFlowItemDto.cashFlowId}
+      </where>
+    </select>
+  <select id="checkVersion" resultType="java.lang.Long">
+    SELECT id
+    FROM wd_cash_flow_item
+    WHERE
+     id = #{cashFlowItemDto.id}
+    AND version != #{cashFlowItemDto.version}
+  </select>
+  <select id="findCashFlowItemListStatus" resultMap="BaseResultMap">
+    select wcf.id,
+    wcf.is_del,
+    wcf.is_approved,
+    wcf.is_released,
+    wcf.cash_flow_id,
+    wcf.code,
+    wcf.version,
+    wcf.up_code,
+    wcf.is_final
+    from wd_cash_flow_item wcf
+    <where>
+      <if test="changeList != null and changeList.size() != 0">
+        and wcf.id in
+        <foreach collection="changeList" item="item" index="index" open="(" close=")" separator=",">
+          #{item.id}
+        </foreach>
+      </if>
+    </where>
+    order by wcf.id asc
+  </select>
+  <select id="findAllCashFlowItemByCode" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List"/>
+    from wd_cash_flow_item wcfi
+    <where>
+      wcfi.is_del=0
+      <if test="cashFlowId != null">
+        and wcfi.cash_flow_id=#{cashFlowId}
+      </if>
+      <if test="isReleased != null">
+        and wcfi.is_released=#{isReleased}
+      </if>
+      <if test="code != null and code != ''">
+        and wcfi.code like concat(#{code} ,'%')
+      </if>
+
+    </where>
+  </select>
+  <select id="findCashFlowItemById" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List"/>,
+    wcf.name cashFlowName
+    from wd_cash_flow_item wcfi
+    left join wd_cash_flow wcf on wcf.id=wcfi.cash_flow_id
+    <where>
+      wcfi.is_del=0
+      <if test="id != null">
+        and wcfi.id=#{id}
+      </if>
+    </where>
+  </select>
+  <update id="updateCashFlowItemBatch">
+    update wd_cash_flow_item wcf
+    <set>
+      <if test="type != null and type==0">
+        wcf.is_del =1,
+      </if>
+      <if test="type != null and type==1">
+        wcf.is_approved =1,
+      </if>
+      <if test="type != null and type==2">
+        wcf.is_approved =0,
+      </if>
+      <if test="type != null and type==3">
+        wcf.is_released =1,
+      </if>
+    </set>
+    where
+    <if test="ids != null and ids.size() != 0">
+      wcf.id in
+      <foreach collection="ids" item="id" index="index" open="(" close=")" separator=",">
+        #{id}
+      </foreach>
+    </if>
+  </update>
+</mapper>

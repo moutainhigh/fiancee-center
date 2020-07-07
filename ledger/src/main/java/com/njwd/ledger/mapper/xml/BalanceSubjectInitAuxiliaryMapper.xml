@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.ledger.mapper.BalanceSubjectInitAuxiliaryMapper">
+  <resultMap id="BaseResultMap" type="com.njwd.entity.ledger.BalanceSubjectInitAuxiliary">
+    <!--@mbg.generated-->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="account_book_id" jdbcType="BIGINT" property="accountBookId" />
+    <result column="account_book_entity_id" jdbcType="BIGINT" property="accountBookEntityId" />
+    <result column="account_subject_id" jdbcType="BIGINT" property="accountSubjectId" />
+    <result column="period_year" jdbcType="BIGINT" property="periodYear" />
+    <result column="period_num" jdbcType="BIGINT" property="periodNum" />
+    <result column="opening_balance" jdbcType="DECIMAL" property="openingBalance" />
+    <result column="this_year_debit_amount" jdbcType="DECIMAL" property="thisYearDebitAmount" />
+    <result column="this_year_credit_amount" jdbcType="DECIMAL" property="thisYearCreditAmount" />
+    <result column="year_opening_balance" jdbcType="DECIMAL" property="yearOpeningBalance" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, account_book_id, account_book_entity_id, account_subject_id, opening_balance,period_year,period_num,
+    this_year_debit_amount, this_year_credit_amount, year_opening_balance
+  </sql>
+  <insert id="addSubjectInitAuxiliary" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+    <selectKey resultType="long" order="AFTER" keyProperty="baSubjectInitAux.id">
+      SELECT LAST_INSERT_ID()
+    </selectKey>
+    insert into wd_balance_subject_init_auxiliary(account_book_id,account_book_entity_id,account_subject_id,period_year,period_num,opening_balance,this_year_debit_amount,this_year_credit_amount,year_opening_balance)
+    values
+      (#{baSubjectInitAux.accountBookId},#{baSubjectInitAux.accountBookEntityId} ,#{baSubjectInitAux.accountSubjectId},#{baSubjectInitAux.periodYear},#{baSubjectInitAux.periodNum},#{baSubjectInitAux.openingBalance} ,#{baSubjectInitAux.thisYearDebitAmount} ,#{baSubjectInitAux.thisYearCreditAmount} ,#{baSubjectInitAux.yearOpeningBalance}  )
+  </insert>
+  <select id="selectSubjectInitAuxiliaryList" resultMap="BaseResultMap">
+   select <include refid="Base_Column_List"/>
+   from wd_balance_subject_init_auxiliary t
+    <where>
+      <if test="accountBookId != null">
+        t.account_book_id=#{accountBookId}
+      </if>
+      <if test="periodYear != null">
+        and t.period_year=#{periodYear}
+      </if>
+      <if test="periodNum != null">
+        and t.period_num=#{periodNum}
+      </if>
+    </where>
+  </select>
+</mapper>

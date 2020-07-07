@@ -1,0 +1,526 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.ledger.mapper.VoucherEntryMapper">
+    <sql id="Base_Column_List">
+            wve.`id`,
+            wve.`voucher_id`,
+            wve.`row_num`,
+            wve.`abstract_content`,
+            wve.`account_subject_id`,
+            wve.`debit_amount`,
+            wve.`credit_amount`,
+            wve.`original_coin`,
+            wve.`exchange_rate`,
+            wve.`original_debit_amount`,
+            wve.`original_credit_amount`,
+            wve.`cash_flow_type`,
+            wve.`interior_type`
+    </sql>
+    <resultMap id="BaseResultMap" type="com.njwd.entity.ledger.vo.VoucherEntryVo">
+    </resultMap>
+
+    <insert id="insertBatch" useGeneratedKeys="true" keyProperty="editEntryList.id">
+        insert into wd_voucher_entry_%s
+        (
+        voucher_id,
+        row_num,
+        abstract_content,
+        account_subject_id,
+        debit_amount,
+        credit_amount,
+        original_coin,
+        exchange_rate,
+        original_debit_amount,
+        original_credit_amount,
+        cash_flow_type,
+        interior_type
+        )
+        values
+        <foreach collection="editEntryList" item="editEntry" separator="," index="i">
+            (
+            #{voucherId},
+            ifnull(#{editEntry.rowNum},#{i}+1),
+            #{editEntry.abstractContent},
+            #{editEntry.accountSubjectId},
+            #{editEntry.debitAmount},
+            #{editEntry.creditAmount},
+            #{editEntry.originalCoin},
+            #{editEntry.exchangeRate},
+            #{editEntry.originalDebitAmount},
+            #{editEntry.originalCreditAmount},
+            ifnull(#{editEntry.cashFlowType},-1),
+            ifnull(#{editEntry.interiorType},-1)
+            )
+        </foreach>
+    </insert>
+
+
+    <!--过账  批量修改科目余额-->
+    <update id="updateVoucherBalanceForPostPeriod" parameterType="java.util.ArrayList">
+        <foreach collection="balanceList" item="item" open="" close="" separator=";">
+            UPDATE wd_balance_subject s
+            SET s.post_debit_amount = s.post_debit_amount + #{item.debitAmount,jdbcType=DECIMAL},
+            s.post_credit_amount = s.post_credit_amount + #{item.creditAmount,jdbcType=DECIMAL} ,
+            s.post_total_debit_amount = s.post_total_debit_amount + #{item.debitAmount,jdbcType=DECIMAL} ,
+            s.post_total_credit_amount = s.post_total_credit_amount + #{item.creditAmount,jdbcType=DECIMAL}
+            WHERE s.account_book_id = #{item.accountBookId,jdbcType=BIGINT}
+            and s.account_book_entity_id = #{item.accountBookEntityId,jdbcType=BIGINT}
+            and s.period_year_num = #{item.periodYearNum,jdbcType=INTEGER}
+            and s.account_subject_id = #{item.accountSubjectId,jdbcType=BIGINT}
+        </foreach>
+    </update>
+
+
+    <update id="updateBatch">
+        <foreach collection="updateEntryList" item="entry" separator=";">
+            update wd_voucher_entry_%s
+            <set>
+                <if test="entry.rowNum != null">
+                    row_num = #{entry.rowNum},
+                </if>
+                <if test="entry.abstractContent != null">
+                    abstract_content = #{entry.abstractContent},
+                </if>
+                <if test="entry.accountSubjectId != null">
+                    account_subject_id = #{entry.accountSubjectId},
+                </if>
+                <if test="entry.debitAmount != null">
+                    debit_amount = #{entry.debitAmount},
+                </if>
+                <if test="entry.creditAmount != null">
+                    credit_amount = #{entry.creditAmount},
+                </if>
+                <if test="entry.originalCoin != null">
+                    original_coin = #{entry.originalCoin},
+                </if>
+                <if test="entry.exchangeRate != null">
+                    exchange_rate = #{entry.exchangeRate},
+                </if>
+                <if test="entry.originalDebitAmount != null">
+                    original_debit_amount = #{entry.originalDebitAmount},
+                </if>
+                <if test="entry.originalCreditAmount != null">
+                    original_credit_amount = #{entry.originalCreditAmount},
+                </if>
+                <if test="entry.cashFlowType != null">
+                    cash_flow_type = #{entry.cashFlowType},
+                </if>
+                <if test="entry.interiorType != null">
+                    interior_type = #{entry.interiorType},
+                </if>
+            </set>
+            where id=#{entry.id}
+        </foreach>
+    </update>
+
+<!--查询现金流量分录信息-->
+    <select id="findCashFlowItemCashReport" resultType="com.njwd.entity.ledger.vo.VoucherEntryVo">
+        select
+        v.credential_word,
+        v.main_code,
+        v.account_book_entity_name,
+        v.voucher_date,
+        v.period_year_num,
+        null currency_amount,
+        null cash_flow_item_id,
+        ve.id,
+        ve.voucher_id,
+        ve.row_num,
+        ve.abstract_content,
+        ve.account_subject_id,
+        <!--ve.debit_amount,
+        ve.credit_amount,-->
+        case ve.debit_amount when 0 then null else ve.debit_amount END as debitAmount,
+        case ve.credit_amount when 0 then null else ve.credit_amount END as creditAmount,
+        ve.original_coin,
+        ve.exchange_rate,
+        ve.original_debit_amount,
+        ve.original_credit_amount,
+        ve.cash_flow_type,
+        ve.interior_type,
+        v.account_book_id,
+        v.account_book_entity_id,
+        v.posting_status,
+        v.account_book_name
+        from wd_voucher_entry_%s ve
+        inner join wd_voucher_entry_cash_flow_%s vec on ve.id = vec.entry_id
+        left join wd_voucher_%s v on ve.voucher_id = v.id
+        <where>
+            1=1 and v.is_del = 0
+            <!--<if test="queryVoucherEntryDto.timeType == 0">-->
+            <!--如果会计期间不等于Null，则过滤会计区间-->
+            <if test="queryVoucherEntryDto.periodYears != null and queryVoucherEntryDto.periodNumbers != null">
+                <if test="queryVoucherEntryDto.periodOperator  !=null and queryVoucherEntryDto.periodOperator == 1">
+                    and v.period_year_num between ( #{queryVoucherEntryDto.periodYears[0]},
+                    LPAD(#{queryVoucherEntryDto.periodNumbers[0]},2,0))
+                    and concat(
+                    #{queryVoucherEntryDto.periodYears[1]},LPAD(#{queryVoucherEntryDto.periodNumbers[1]},2,0))
+                </if>
+            </if>
+            <!--</if>-->
+            <!--<if test="queryVoucherEntryDto.timeType == 1">
+                &lt;!&ndash;如果制单日期不等于Null，则过滤制单日期&ndash;&gt;
+                <if test="queryVoucherEntryDto.voucherDate != null ">
+                    <if test="queryVoucherEntryDto.voucherDateOperator  !=null and queryVoucherEntryDto.voucherDateOperator == 1">
+                        and v1.voucher_date between #{queryVoucherEntryDto.voucherDate[0]} and #{queryVoucherEntryDto.voucherDate[1]}
+                    </if>
+                </if>
+            </if>-->
+            <!--过滤未过账-->
+            <if test="queryVoucherEntryDto.isIncludeUnbooked == 0">
+                and v.posting_status = 1
+            </if>
+            <!--账簿Id过滤-->
+
+            <if test="queryVoucherEntryDto.accountBookIdOperator != null and queryVoucherEntryDto.accountBookIds != null">
+                <if test="queryVoucherEntryDto.accountBookIdOperator == 0">
+                    and v.account_book_id in (
+                    <foreach collection="queryVoucherEntryDto.accountBookIds" item="item" index="index" separator=",">
+                        #{item}
+                    </foreach>
+                    )
+                </if>
+            </if>
+            <!--核算主体Id过滤-->
+
+            <if test="queryVoucherEntryDto.accountBookEntityIdOperator != null and queryVoucherEntryDto.accountBookEntityIds != null">
+                <if test="queryVoucherEntryDto.accountBookEntityIdOperator == 0">
+                    and v.account_book_entity_id in (
+                    <foreach collection="queryVoucherEntryDto.accountBookEntityIds" item="item" index="index"
+                             separator=",">
+                        #{item}
+                    </foreach>
+                    )
+                </if>
+            </if>
+            <!--现金流量Id过滤-->
+            <if test="queryVoucherEntryDto.cashFlowItemOperator != null and queryVoucherEntryDto.cashFlowItemIds != null and queryVoucherEntryDto.cashFlowItemIds.size()> 0">
+                <if test="queryVoucherEntryDto.cashFlowItemOperator == 0">
+                    and
+                    ve.id in (select vecf.entry_id from wd_voucher_entry_cash_flow_%s vecf
+                    where vecf.cash_flow_item_id in (
+                    <foreach collection="queryVoucherEntryDto.cashFlowItemIds" item="item" index="index" separator=",">
+                        #{item}
+                    </foreach>
+                    ) )
+                </if>
+            </if>
+        </where>
+    </select>
+
+    <!--查询非现金流量分录信息-->
+    <select id="findCashFlowItemUnCashReport" resultType="com.njwd.entity.ledger.vo.VoucherEntryVo">
+        select
+        v.credential_word,
+        v.main_code,
+        v.account_book_entity_name,
+        v.voucher_date,
+        v.period_year_num,
+        vec.currency_amount,
+        vec.cash_flow_item_id,
+        ve.id,
+        ve.voucher_id,
+        ve.row_num,
+        ve.abstract_content,
+        ve.account_subject_id,
+<!--     ve.debit_amount,
+        ve.credit_amount,-->
+        case ve.debit_amount when 0 then null else ve.debit_amount END as debitAmount,
+        case ve.credit_amount when 0 then null else ve.credit_amount END as creditAmount,
+        ve.original_coin,
+        ve.exchange_rate,
+        ve.original_debit_amount,
+        ve.original_credit_amount,
+        ve.cash_flow_type,
+        ve.interior_type,
+        v.account_book_id,
+        v.account_book_entity_id,
+        v.posting_status,
+        v.account_book_name
+        from wd_voucher_entry_%s ve
+        inner join wd_voucher_entry_cash_flow_%s vec on ve.id = vec.opposite_entry_id
+        left join wd_voucher_%s v on ve.voucher_id = v.id
+        <where>
+            1=1  and v.is_del = 0
+            <!--<if test="queryVoucherEntryDto.timeType == 0">-->
+            <!--如果会计期间不等于Null，则过滤会计区间-->
+            <if test="queryVoucherEntryDto.periodYears != null and queryVoucherEntryDto.periodNumbers != null">
+                <if test="queryVoucherEntryDto.periodOperator  !=null and queryVoucherEntryDto.periodOperator == 1">
+                    and v.period_year_num between concat( #{queryVoucherEntryDto.periodYears[0]},
+                    LPAD(#{queryVoucherEntryDto.periodNumbers[0]},2,0))
+                    and concat(
+                    #{queryVoucherEntryDto.periodYears[1]},LPAD(#{queryVoucherEntryDto.periodNumbers[1]},2,0))
+                </if>
+            </if>
+            <!--</if>-->
+            <!--<if test="queryVoucherEntryDto.timeType == 1">
+                &lt;!&ndash;如果制单日期不等于Null，则过滤制单日期&ndash;&gt;
+                <if test="queryVoucherEntryDto.voucherDate != null ">
+                    <if test="queryVoucherEntryDto.voucherDateOperator  !=null and queryVoucherEntryDto.voucherDateOperator == 1">
+                        and v.voucher_date between #{queryVoucherEntryDto.voucherDate[0]} and #{queryVoucherEntryDto.voucherDate[1]}
+                    </if>
+                </if>
+            </if>-->
+            <!--过滤未过账-->
+            <if test="queryVoucherEntryDto.isIncludeUnbooked == 0">
+                and v.posting_status = 1
+            </if>
+            <!--账簿Id过滤-->
+
+            <if test="queryVoucherEntryDto.accountBookIdOperator != null and queryVoucherEntryDto.accountBookIds != null">
+                <if test="queryVoucherEntryDto.accountBookIdOperator == 0">
+                    and v.account_book_id in (
+                    <foreach collection="queryVoucherEntryDto.accountBookIds" item="item" index="index" separator=",">
+                        #{item}
+                    </foreach>
+                    )
+                </if>
+            </if>
+            <!--核算主体Id过滤-->
+
+            <if test="queryVoucherEntryDto.accountBookEntityIdOperator != null and queryVoucherEntryDto.accountBookEntityIds != null">
+                <if test="queryVoucherEntryDto.accountBookEntityIdOperator == 0">
+                    and v.account_book_entity_id in (
+                    <foreach collection="queryVoucherEntryDto.accountBookEntityIds" item="item" index="index"
+                             separator=",">
+                        #{item}
+                    </foreach>
+                    )
+                </if>
+            </if>
+            <!--现金流量Id过滤-->
+            <if test="queryVoucherEntryDto.cashFlowItemOperator != null and queryVoucherEntryDto.cashFlowItemIds != null and queryVoucherEntryDto.cashFlowItemIds.size()> 0">
+                <if test="queryVoucherEntryDto.cashFlowItemOperator == 0">
+                    and vec.cash_flow_item_id in (
+                    <foreach collection="queryVoucherEntryDto.cashFlowItemIds" item="item" index="index"
+                             separator=",">
+                        #{item}
+                    </foreach>
+                    )
+                </if>
+            </if>
+        </where>
+    </select>
+
+    <!--查询现金流量明细-->
+    <select id="findCashFlowItemDetailReport" resultType="com.njwd.entity.ledger.vo.VoucherEntryVo">
+        select
+        vecf.cash_flow_item_id,
+        vecf.voucher_id,
+        vecf.currency_amount,
+        ve.abstract_content,
+        ve.account_subject_id,
+        v.voucher_date,
+        v.posting_status,
+        v.account_book_entity_id,
+        v.account_book_id,
+        v.account_book_name,
+        v.account_book_entity_name,
+        v.credential_word,
+        v.main_code
+        from wd_voucher_entry_cash_flow_%s vecf
+        left join wd_voucher_entry_%s ve on vecf.entry_id = ve.id
+        left join wd_voucher_%s v on vecf.voucher_id = v.id
+        <where>
+            1=1 and v.is_del = 0
+            <!--<if test="queryVoucherEntryDto.timeType == 0">-->
+            <!--如果会计期间不等于Null，则过滤会计区间-->
+            <if test="queryVoucherEntryDto.periodYears != null and queryVoucherEntryDto.periodNumbers != null">
+                <if test="queryVoucherEntryDto.periodOperator  !=null and queryVoucherEntryDto.periodOperator == 1">
+                    and v.period_year_num between concat(#{queryVoucherEntryDto.periodYears[0]},LPAD(#{queryVoucherEntryDto.periodNumbers[0]},2,0))
+                    and concat(#{queryVoucherEntryDto.periodYears[1]},LPAD(#{queryVoucherEntryDto.periodNumbers[1]},2,0))
+                </if>
+            </if>
+            <!--</if>-->
+            <!--<if test="queryVoucherEntryDto.timeType == 1">
+                &lt;!&ndash;如果制单日期不等于Null，则过滤制单日期&ndash;&gt;
+                <if test="queryVoucherEntryDto.voucherDate != null ">
+                    <if test="queryVoucherEntryDto.voucherDateOperator  !=null and queryVoucherEntryDto.voucherDateOperator == 1">
+                        and t.voucher_date between #{queryVoucherEntryDto.voucherDate[0]} and #{queryVoucherEntryDto.voucherDate[1]}
+                    </if>
+                </if>
+            </if>-->
+            <!--过滤未过账-->
+            <if test="queryVoucherEntryDto.isIncludeUnbooked == 0">
+                and v.posting_status = 1
+            </if>
+            <!--账簿Id过滤-->
+
+            <if test="queryVoucherEntryDto.accountBookIdOperator != null and queryVoucherEntryDto.accountBookIds != null">
+                <if test="queryVoucherEntryDto.accountBookIdOperator == 0">
+                    and v.account_book_id in (
+                    <foreach collection="queryVoucherEntryDto.accountBookIds" item="item" index="index" separator=",">
+                        #{item}
+                    </foreach>
+                    )
+                </if>
+            </if>
+            <!--核算主体Id过滤-->
+
+            <if test="queryVoucherEntryDto.accountBookEntityIdOperator != null and queryVoucherEntryDto.accountBookEntityIds != null">
+                <if test="queryVoucherEntryDto.accountBookEntityIdOperator == 0">
+                    and v.account_book_entity_id in (
+                    <foreach collection="queryVoucherEntryDto.accountBookEntityIds" item="item" index="index"
+                             separator=",">
+                        #{item}
+                    </foreach>
+                    )
+                </if>
+            </if>
+
+            <!--现金流量Id过滤-->
+            <if test="queryVoucherEntryDto.cashFlowItemOperator != null and queryVoucherEntryDto.cashFlowItemIds != null and queryVoucherEntryDto.cashFlowItemIds.size()> 0">
+                <if test="queryVoucherEntryDto.cashFlowItemOperator == 0">
+                    and vecf.cash_flow_item_id in (
+                    <foreach collection="queryVoucherEntryDto.cashFlowItemIds" item="item" index="index"
+                             separator=",">
+                        #{item}
+                    </foreach>
+                    )
+                </if>
+            </if>
+        </where>
+    </select>
+
+    <!--过账 批量修改科目余额  暂保留-->
+    <!--    <update id="updateVoucherBalanceForPostPeriod">-->
+    <!--        UPDATE wd_balance_subject s,-->
+    <!--            (-->
+    <!--                SELECT ve.account_subject_id,-->
+    <!--                       sum(ve.debit_amount)  as debit_amount,-->
+    <!--                       sum(ve.credit_amount) AS credit_amount-->
+    <!--                from wd_voucher v-->
+    <!--                         left join-->
+    <!--                     wd_voucher_entry ve-->
+    <!--                     on ve.voucher_id = v.id-->
+    <!--                where v.account_book_id = #{accountBookPeriod.accountBookId}-->
+    <!--                  and v.posting_period_year = #{accountBookPeriod.periodYear}-->
+    <!--                  and v.posting_period_num = #{accountBookPeriod.periodNum}-->
+    <!--                  and v.status = 1-->
+    <!--                GROUP BY ve.account_subject_id-->
+    <!--                ) t1-->
+    <!--        SET s.post_debit_amount       = t1.debit_amount,-->
+    <!--            s.post_credit_amount      = t1.credit_amount,-->
+    <!--            s.post_total_debit_amount = s.post_total_debit_amount + t1.debit_amount,-->
+    <!--            s.post_sy_credit_amount   = s.post_sy_credit_amount + t1.credit_amount-->
+    <!--        WHERE s.account_subject_id = t1.account_subject_id-->
+    <!--    </update>-->
+
+
+    <select id="findBalanceBeforeUpdateForPostPeriod" resultType="com.njwd.entity.ledger.vo.PostPeriodBalanceVo">
+        SELECT v.account_book_id, v.account_book_entity_id, v.period_year_num ,ve.account_subject_id,
+                       sum(ve.debit_amount)  as debit_amount,
+                       sum(ve.credit_amount) AS credit_amount
+                from wd_voucher_%s v
+                left join
+                wd_voucher_entry_%s ve
+                on ve.voucher_id = v.id
+                where v.account_book_id = #{accountBookPeriod.accountBookId,jdbcType=BIGINT}
+                  and v.period_year_num = #{accountBookPeriod.periodYearNum,jdbcType=INTEGER}
+                  and v.status = 1
+                  and v.is_del = 0
+                GROUP BY v.account_book_id, v.account_book_entity_id, v.period_year_num ,ve.account_subject_id
+    </select>
+
+    <select id="findVoucherEntryInteriorInfo" resultType="com.njwd.entity.ledger.vo.VoucherEntryVo">
+        select
+        wvei.entry_id interiorEntryId,
+        wv.credential_word credentialWord,
+        wv.main_code mainCode,
+        wv.child_code childCode,
+        wv.voucher_date voucherDate,
+        wvei.voucher_id oppositeVoucherId,
+        wv.account_book_entity_id accountBookEntityId,
+        wv.account_book_entity_name accountBookEntityName,
+        <include refid="Base_Column_List"/>
+        from
+        wd_voucher_entry_%s wve left join wd_voucher_entry_interior_%s wvei on wvei.interior_voucher_id = wve.voucher_id
+                                          and wvei.interior_entry_id = wve.id
+                                left join wd_voucher_%s wv on wvei.interior_voucher_id = wv.id
+        where wve.voucher_id in
+        <foreach collection="voucherIds" item="voucherId" open="(" close=")" separator=",">
+            #{voucherId}
+        </foreach>
+    </select>
+    <select id="findList" resultType="com.njwd.entity.ledger.dto.VoucherEntryDto">
+        select
+        wv.account_book_entity_id,
+        <include refid="Base_Column_List"/>
+        from wd_voucher_entry_%s wve
+        inner join wd_voucher_%s wv on wv.id = wve.voucher_id
+        where wve.voucher_id in
+        <foreach collection="voucherIds" item="voucherId" open="(" close=")" separator=",">
+            #{voucherId}
+        </foreach>
+    </select>
+    <select id="findListWithVoucher" resultType="com.njwd.entity.ledger.vo.VoucherEntryVo">
+        select
+        <include refid="Base_Column_List"/>,
+        wv.account_book_id accountBookId,
+        wv.account_book_name accountBookName,
+        wv.credential_word credentialWord,
+        wv.main_code mainCode,
+        wv.child_code childCode,
+        wv.voucher_date voucherDate,
+        wv.creator_name creatorName,
+        wv.approver_name approverName,
+        wv.reviewer_name reviewerName,
+        wv.posting_user_name postingUserName,
+        wv.source_type sourceType,
+        wv.source_system sourceSystem,
+        wv.source_code sourceCode,
+        wv.account_book_entity_id accountBookEntityId,
+        wv.account_book_entity_name accountBookEntityName,
+        wabp.account_book_code accountBookCode,
+        wv.period_year_num periodYearNum,
+        wv1.credential_word oppositeCredentialWord,
+        wv1.main_code oppositeMainCode,
+        wv.version,
+        wv.posting_period_num periodNum,
+        wv.posting_period_year periodYear,
+        wv.status status,
+        wv.review_status reviewStatus,
+        wv.is_offset isOffset,
+        wv.cash_check_type cashCheckType
+        from wd_voucher_entry_%s wve
+        left join wd_voucher_%s wv on wve.voucher_id = wv.id
+        left join wd_voucher_%s wv1 on wv.source_code = wv1.id
+        left join 	wd_account_book_period wabp on wv.account_book_id = wabp.account_book_id and wabp.root_enterprise_id = #{voucherDto.rootEnterpriseId} and wabp.system_sign = 'ledger'
+        where
+        1=1
+        <if test="voucherDto.voucherIds !=null and voucherDto.voucherIds.size() != 0">
+            and wve.voucher_id in
+            <foreach collection="voucherDto.voucherIds" item="voucherId" open="(" close=")" separator=",">
+                #{voucherId}
+            </foreach>
+            group by id
+            order by field(voucher_id,<foreach collection="voucherDto.voucherIds" item="voucherId" index="index" separator="," >
+            #{voucherId}
+        </foreach>)
+            ,row_num
+        </if>
+    </select>
+    <select id="findListByRules" resultType="com.njwd.entity.ledger.vo.VoucherEntryVo">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_voucher_entry_%s wve
+        where
+        1=1
+        <if test="voucherDto.subjectIdList !=null and voucherDto.subjectIdList.size() != 0">
+            and wve.account_subject_id in
+            <foreach collection="voucherDto.subjectIdList" item="subjectId" index="index" open="(" separator=","
+                     close=")">
+                #{subjectId}
+            </foreach>
+        </if>
+        <if test="voucherDto.abstractContent !=null ">
+            and wve.abstract_content like concat('%',#{voucherDto.abstractContent},'%')
+        </if>
+        <if test="voucherDto.entryIdList !=null and voucherDto.entryIdList.size() != 0">
+            and wve.id in
+            <foreach collection="voucherDto.entryIdList" item="id" index="index" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        </if>
+    </select>
+</mapper>

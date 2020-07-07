@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.ledger.mapper.ParameterSetSubMapper">
+    <sql id="Base_Column_List">
+      wpss.`id`,
+      wpss.`set_id`,
+      wpss.`account_book_id`,
+      wpss.`account_book_name`,
+      wpss.`value`
+    </sql>
+
+    <resultMap id="BaseResultMap" type="com.njwd.entity.ledger.ParameterSetSub">
+        <result column="id" property="id"/>
+        <result column="set_id" property="setId"/>
+        <result column="account_book_id" property="accountBookId"/>
+        <result column="account_book_name" property="accountBookName"/>
+        <result column="value" property="value"/>
+    </resultMap>
+
+    <!-- 批量新增参数设置子表 -->
+    <insert id="insertParameterSetSubBatch" useGeneratedKeys="true" keyProperty="subId">
+        INSERT INTO wd_parameter_set_sub (
+        set_id,
+        root_enterprise_id,
+        account_book_id,
+        account_book_name,
+        `value`
+        )
+        VALUES
+        <foreach collection ="parameterSetVoList" item="psv" index="index" separator =",">
+            (#{psv.id},
+            #{psv.rootEnterpriseId},
+            #{psv.accountBookId},
+            #{psv.accountBookName},
+            #{psv.value})
+        </foreach>
+    </insert>
+
+    <!-- 批量新增参数设置子表 -->
+    <update id="updateParameterSetSubBatch" parameterType="java.util.List">
+        <foreach collection="parameterSetVoList" item="psv" index="index" separator=";">
+            update wd_parameter_set_sub
+            <set>
+                account_book_name= #{psv.accountBookName},
+                `value` = #{psv.value}
+            </set>
+            <where>
+                and set_id = #{psv.id}
+                and account_book_id = #{psv.accountBookId}
+            </where>
+        </foreach>
+    </update>
+
+</mapper>

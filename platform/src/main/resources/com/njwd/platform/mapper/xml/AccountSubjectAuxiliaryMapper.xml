@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.AccountSubjectAuxiliaryMapper">
+  <sql id="Base_Column_List">
+      wasa.`id`,
+      wasa.`account_subject_id`,
+      wasa.`account_id`,
+      wasa.`auxiliary_id`,
+      wasa.`auxiliary_name`,
+      wasa.`auxiliary_source`,
+      wasa.`auxiliary_dependent`,
+      wasa.`create_time`
+  </sql>
+  <select id="findList" resultType="com.njwd.entity.platform.vo.AccountSubjectAuxiliaryVo">
+      select
+      wai.code auxiliaryCode,
+      wai.source_table auxiliarySourceTable,
+      <include refid="Base_Column_List"/>
+      from wd_account_subject_auxiliary wasa
+      inner join wd_auxiliary_item wai on wai.id = wasa.auxiliary_id
+      where wasa.account_subject_id = #{accSubjectId}
+  </select>
+
+</mapper>

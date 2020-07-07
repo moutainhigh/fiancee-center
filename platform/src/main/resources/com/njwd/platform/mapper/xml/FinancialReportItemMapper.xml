@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.FinancialReportItemMapper">
+  <resultMap id="BaseResultMap" type="com.njwd.entity.platform.vo.FinancialReportItemVo">
+    <!--@mbg.generated-->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="report_type_id" jdbcType="BIGINT" property="reportTypeId" />
+    <result column="code" jdbcType="VARCHAR" property="code" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="is_contain" jdbcType="TINYINT" property="isContain" />
+    <result column="is_add" jdbcType="TINYINT" property="isAdd" />
+    <result column="item_type" jdbcType="TINYINT" property="itemType" />
+    <result column="is_flow" jdbcType="TINYINT" property="isFlow" />
+    <result column="is_enable" jdbcType="TINYINT" property="isEnable" />
+    <result column="is_del" jdbcType="TINYINT" property="isDel" />
+    <result column="is_approved" jdbcType="TINYINT" property="isApproved" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="creator_id" jdbcType="BIGINT" property="creatorId" />
+    <result column="creator_name" jdbcType="VARCHAR" property="creatorName" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="updator_id" jdbcType="BIGINT" property="updatorId" />
+    <result column="updator_name" jdbcType="VARCHAR" property="updatorName" />
+    <result column="version" jdbcType="INTEGER" property="version" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    wfri.id, wfri.report_type_id, wfri.code, wfri.`name`, wfri.is_contain, wfri.is_add, wfri.item_type, wfri.is_flow, wfri.is_enable,wfri.is_del,wfri.is_approved,
+    wfri.create_time, wfri.creator_id, wfri.creator_name, wfri.update_time, wfri.updator_id, wfri.updator_name,wfri.version
+  </sql>
+  <select id="findReportItemListPage" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List"/>,
+    wfrt.name reportTypeName
+    from wd_financial_report_item wfri
+    left join wd_financial_report_type wfrt on wfrt.id=wfri.report_type_id
+    <where>
+      wfri.is_del=0
+      <if test="dto.reportTypeId != null">
+        and wfri.report_type_id=#{dto.reportTypeId}
+      </if>
+      <if test="dto.reportTypeIdList != null and dto.reportTypeIdList.size() != 0">
+        and wfri.report_type_id in
+        <foreach collection="dto.reportTypeIdList" item="id" index="index" open="(" close=")" separator=",">
+          #{id}
+        </foreach>
+      </if>
+      <if test="dto.isApproved != null">
+        and wfri.is_approved=#{dto.isApproved}
+      </if>
+      <if test="dto.codeOrName != null and dto.codeOrName != ''">
+        and (wfri.code like concat('%',#{dto.codeOrName} ,'%') or wfri.name like concat('%',#{dto.codeOrName}
+        ,'%'))
+      </if>
+    </where>
+      order by RPAD( wfri.code, 14, 0 )
+  </select>
+  <select id="findReportItemListStatus" resultMap="BaseResultMap">
+    select wcf.id,
+    wcf.is_del,
+    wcf.is_approved,
+    wcf.version
+    from wd_financial_report_item wcf
+    <where>
+      <if test="changeList != null and changeList.size() != 0">
+        and wcf.id in
+        <foreach collection="changeList" item="item" index="index" open="(" close=")" separator=",">
+          #{item.id}
+        </foreach>
+      </if>
+    </where>
+    order by wcf.id asc
+  </select>
+  <update id="updateCashFlowBatch">
+    update wd_financial_report_item wcf
+    <set>
+      <if test="type != null and type==0">
+        wcf.is_del =1,
+      </if>
+      <if test="type != null and type==1">
+        wcf.is_approved =1,
+      </if>
+      <if test="type != null and type==2">
+        wcf.is_approved =0,
+      </if>
+    </set>
+    where
+    <if test="ids != null and ids.size() != 0">
+      wcf.id in
+      <foreach collection="ids" item="id" index="index" open="(" close=")" separator=",">
+        #{id}
+      </foreach>
+    </if>
+  </update>
+  <select id="findReportItemById" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List"/>
+    from wd_financial_report_item wfri
+    <where>
+      wfri.is_del=0
+      <if test="id != null">
+        and wfri.id=#{id}
+      </if>
+    </where>
+  </select>
+</mapper>

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.SysLogMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.platform.vo.SysLogVo">
+        <!--@mbg.generated-->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="root_enterprise_id" jdbcType="BIGINT" property="rootEnterpriseId"/>
+        <result column="creator_id" jdbcType="BIGINT" property="creatorId"/>
+        <result column="creator_account" jdbcType="VARCHAR" property="creatorAccount"/>
+        <result column="creator_name" jdbcType="VARCHAR" property="creatorName"/>
+        <result column="sys_name" jdbcType="VARCHAR" property="sysName"/>
+        <result column="operate_type" jdbcType="VARCHAR" property="operateType"/>
+        <result column="menu_name" jdbcType="VARCHAR" property="menuName"/>
+        <result column="mobile" jdbcType="VARCHAR" property="mobile"/>
+        <result column="status" jdbcType="TINYINT" property="status"/>
+        <result column="open_url" jdbcType="VARCHAR" property="openUrl"/>
+        <result column="operation" jdbcType="VARCHAR" property="operation"/>
+        <result column="ip_address" jdbcType="VARCHAR" property="ipAddress"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        id, create_time,root_enterprise_id, creator_id, creator_account, creator_name, sys_name,operate_type,
+        menu_name,operation,
+        mobile, `status`, open_url, ip_address
+    </sql>
+
+    <select id="findSysLogPage" resultMap="BaseResultMap">
+        select <include refid="Base_Column_List" />
+        from wd_sys_log
+        <where>
+            <if test="sysLogDto.beginTime!=null and sysLogDto.beginTime!=''">
+                and create_time &gt;= #{sysLogDto.beginTime,jdbcType=VARCHAR}
+            </if>
+            <if test="sysLogDto.endTime!=null and sysLogDto.endTime!=''">
+                and create_time &lt;= #{sysLogDto.endTime,jdbcType=VARCHAR}
+            </if>
+            <if test="sysLogDto.userIds!=null and sysLogDto.userIds.size()>0">
+                and creator_id in
+                <foreach collection="sysLogDto.userIds" item="userId" open="(" close=")" separator=",">
+                    #{userId}
+                </foreach>
+            </if>
+            <if test="sysLogDto.sysNames!=null and sysLogDto.sysNames.size()>0">
+                and sys_name in
+                <foreach collection="sysLogDto.sysNames" item="sysName" open="(" close=")" separator=",">
+                    #{sysName}
+                </foreach>
+            </if>
+            <if test="sysLogDto.menuNames!=null and sysLogDto.menuNames.size()>0">
+                and menu_name in
+                <foreach collection="sysLogDto.menuNames" item="menuName" open="(" close=")" separator=",">
+                    #{menuName}
+                </foreach>
+            </if>
+        </where>
+        order by id desc
+    </select>
+
+
+</mapper>

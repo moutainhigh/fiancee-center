@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.financeback.mapper.CompanyMapper">
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, root_enterprise_id, code, `name`, simple_name, company_form_id, company_form_name,registe_address,
+    establish_date, company_type_id, company_type_name,legal_person, fixed_phone, mobile, credit_code,
+    tax_payer_number, registe_number, bank_name, bank_number, accounting_standard_id,accounting_standard_name,
+    tax_system_id,tax_system_name, accounting_currency_id, accounting_currency_name,tax_qualification_id,tax_qualification_name,
+    is_accounting,has_sub_account, is_del, version, creator_id, creator_name,create_time, updator_id, updator_name, update_time
+  </sql>
+
+  <sql id="FIND_PAGE_WHERE">
+    is_del = 0
+    <if test = "companyDto.companyTypeId != null">
+      AND company_type_id = #{companyDto.companyTypeId}
+    </if>
+    <if test = "companyDto.isAccounting != null">
+      AND is_accounting = #{companyDto.isAccounting}
+    </if>
+    <if test = "companyDto.codeOrName != null and companyDto.codeOrName != ''">
+      AND (code like CONCAT('%',#{companyDto.codeOrName},'%')
+      OR name like CONCAT('%',#{companyDto.codeOrName},'%'))
+    </if>
+    <if test = "companyDto.companyFormId != null">
+      AND company_form_id = #{companyDto.companyFormId}
+    </if>
+    <if test = "companyDto.rootEnterpriseId != null">
+      AND root_enterprise_id = #{companyDto.rootEnterpriseId}
+    </if>
+    <if test = "companyDto.id != null">
+      AND id = #{companyDto.id}
+    </if>
+    <if test = "companyDto.code != null">
+      AND code = #{companyDto.code}
+    </if>
+    <if test = "companyDto.name != null">
+      AND name = #{companyDto.name}
+    </if>
+  </sql>
+
+  <!-- 根据 id/name/code/enterpriseId 查询公司信息 -->
+  <select id="selectByIdOrCodeOrName" parameterType="com.njwd.entity.basedata.dto.CompanyDto"
+          resultType="com.njwd.entity.basedata.vo.CompanyVo">
+    SELECT
+    <include refid="Base_Column_List"/>
+    FROM wd_company
+    WHERE
+        <include refid="FIND_PAGE_WHERE"/>
+  </select>
+
+  <!-- 根据ID List 查询公司列表 （若是User 端，则查询已配置的公司列表）  -->
+  <select id="findPage" parameterType="com.njwd.entity.basedata.dto.CompanyDto"
+          resultType="com.njwd.entity.basedata.vo.CompanyVo">
+    SELECT
+    <include refid="Base_Column_List"/>
+    FROM wd_company
+    <where>
+        <include refid="FIND_PAGE_WHERE"/>
+        <if test="companyDto.userId != null">
+          and id in
+          ( select distinct wsur.company_id from wd_sys_user_role wsur
+          inner join wd_sys_role_menu wsrm on wsrm.role_id = wsur.role_id
+          inner join wd_sys_menu wsm on wsm.menu_id = wsrm.menu_id
+          where wsur.user_id = #{companyDto.userId}
+          and wsm.code = #{companyDto.menuCode}
+          )
+        </if>
+        <if test="companyDto.idList != null and companyDto.idList.size() != 0">
+          and id in
+          <foreach collection="companyDto.idList" item="id" open="(" close=")" separator=",">
+            #{id}
+          </foreach>
+        </if>
+    </where>
+    ORDER BY code
+  </select>
+
+
+
+  <!-- 根据ID List 查询公司列表 （若是User 端，则查询已配置的公司列表） 排除当前公司 -->
+  <select id="findCompanyPageOut" parameterType="com.njwd.entity.basedata.dto.CompanyDto"
+          resultType="com.njwd.entity.basedata.vo.CompanyVo">
+    SELECT
+    <include refid="Base_Column_List"/>
+    FROM wd_company
+    <where>
+      is_del = 0
+      <if test = "companyDto.companyTypeId != null">
+        AND company_type_id = #{companyDto.companyTypeId}
+      </if>
+      <if test = "companyDto.isAccounting != null">
+        AND is_accounting = #{companyDto.isAccounting}
+      </if>
+      <if test = "companyDto.codeOrName != null">
+        AND (code like ('%',#{companyDto.codeOrName},'%')
+        OR name like ('%',#{companyDto.codeOrName},'%'))
+      </if>
+      <if test = "companyDto.companyFormId != null">
+        AND company_form_id = #{companyDto.companyFormId}
+      </if>
+      <if test = "companyDto.rootEnterpriseId != null">
+        AND root_enterprise_id = #{companyDto.rootEnterpriseId}
+      </if>
+      <if test = "companyDto.code != null">
+        AND code = #{companyDto.code}
+      </if>
+      <if test = "companyDto.name != null">
+        AND name = #{companyDto.name}
+      </if>
+      <if test="companyDto.userId != null">
+        and id in
+        ( select distinct wsur.company_id from wd_sys_user_role wsur
+        inner join wd_sys_role_menu wsrm on wsrm.role_id = wsur.role_id
+        inner join wd_sys_menu wsm on wsm.menu_id = wsrm.menu_id
+        where wsur.user_id = #{companyDto.userId}
+        and wsm.code = #{companyDto.menuCode}
+        )
+      </if>
+      <if test="companyDto.id!=null">
+        and id!=#{companyDto.id}
+      </if>
+      <if test="companyDto.idList != null and companyDto.idList.size() != 0">
+        and id in
+        <foreach collection="companyDto.idList" item="id" open="(" close=")" separator=",">
+          #{id}
+        </foreach>
+      </if>
+    </where>
+    ORDER BY code
+  </select>
+
+
+  <!-- 根据ID List 查询公司列表 -->
+  <select id="findPageForConfigure" parameterType="com.njwd.entity.basedata.dto.CompanyDto"
+          resultType="com.njwd.entity.basedata.vo.CompanyVo">
+    SELECT
+    <include refid="Base_Column_List"/>
+    FROM wd_company
+    <where>
+      <include refid="FIND_PAGE_WHERE"/>
+      <if test="companyDto.idList != null and companyDto.idList.size() != 0">
+        and id in
+        <foreach collection="companyDto.idList" item="id" open="(" close=")" separator=",">
+          #{id}
+        </foreach>
+      </if>
+    </where>
+    ORDER BY code
+  </select>
+
+  <select id="findCompanyMap" resultType="com.njwd.entity.basedata.vo.CompanyVo">
+    select distinct wc.id, wc.name, wc.code, wc.has_sub_account
+    from wd_company wc
+               inner join wd_sys_user_role wsur on wsur.company_id = wc.id
+      where wsur.root_enterprise_id = #{rootEnterpriseId}
+        and wc.is_del = 0
+        and wsur.user_id = #{userId}
+  </select>
+
+  <select id="findCompanyByName" resultType="com.njwd.entity.basedata.vo.CompanyVo">
+    select  wc.id,wc.code
+    from wd_company wc
+    where wc.name = #{name} and wc.root_enterprise_id = #{rootEnterpriseId}
+           and wc.is_del = 0
+  </select>
+  <select id="findList" resultType="com.njwd.entity.basedata.vo.CompanyVo">
+    select wc.id, wc.name, wc.code, wc.has_sub_account
+    from wd_company wc
+    where wc.root_enterprise_id = #{rootEnterpriseId} and wc.is_del = 0
+  </select>
+
+  <select id="findCompanyByCode" resultType="com.njwd.entity.basedata.vo.CompanyVo">
+    select c.`id`,c.`code`,c.`name`,c.`root_enterprise_id`,c.`has_sub_account`
+    from wd_company c
+    where c.root_enterprise_id = #{rootEnterpriseId}
+    and c.is_del=0
+    and c.is_enable=1
+    and c.`code` = #{code}
+  </select>
+
+  <insert id="addBatch" useGeneratedKeys="true" keyProperty="id">
+    insert into `wd_company`(
+      `root_enterprise_id`,
+      `code`,
+      `name`,
+      `simple_name`,
+      `company_form_id`,
+      `company_form_name`,
+      `registe_address`,
+      `establish_date`,
+      `company_type_id`,
+      `company_type_name`,
+      `legal_person`,
+      `fixed_phone`,
+      `mobile`,
+      `credit_code`,
+      `tax_payer_number`,
+      `registe_number`,
+      `bank_name`,
+      `bank_number`,
+      `accounting_standard_id`,
+      `accounting_standard_name`,
+      `tax_system_id`,
+      `tax_system_name`,
+      `accounting_currency_id`,
+      `accounting_currency_name`,
+      `tax_qualification_id`,
+      `tax_qualification_name`,
+      `has_sub_account`,
+      `creator_id`,
+      `creator_name`)
+      values
+      <foreach collection="list" item="company" separator="," >
+        (
+          #{company.rootEnterpriseId},
+          #{company.code},
+        #{company.name} ,
+        #{company.simpleName} ,
+        #{company.companyFormId} ,
+        #{company.companyFormName} ,
+        #{company.registeAddress} ,
+        #{company.establishDate} ,
+        #{company.companyTypeId} ,
+        #{company.companyTypeName} ,
+        #{company.legalPerson} ,
+        #{company.fixedPhone} ,
+        #{company.mobile} ,
+        #{company.creditCode} ,
+        #{company.taxPayerNumber} ,
+        #{company.registeNumber} ,
+        #{company.bankName} ,
+        #{company.bankNumber}  ,
+        #{company.accountingStandardId},
+        #{company.accountingStandardName} ,
+        #{company.taxSystemId} ,
+        #{company.taxSystemName} ,
+        #{company.accountingCurrencyId} ,
+        #{company.accountingCurrencyName} ,
+        #{company.taxQualificationId} ,
+        #{company.taxQualificationName} ,
+        #{company.hasSubAccount} ,
+        #{company.creatorId} ,
+        #{company.creatorName}
+        )
+      </foreach>
+
+  </insert>
+    <select id="checkHasSubAccount" resultType="com.njwd.entity.basedata.vo.CompanyVo">
+    select
+        distinct
+        wc.has_sub_account,
+        wc.id,
+        wab.id accountBookId
+    from wd_account_book wab
+    left join wd_company wc on wab.company_id = wc.id
+    where
+          <choose>
+            <when test="accountBookDto.id != null">
+              wab.id = #{accountBookDto.id}
+              limit 1
+            </when>
+            <otherwise>
+              wab.id in
+              <foreach collection="accountBookDto.idSet" item="id" open="(" close=")" separator=",">
+                #{id}
+              </foreach>
+            </otherwise>
+          </choose>
+    </select>
+
+</mapper>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.ledger.mapper.VoucherEntryCashFlowMapper">
+    <sql id="Base_Column_List">
+            wvecf.`id`,
+            wvecf.`voucher_id`,
+            wvecf.`entry_id`,
+            wvecf.`row_num`,
+            wvecf.`opposite_entry_id`,
+            wvecf.`cash_flow_item_id`,
+            wvecf.`currency_amount`
+    </sql>
+    <resultMap id="BaseResultMap" type="com.njwd.entity.ledger.vo.VoucherEntryCashFlowVo">
+    </resultMap>
+    <insert id="insertBatch">
+        insert into wd_voucher_entry_cash_flow_%s
+        (
+        voucher_id,
+        entry_id,
+        row_num,
+        opposite_entry_id,
+        cash_flow_item_id,
+        currency_amount
+        ) VALUES
+        <foreach collection="editCashFlowList" item="editCashFlow" separator="," index="i">
+            (
+            #{voucherId},
+            #{editCashFlow.entry.id},
+            ifnull(#{editCashFlow.rowNum},#{i}),
+            #{editCashFlow.oppositeEntry.id},
+            #{editCashFlow.cashFlowItemId},
+            #{editCashFlow.currencyAmount}
+            )
+        </foreach>
+    </insert>
+    <select id="findList" resultType="com.njwd.entity.ledger.dto.VoucherEntryCashFlowDto">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_voucher_entry_cash_flow_%s wvecf
+        where wvecf.voucher_id in
+        <foreach collection="voucherIds" item="voucherId" open="(" close=")" separator=",">
+            #{voucherId}
+        </foreach>
+    </select>
+
+
+    <select id="findCashFlowItemIdFromVoucher" resultType="com.njwd.entity.ledger.vo.VoucherEntryCashFlowVo">
+    select distinct cash_flow_item_id from wd_voucher_entry_cash_flow_%s
+    </select>
+
+</mapper>

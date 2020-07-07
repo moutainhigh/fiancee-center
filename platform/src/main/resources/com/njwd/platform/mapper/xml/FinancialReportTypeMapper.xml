@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.FinancialReportTypeMapper">
+  <resultMap id="BaseResultMap" type="com.njwd.entity.platform.vo.FinancialReportTypeVo">
+    <!--@mbg.generated generated on Tue Jun 25 09:40:05 CST 2019.-->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="code" jdbcType="VARCHAR" property="code" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="remark" jdbcType="VARCHAR" property="remark" />
+    <result column="is_enable" jdbcType="TINYINT" property="isEnable" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="creator_id" jdbcType="BIGINT" property="creatorId" />
+    <result column="creator_name" jdbcType="VARCHAR" property="creatorName" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="is_approved" jdbcType="TINYINT" property="isApproved" />
+    <result column="updator_id" jdbcType="BIGINT" property="updatorId" />
+    <result column="updator_name" jdbcType="VARCHAR" property="updatorName" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    id, code, `name`, remark, is_enable, create_time, creator_id, creator_name, update_time, 
+    updator_id, updator_name,is_approved
+  </sql>
+    <select id="findFinancialReportTypePage" resultMap="BaseResultMap">
+      select <include refid="Base_Column_List"/>
+      from wd_financial_report_type wfrt
+      <where>
+        wfrt.is_del=0
+        <if test="financialReportTypeDto.isApproved != null">
+          and wfrt.is_approved=#{financialReportTypeDto.isApproved}
+        </if>
+        <if test="financialReportTypeDto.codeOrName != null and financialReportTypeDto.codeOrName != ''">
+          and (wfrt.code like concat('%',#{financialReportTypeDto.codeOrName} ,'%') or wfrt.name like concat('%',#{financialReportTypeDto.codeOrName}
+          ,'%'))
+        </if>
+      </where>
+      order by wfrt.code asc
+    </select>
+</mapper>

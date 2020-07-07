@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.financeback.mapper.AccountingSubjectMapper">
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+     id,  root_enterprise_id,   account_book_type_id, account_book_type_name, acc_standard_id, acc_standard_name, subject_id, subject_name,
+    template_subject_id, template_subject_name, max_level, creator_id,  creator_name, create_time
+  </sql>
+
+  <select id="selectByAccStandardId" parameterType="com.njwd.entity.basedata.AccountingSubject" resultType="com.njwd.entity.basedata.AccountingSubject">
+    select
+    <include refid="Base_Column_List"/>
+    from wd_subject
+    where
+    account_book_type_id = #{accountBookTypeId}
+    and acc_standard_id = #{accStandardId}
+    and root_enterprise_id = #{rootEnterpriseId}
+  </select>
+
+</mapper>

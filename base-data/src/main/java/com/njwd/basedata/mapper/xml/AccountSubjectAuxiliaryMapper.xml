@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.basedata.mapper.AccountSubjectAuxiliaryMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.platform.AccountSubjectAuxiliary">
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        t.id, t.account_subject_id, t.auxiliary_code, t.auxiliary_name, t.auxiliary_source, t.auxiliary_source_table,
+        t.auxiliary_dependent, t.create_time
+    </sql>
+
+    <delete id="delete">
+        DELETE FROM wd_account_subject_auxiliary WHERE account_subject_id IN
+        (SELECT id FROM wd_account_subject WHERE subject_id = #{accountSubjectDto.subjectId})
+    </delete>
+
+    <delete id="deleteByParam">
+        DELETE FROM wd_account_subject_auxiliary
+        WHERE account_subject_id = #{accountSubjectAuxiliary.accountSubjectId}
+    </delete>
+
+    <delete id="updateAccountSubjectId">
+        update wd_account_subject_auxiliary
+        set account_subject_id = #{accountSubjectAuxiliaryDto.childAccountSubjectId}
+        WHERE account_subject_id = #{accountSubjectAuxiliaryDto.accountSubjectId}
+    </delete>
+
+    <select id="findCountByParam" resultType="int">
+        SELECT COUNT(1) FROM wd_account_subject_auxiliary
+        WHERE account_subject_id = #{accountSubjectCurrency.accountSubjectId}
+    </select>
+
+    <select id="findUsedAuxiliaryName" resultMap="BaseResultMap">
+        SELECT GROUP_CONCAT(DISTINCT t.auxiliary_name) auxiliary_name
+        FROM wd_account_subject_auxiliary t
+        LEFT JOIN wd_account_subject f ON f.id = t.account_subject_id
+        WHERE f.subject_id = #{subjectId}
+        AND t.auxiliary_code in(
+        <foreach collection="list" item="item" index="index" separator=",">
+            #{item.code}
+        </foreach>
+        )
+    </select>
+
+    <select id="findListById" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM wd_account_subject_auxiliary t
+        inner join wd_subject_auxiliary m on m.code = t.auxiliary_code
+        inner join wd_account_subject n on n.subject_id = m.subject_id and n.id = t.account_subject_id
+        WHERE 1=1
+        <if test="accountSubjectDto.ids != null">
+            and t.account_subject_id in(
+            <foreach collection="accountSubjectDto.ids" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        <if test="accountSubjectDto.rootEnterpriseId != null">
+            and m.root_enterprise_id = #{accountSubjectDto.rootEnterpriseId}
+        </if>
+    </select>
+
+    <select id="findAuxiliaryGroup" resultType="com.njwd.entity.platform.vo.AccountSubjectAuxiliaryVo">
+        select distinct
+        group_concat( t.auxiliary_code order by t.auxiliary_code) auxiliary_codes,
+        group_concat( t.auxiliary_name order by t.auxiliary_code) auxiliary_names,
+        group_concat( t.auxiliary_source_table order by t.auxiliary_code) auxiliary_source_tables
+        from
+        wd_account_subject_auxiliary t
+        inner join wd_subject_auxiliary m on m.code = t.auxiliary_code
+        left join wd_account_subject f on t.account_subject_id = f.id and m.subject_id = f.subject_id
+        where 1=1
+        <if test="accountSubjectDto.subjectId != null">
+            and f.subject_id = #{accountSubjectDto.subjectId}
+        </if>
+        <if test="accountSubjectDto.rootEnterpriseId != null">
+            and m.root_enterprise_id = #{accountSubjectDto.rootEnterpriseId}
+        </if>
+        <if test="accountSubjectDto.accountCategory != null and accountSubjectDto.accountCategory != ''">
+            and f.account_category = #{accountSubjectDto.accountCategory}
+        </if>
+        group by f.id
+    </select>
+
+    <select id="findAuxiliaryPage" resultType="com.njwd.entity.platform.vo.AccountSubjectAuxiliaryVo">
+        select t.id, t.auxiliary_code, t.auxiliary_name, t.auxiliary_source_table
+        from wd_account_subject_auxiliary t
+        inner join wd_subject_auxiliary m on m.code = t.auxiliary_code
+        where 1=1
+        <if test="accountSubjectAuxiliaryDto.rootEnterpriseId != null">
+            and m.root_enterprise_id = #{accountSubjectAuxiliaryDto.rootEnterpriseId}
+        </if>
+        <if test="accountSubjectAuxiliaryDto.accountSubjectId != null">
+            and t.account_subject_id = #{accountSubjectAuxiliaryDto.accountSubjectId}
+        </if>
+        <if test="accountSubjectAuxiliaryDto.codeOrName != null and accountSubjectAuxiliaryDto.codeOrName != ''">
+            and (t.auxiliary_code like concat('%',#{accountSubjectAuxiliaryDto.codeOrName},'%')
+            or t.auxiliary_name like concat('%',#{accountSubjectAuxiliaryDto.codeOrName},'%'))
+        </if>
+        group by t.id
+    </select>
+
+</mapper>

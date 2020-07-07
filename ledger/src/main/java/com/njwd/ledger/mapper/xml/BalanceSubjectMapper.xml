@@ -1,0 +1,823 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.ledger.mapper.BalanceSubjectMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.ledger.vo.BalanceSubjectVo">
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        id, account_book_id, account_book_entity_id, account_subject_id, period_year, period_num,
+        opening_balance, closing_balance, debit_amount, credit_amount, total_debit_amount,
+        total_credit_amount, post_debit_amount, post_credit_amount, post_total_debit_amount,
+        post_total_credit_amount, sy_debit_amount, sy_credit_amount, sy_total_debit_amount,
+        sy_total_credit_amount, post_sy_debit_amount, post_sy_credit_amount, post_sy_total_debit_amount,
+        post_sy_total_credit_amount
+    </sql>
+
+    <insert id="addSubject">
+        insert into
+        wd_balance_subject(account_book_id,account_book_entity_id,account_subject_id,period_year,period_num,period_year_num,opening_balance,total_debit_amount,total_credit_amount,post_total_debit_amount,post_total_credit_amount)
+        values
+        (#{balanceSubjectInit.accountBookId},#{balanceSubjectInit.accountBookEntityId} ,#{balanceSubjectInit.accountSubjectId},#{balanceSubjectInit.periodYear}
+        ,#{balanceSubjectInit.periodNum},(#{balanceSubjectInit.periodYear},LPAD(#{balanceSubjectInit.periodNum},2,0)),#{balanceSubjectInit.openingBalance},#{balanceSubjectInit.thisYearDebitAmount} ,#{balanceSubjectInit.thisYearCreditAmount}
+        ,#{balanceSubjectInit.thisYearDebitAmount} ,#{balanceSubjectInit.thisYearCreditAmount} )
+    </insert>
+
+    <insert id="addSubjectOne">
+        insert into
+        wd_balance_subject(account_book_id,account_book_entity_id,account_subject_id,period_year,period_num,period_year_num,opening_balance,total_debit_amount,total_credit_amount,post_total_debit_amount,post_total_credit_amount)
+        values
+        <if test="balanceSubjectInit.periodNum !=1">
+            (#{balanceSubjectInit.accountBookId},#{balanceSubjectInit.accountBookEntityId}
+            ,#{balanceSubjectInit.accountSubjectId},#{balanceSubjectInit.periodYear}
+            ,1,concat(#{balanceSubjectInit.periodYear},LPAD(1,2,0))
+            ,#{balanceSubjectInit.yearOpeningBalance} ,0.00,0.00,0.00,0.00)
+        </if>
+        <if test="balanceSubjectInit.periodNum ==1">
+            (#{balanceSubjectInit.accountBookId},#{balanceSubjectInit.accountBookEntityId}
+            ,#{balanceSubjectInit.accountSubjectId},#{balanceSubjectInit.periodYear}
+            ,#{balanceSubjectInit.periodNum}
+            ,concat(#{balanceSubjectInit.periodYear},LPAD(#{balanceSubjectInit.periodNum},2,0)),#{balanceSubjectInit.openingBalance},0.00,0.00,0.00,0.00)
+        </if>
+    </insert>
+
+    <insert id="addSubjectZero">
+        insert into
+        wd_balance_subject(account_book_id,account_book_entity_id,account_subject_id,period_year,period_num,period_year_num,opening_balance,closing_balance,debit_amount,credit_amount,total_debit_amount,total_credit_amount,post_total_debit_amount,post_total_credit_amount,post_debit_amount,post_credit_amount)
+        values
+        <if test="balanceSubjectInit.periodNum !=1">
+            (#{balanceSubjectInit.accountBookId},#{balanceSubjectInit.accountBookEntityId}
+            ,#{balanceSubjectInit.accountSubjectId},#{balanceSubjectInit.periodYear}
+            ,0,concat(#{balanceSubjectInit.periodYear},LPAD(0,2,0))
+            ,#{balanceSubjectInit.yearOpeningBalance},#{balanceSubjectInit.openingBalance},#{balanceSubjectInit.thisYearDebitAmount},#{balanceSubjectInit.thisYearCreditAmount}
+            ,#{balanceSubjectInit.thisYearDebitAmount},#{balanceSubjectInit.thisYearCreditAmount},#{balanceSubjectInit.thisYearDebitAmount},#{balanceSubjectInit.thisYearCreditAmount},#{balanceSubjectInit.thisYearDebitAmount},#{balanceSubjectInit.thisYearCreditAmount})
+        </if>
+        <if test="balanceSubjectInit.periodNum ==1">
+            (#{balanceSubjectInit.accountBookId},#{balanceSubjectInit.accountBookEntityId}
+            ,#{balanceSubjectInit.accountSubjectId},#{balanceSubjectInit.periodYear}
+            ,0
+            ,concat(#{balanceSubjectInit.periodYear},LPAD(0,2,0)),#{balanceSubjectInit.openingBalance},#{balanceSubjectInit.openingBalance},0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00)
+        </if>
+    </insert>
+
+    <update id="updateBatch">
+        <foreach collection="balanceSubjects" item="balanceSubject" separator=";">
+            update wd_balance_subject wbs
+            <set>
+                <if test="balanceSubject.debitAmount != null">
+                    wbs.debit_amount = wbs.debit_amount
+                    <choose>
+                        <when test="updateType == 1">+</when>
+                        <otherwise>-</otherwise>
+                    </choose>
+                    #{balanceSubject.debitAmount},
+                    wbs.total_debit_amount = wbs.total_debit_amount
+                    <choose>
+                        <when test="updateType == 1">+</when>
+                        <otherwise>-</otherwise>
+                    </choose>
+                    #{balanceSubject.debitAmount},
+                </if>
+                <if test="balanceSubject.creditAmount != null">
+                    wbs.credit_amount = wbs.credit_amount
+                    <choose>
+                        <when test="updateType == 1">+</when>
+                        <otherwise>-</otherwise>
+                    </choose>
+                    #{balanceSubject.creditAmount},
+                    wbs.total_credit_amount = wbs.total_credit_amount
+                    <choose>
+                        <when test="updateType == 1">+</when>
+                        <otherwise>-</otherwise>
+                    </choose>
+                    #{balanceSubject.creditAmount},
+                </if>
+            </set>
+            where
+            wbs.account_book_id = #{voucherDto.accountBookId}
+            and wbs.account_book_entity_id = #{voucherDto.accountBookEntityId}
+            and wbs.period_year = #{voucherDto.postingPeriodYear}
+            and wbs.period_num = #{voucherDto.postingPeriodNum}
+            and wbs.account_subject_id = #{balanceSubject.subjectId}
+        </foreach>
+    </update>
+
+    <update id="updateSubjectOne">
+        update wd_balance_subject wbs
+        <set>
+            <if test="balanceSubjectInit.periodNum !=1">
+                wbs.opening_balance = wbs.opening_balance + #{balanceSubjectInit.yearOpeningBalance} ,
+            </if>
+            <if test="balanceSubjectInit.periodNum ==1">
+                wbs.opening_balance = wbs.opening_balance + #{balanceSubjectInit.openingBalance} ,
+            </if>
+        </set>
+        where
+        wbs.account_book_id = #{balanceSubjectInit.accountBookId}
+        and wbs.account_book_entity_id = #{balanceSubjectInit.accountBookEntityId}
+        and wbs.period_year = #{balanceSubjectInit.periodYear}
+        and wbs.period_num = 1
+        and wbs.account_subject_id = #{balanceSubjectInit.accountSubjectId}
+    </update>
+
+    <update id="updateSubjectAdd">
+        update wd_balance_subject wbs
+        <set>
+            wbs.opening_balance = wbs.opening_balance + #{balanceSubjectInit.openingBalance} ,
+            wbs.total_debit_amount = wbs.total_debit_amount + #{balanceSubjectInit.thisYearDebitAmount} ,
+            wbs.total_credit_amount = wbs.total_credit_amount + #{balanceSubjectInit.thisYearCreditAmount} ,
+            wbs.post_total_debit_amount = wbs.post_total_debit_amount + #{balanceSubjectInit.thisYearDebitAmount} ,
+            wbs.post_total_credit_amount = wbs.post_total_credit_amount + #{balanceSubjectInit.thisYearCreditAmount}
+        </set>
+        where
+        wbs.account_book_id = #{balanceSubjectInit.accountBookId}
+        and wbs.account_book_entity_id = #{balanceSubjectInit.accountBookEntityId}
+        and wbs.period_year = #{balanceSubjectInit.periodYear}
+        and wbs.period_num = #{balanceSubjectInit.periodNum}
+        and wbs.account_subject_id = #{balanceSubjectInit.accountSubjectId}
+    </update>
+
+    <update id="updateSubjectDel">
+        update wd_balance_subject wbs
+        <set>
+            wbs.opening_balance = wbs.opening_balance - #{balanceSubjectInit.openingBalance} ,
+            wbs.total_debit_amount = wbs.total_debit_amount - #{balanceSubjectInit.thisYearDebitAmount} ,
+            wbs.total_credit_amount = wbs.total_credit_amount - #{balanceSubjectInit.thisYearCreditAmount} ,
+            wbs.post_total_debit_amount = wbs.post_total_debit_amount - #{balanceSubjectInit.thisYearDebitAmount} ,
+            wbs.post_total_credit_amount = wbs.post_total_credit_amount - #{balanceSubjectInit.thisYearCreditAmount}
+        </set>
+        where
+        wbs.account_book_id = #{balanceSubjectInit.accountBookId}
+        and wbs.account_book_entity_id = #{balanceSubjectInit.accountBookEntityId}
+        and wbs.period_year = #{balanceSubjectInit.periodYear}
+        and wbs.period_num = #{balanceSubjectInit.periodNum}
+        and wbs.account_subject_id = #{balanceSubjectInit.accountSubjectId}
+    </update>
+
+    <update id="updateSubjectDelOne">
+        update wd_balance_subject wbs
+        <set>
+            <if test="balanceSubjectInit.periodNum !=1">
+                wbs.opening_balance = wbs.opening_balance - #{balanceSubjectInit.yearOpeningBalance} ,
+            </if>
+            <if test="balanceSubjectInit.periodNum ==1">
+                wbs.opening_balance = wbs.opening_balance - #{balanceSubjectInit.openingBalance} ,
+            </if>
+        </set>
+        where
+        wbs.account_book_id = #{balanceSubjectInit.accountBookId}
+        and wbs.account_book_entity_id = #{balanceSubjectInit.accountBookEntityId}
+        and wbs.period_year = #{balanceSubjectInit.periodYear}
+        and wbs.period_num = 1
+        and wbs.account_subject_id = #{balanceSubjectInit.accountSubjectId}
+    </update>
+
+    <select id="findListByParam" resultMap="BaseResultMap">
+        select
+        f.account_book_id,
+        f.account_book_entity_id,
+        f.account_subject_id,
+        f.period_year,
+        sum( ifnull(m.debit_amount,0) ) debit_amount,
+        sum( ifnull(m.credit_amount,0) ) credit_amount,
+        sum( ifnull(n.debit_amount,0) ) total_debit_amount,
+        sum( ifnull(n.credit_amount,0) ) total_credit_amount,
+        sum( ifnull(m.post_debit_amount,0) ) post_debit_amount,
+        sum( ifnull(m.post_credit_amount,0) ) post_credit_amount,
+        sum( ifnull(n.post_debit_amount,0) ) post_total_debit_amount,
+        sum( ifnull(n.post_credit_amount,0) ) post_total_credit_amount,
+        sum( ifnull(m.sy_debit_amount,0) ) sy_debit_amount,
+        sum( ifnull(m.sy_credit_amount,0) ) sy_credit_amount,
+        sum( ifnull(n.sy_debit_amount,0) ) sy_total_debit_amount,
+        sum( ifnull(n.sy_credit_amount,0) ) sy_total_credit_amount,
+        sum( ifnull(m.post_sy_debit_amount,0) ) post_sy_debit_amount,
+        sum( ifnull(m.post_sy_credit_amount,0) ) post_sy_credit_amount,
+        sum( ifnull(n.post_sy_debit_amount,0) ) post_sy_total_debit_amount,
+        sum( ifnull(n.post_sy_credit_amount,0) ) post_sy_total_credit_amount
+        from wd_balance_subject f
+        LEFT JOIN wd_balance_subject m ON m.id = f.id
+        <if test="balanceSubjectQueryDto.periodYears != null and balanceSubjectQueryDto.periodYears.size() > 0
+        and balanceSubjectQueryDto.periodNumbers != null and balanceSubjectQueryDto.periodNumbers.size() > 0">
+            <if test="balanceSubjectQueryDto.periodOperator != null and balanceSubjectQueryDto.periodOperator == 1">
+                and m.period_year_num
+                between
+                concat(#{balanceSubjectQueryDto.periodYears[0]}, LPAD(#{balanceSubjectQueryDto.periodNumbers[0]},2,0))
+                and
+                concat(#{balanceSubjectQueryDto.periodYears[1]}, LPAD(#{balanceSubjectQueryDto.periodNumbers[1]},2,0))
+            </if>
+        </if>
+        LEFT JOIN wd_balance_subject n ON n.id = f.id
+        <if test="balanceSubjectQueryDto.periodYears != null and balanceSubjectQueryDto.periodYears.size() > 0
+        and balanceSubjectQueryDto.periodNumbers != null and balanceSubjectQueryDto.periodNumbers.size() > 0">
+            <if test="balanceSubjectQueryDto.periodOperator != null and balanceSubjectQueryDto.periodOperator == 1">
+                and n.period_year_num
+                between
+                concat(#{balanceSubjectQueryDto.periodYears[0]},'00')
+                and
+                concat(#{balanceSubjectQueryDto.periodYears[1]}, LPAD(#{balanceSubjectQueryDto.periodNumbers[1]},2,0))
+            </if>
+        </if>
+        where 1 = 1
+        <if test="balanceSubjectQueryDto.accountBookEntityIdOperator != null and balanceSubjectQueryDto.accountBookEntityList != null
+        and balanceSubjectQueryDto.accountBookEntityList.size() > 0">
+            <if test="balanceSubjectQueryDto.accountBookEntityIdOperator == 0">
+                and f.account_book_entity_id in (
+                <foreach collection="balanceSubjectQueryDto.accountBookEntityList" item="item" index="index"
+                         separator=",">
+                    #{item.id}
+                </foreach>
+                )
+            </if>
+        </if>
+        <if test="balanceSubjectQueryDto.periodYears != null and balanceSubjectQueryDto.periodYears.size() > 0">
+            <if test="balanceSubjectQueryDto.periodOperator != null and balanceSubjectQueryDto.periodOperator == 1">
+                and f.period_year between #{balanceSubjectQueryDto.periodYears[0]} and
+                #{balanceSubjectQueryDto.periodYears[1]}
+            </if>
+        </if>
+        group by f.account_book_id,f.account_book_entity_id,f.account_subject_id,f.period_year
+    </select>
+
+    <select id="findCollectListByParam" resultMap="BaseResultMap">
+        select
+        f.account_book_id,
+        f.account_book_entity_id,
+        f.account_subject_id,
+        sum( ifnull(f.debit_amount,0) ) debit_amount,
+        sum( ifnull(f.credit_amount,0) ) credit_amount,
+        sum( ifnull(f.post_debit_amount,0) ) post_debit_amount,
+        sum( ifnull(f.post_credit_amount,0) ) post_credit_amount,
+        sum( ifnull(f.sy_debit_amount,0) ) sy_debit_amount,
+        sum( ifnull(f.sy_credit_amount,0) ) sy_credit_amount,
+        sum( ifnull(f.post_sy_debit_amount,0) ) post_sy_debit_amount,
+        sum( ifnull(f.post_sy_credit_amount,0) ) post_sy_credit_amount
+        from wd_balance_subject f
+        where 1 = 1
+        <if test="balanceSubjectQueryDto.accountBookEntityIdOperator != null and balanceSubjectQueryDto.accountBookEntityList != null
+        and balanceSubjectQueryDto.accountBookEntityList.size() > 0">
+            <if test="balanceSubjectQueryDto.accountBookEntityIdOperator == 0">
+                and f.account_book_entity_id in (
+                <foreach collection="balanceSubjectQueryDto.accountBookEntityList" item="item" index="index"
+                         separator=",">
+                    #{item.id}
+                </foreach>
+                )
+            </if>
+        </if>
+        <if test="balanceSubjectQueryDto.periodYears != null and balanceSubjectQueryDto.periodYears.size() > 0
+        and balanceSubjectQueryDto.periodNumbers != null and balanceSubjectQueryDto.periodNumbers.size() > 0">
+            <if test="balanceSubjectQueryDto.periodOperator != null and balanceSubjectQueryDto.periodOperator == 1">
+                and f.period_year_num
+                between
+                concat(#{balanceSubjectQueryDto.periodYears[0]}, LPAD(#{balanceSubjectQueryDto.periodNumbers[0]},2,0))
+                and
+                concat(#{balanceSubjectQueryDto.periodYears[1]}, LPAD(#{balanceSubjectQueryDto.periodNumbers[1]},2,0))
+            </if>
+        </if>
+        group by f.account_book_id,f.account_book_entity_id,f.account_subject_id
+    </select>
+
+    <select id="findVoucherListByParam" resultMap="BaseResultMap">
+        select
+        t.account_book_id,
+        t.account_book_entity_id,
+        f.account_subject_id,
+        sum(ifnull( f.debit_amount, 0 )) debit_amount,
+        sum(ifnull( f.credit_amount, 0 )) credit_amount,
+        sum(ifnull( p.debit_amount, 0 )) post_debit_amount,
+        sum(ifnull( p.credit_amount, 0 )) post_credit_amount,
+        sum(ifnull( s.debit_amount, 0 )) sy_debit_amount,
+        sum(ifnull( s.credit_amount, 0 )) sy_credit_amount,
+        sum(ifnull( ps.debit_amount, 0 )) post_sy_debit_amount,
+        sum(ifnull( ps.credit_amount, 0 )) post_sy_credit_amount
+        from
+        wd_voucher_${balanceSubjectQueryDto.rootEnterpriseId} t
+        left join wd_voucher_entry_${balanceSubjectQueryDto.rootEnterpriseId} f on t.id = f.voucher_id
+        left join wd_voucher_entry_${balanceSubjectQueryDto.rootEnterpriseId} p on p.id = f.id
+        and t.posting_status = 1
+        left join wd_voucher_entry_${balanceSubjectQueryDto.rootEnterpriseId} s on s.id = f.id
+        and t.source_type = 2
+        left join wd_voucher_entry_${balanceSubjectQueryDto.rootEnterpriseId} ps on ps.id = f.id
+        and t.posting_status = 1
+        and t.source_type = 2
+        where t.is_del = 0
+        <if test="balanceSubjectQueryDto.accountBookEntityIdOperator != null and balanceSubjectQueryDto.accountBookEntityList != null
+        and balanceSubjectQueryDto.accountBookEntityList.size() > 0">
+            <if test="balanceSubjectQueryDto.accountBookEntityIdOperator == 0">
+                and t.account_book_entity_id in (
+                <foreach collection="balanceSubjectQueryDto.accountBookEntityList" item="item" index="index"
+                         separator=",">
+                    #{item.id}
+                </foreach>
+                )
+            </if>
+        </if>
+        <if test="balanceSubjectQueryDto.voucherDates != null and balanceSubjectQueryDto.voucherDates.size() > 0">
+            <if test="balanceSubjectQueryDto.voucherDateOperator != null and balanceSubjectQueryDto.voucherDateOperator == 1">
+                and voucher_date between #{balanceSubjectQueryDto.voucherDates[0]} and
+                #{balanceSubjectQueryDto.voucherDates[1]}
+            </if>
+        </if>
+        group by
+        t.account_book_id,
+        t.account_book_entity_id,
+        f.account_subject_id
+    </select>
+
+    <select id="findVoucherNumberByParam" resultType="string">
+        SELECT
+        GROUP_CONCAT(concat( CASE t.credential_word WHEN 1 THEN '记' WHEN 2 THEN '收' WHEN 3 THEN '付' WHEN 4 THEN '转' END,
+        t.main_code, '-', t.child_code )) voucherNumber
+        FROM
+        wd_voucher_${balanceSubjectQueryDto.rootEnterpriseId} t
+        WHERE t.is_del = 0
+        <if test="balanceSubjectQueryDto.accountBookEntityIdOperator != null and balanceSubjectQueryDto.accountBookEntityIds != null
+        and balanceSubjectQueryDto.accountBookEntityIds.size() > 0">
+            <if test="balanceSubjectQueryDto.accountBookEntityIdOperator == 0">
+                and t.account_book_entity_id in (
+                <foreach collection="balanceSubjectQueryDto.accountBookEntityIds" item="item" index="index"
+                         separator=",">
+                    #{item}
+                </foreach>
+                )
+            </if>
+        </if>
+        <if test="balanceSubjectQueryDto.voucherDates != null and balanceSubjectQueryDto.voucherDates.size() > 0">
+            <if test="balanceSubjectQueryDto.voucherDateOperator != null and balanceSubjectQueryDto.voucherDateOperator == 1">
+                and t.voucher_date between #{balanceSubjectQueryDto.voucherDates[0]} and
+                #{balanceSubjectQueryDto.voucherDates[1]}
+            </if>
+        </if>
+        <if test="balanceSubjectQueryDto.periodYears != null and balanceSubjectQueryDto.periodYears.size() > 0
+        and balanceSubjectQueryDto.periodNumbers != null and balanceSubjectQueryDto.periodNumbers.size() > 0">
+            <if test="balanceSubjectQueryDto.periodOperator != null and balanceSubjectQueryDto.periodOperator == 1">
+                and t.period_year_num
+                between
+                concat(#{balanceSubjectQueryDto.periodYears[0]}, LPAD(#{balanceSubjectQueryDto.periodNumbers[0]},2,0))
+                and
+                concat(#{balanceSubjectQueryDto.periodYears[1]}, LPAD(#{balanceSubjectQueryDto.periodNumbers[1]},2,0))
+            </if>
+        </if>
+    </select>
+
+    <!-- 根据账簿ID/核算主体ID 查询科目余额信息 -->
+    <select id="findListByAccountBookIdAndEntityId" parameterType="com.njwd.entity.ledger.dto.BalanceSubjectQueryDto"
+            resultType="com.njwd.entity.ledger.vo.BalanceSubjectVo">
+        select
+        account_subject_id,
+        sum( ifnull(opening_balance,0) ) openingBalance,
+        sum( ifnull(closing_balance,0) ) closingBalance,
+        sum( ifnull(debit_amount,0) ) debitAmount,
+        sum( ifnull(credit_amount,0) ) creditAmount,
+        sum( ifnull(post_debit_amount,0) ) postDebitAmount,
+        sum( ifnull(post_credit_amount,0) ) postCreditAmount
+        from wd_balance_subject
+        where
+        account_book_id = #{accountBookId}
+        <if test="periodYear != null">
+            and period_year = #{periodYear}
+        </if>
+        <if test="periodNum != null">
+            and period_num = #{periodNum}
+        </if>
+        <if test="accountBookEntityId != null">
+            and account_book_entity_id = #{accountBookEntityId}
+        </if>
+        group by
+        account_subject_id
+    </select>
+
+    <!-- 根据账簿id/核算主体id/期间 查询科目发生额累计 -->
+    <select id="getAccumulateBalanceByPeriodNum" parameterType="com.njwd.entity.ledger.dto.BalanceSubjectQueryDto"
+            resultType="com.njwd.entity.ledger.vo.BalanceSubjectVo">
+        select
+        account_subject_id,
+        sum( ifnull(debit_amount,0)) debitAmount,
+        sum( ifnull(credit_amount,0)) creditAmount,
+        sum( ifnull(debit_amount,0)) totalDebitAmount,
+        sum( ifnull(credit_amount,0)) totalCreditAmount,
+        sum( ifnull(post_debit_amount,0)) postDebitAmount,
+        sum( ifnull(post_credit_amount,0)) postCreditAmount,
+        sum( ifnull(post_debit_amount,0)) postTotalDebitAmount,
+        sum( ifnull(post_credit_amount,0)) postTotalCreditAmount,
+        sum( ifnull(sy_debit_amount,0)) syTotalDebitAmount,
+        sum( ifnull(sy_credit_amount,0)) syTotalCreditAmount,
+        sum( ifnull(post_sy_debit_amount,0)) postSyTotalDebitAmount,
+        sum( ifnull(post_sy_credit_amount,0)) postSyTotalCreditAmount
+        from wd_balance_subject
+        where
+        account_book_id = #{accountBookId}
+        and period_year_num between concat(#{lastPeriodYear}, LPAD(#{lastPeriodNum},2,0)) and
+        concat(#{periodYear}, LPAD(#{periodNum},2,0))
+        <if test="accountBookEntityId != null">
+            and account_book_entity_id = #{accountBookEntityId}
+        </if>
+        group by account_subject_id
+
+    </select>
+
+    <select id="selectBalanceSubjectInfoByAccount" parameterType="com.njwd.entity.ledger.dto.BalanceSubjectQueryDto"
+            resultType="com.njwd.entity.ledger.vo.BalanceSubjectVo">
+        select
+        account_subject_id,
+        sum(debit_amount) debit_amount,
+        sum(credit_amount) credit_amount,
+        sum(debit_amount) total_debit_amount,
+        sum(credit_amount) total_credit_amount,
+        sum(post_debit_amount) post_debit_amount,
+        sum(post_credit_amount) post_credit_amount,
+        sum(post_debit_amount) post_total_debit_amount,
+        sum(post_credit_amount) post_total_credit_amount,
+        sum(sy_debit_amount) sy_debit_amount,
+        sum(sy_credit_amount) sy_credit_amount,
+        sum(sy_debit_amount) sy_total_debit_amount,
+        sum(sy_credit_amount) sy_total_credit_amount,
+        sum(post_sy_debit_amount) post_sy_debit_amount,
+        sum(post_sy_credit_amount) post_sy_credit_amount,
+        sum(post_sy_debit_amount) post_sy_total_debit_amount,
+        sum(post_sy_credit_amount) post_sy_total_credit_amount
+        from
+        wd_balance_subject
+        where
+        account_book_id = #{accountBookId}
+        and period_year_num between concat(
+        #{periodYear}, LPAD(#{lastPeriodNum},2,0)) and
+        concat(#{periodYear}, LPAD(#{periodNum},2,0))
+        <if test="accountBookEntityId != null">
+            and account_book_entity_id = #{accountBookEntityId}
+        </if>
+        group by account_subject_id
+    </select>
+
+    <select id="findInfoByPeriod" resultMap="BaseResultMap">
+        select account_book_entity_id,account_subject_id,period_year,period_num,opening_balance, closing_balance
+        from wd_balance_subject
+        where concat(account_book_entity_id,account_subject_id,period_year,period_num) in(
+        <foreach collection="list" item="item" index="index"
+                 separator=",">
+            concat(#{item.accountBookEntityId},#{item.accountSubjectId},#{item.periodYear},#{item.periodNum})
+        </foreach>
+        )
+    </select>
+
+    <select id="findInfoByPeriods" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_balance_subject
+        where account_book_entity_id = #{balanceSubjectQueryDto.accountBookEntityId}
+        and account_subject_id = #{balanceSubjectQueryDto.accountSubjectId}
+        <if test="balanceSubjectQueryDto.periodYears != null and balanceSubjectQueryDto.periodYears.size() > 0
+        and balanceSubjectQueryDto.periodNumbers != null and balanceSubjectQueryDto.periodNumbers.size() > 0">
+            and period_year_num &gt;
+            concat(#{balanceSubjectQueryDto.periodYears[0]}, LPAD(#{balanceSubjectQueryDto.periodNumbers[0]},2,0))
+            and period_year_num &lt;=
+            concat(#{balanceSubjectQueryDto.periodYears[1]}, LPAD(#{balanceSubjectQueryDto.periodNumbers[1]},2,0))
+        </if>
+        order by period_year_num
+    </select>
+
+    <select id="findStartPeriodBalance" resultMap="BaseResultMap">
+        select f.account_book_id,f.account_book_entity_id,f.account_subject_id,
+        f.period_year_num,f.opening_balance,f.closing_balance
+        from wd_balance_subject f
+        where 1=1
+        <if test="list != null and list.size() != 0">
+            and concat(account_book_entity_id,account_subject_id,period_year_num) in(
+            <foreach collection="list" item="item" index="index"
+                     separator=",">
+                concat(#{item.accountBookEntityId},#{item.accountSubjectId},#{item.startPeriod})
+            </foreach>
+            )
+        </if>
+    </select>
+
+    <!-- 查询当前账簿下每个核算主体的第一期数据 -->
+    <select id="findFirstBalanceSubjectByParams" resultType="com.njwd.entity.ledger.vo.BalanceSubjectVo">
+        SELECT
+        t1.id id,
+        t1.account_book_id accountBookId,
+        t1.account_book_entity_id accountBookEntityId,
+        t1.period_year periodYear,
+        t1.period_num periodNum,
+        t1.period_year_num periodYearNum,
+        t1.opening_balance openingBalance,
+        t1.closing_balance closingBalance,
+        t1.debit_amount debitAmount,
+        t1.credit_amount creditAmount,
+        t1.post_debit_amount postDebitAmount,
+        t1.post_credit_amount postCreditAmount,
+        t1.sy_debit_amount syDebitAmount,
+        t1.sy_credit_amount syCreditAmount,
+        t1.post_sy_debit_amount postSyDebitAmount,
+        t1.post_sy_credit_amount postSyCreditAmount
+        FROM
+        wd_balance_subject t1
+        <where>
+            <if test="dto.accountBookId != null">
+                AND t1.account_book_id = #{dto.accountBookId}
+            </if>
+            <if test="dto.accountBookEntityId != null">
+                AND t1.account_book_entity_id = #{dto.accountBookEntityId}
+            </if>
+        </where>
+        ORDER BY
+        t1.period_year_num DESC
+        LIMIT 1
+    </select>
+
+    <!-- 查询最后一次结账的科目余额信息 -->
+    <select id="findLastPostingBalanceSubjectInfo" resultType="com.njwd.entity.ledger.vo.BalanceSubjectVo">
+        SELECT
+        t1.id id,
+        t1.account_subject_id accountSubjectId,
+        t1.account_book_id accountBookId,
+        t1.account_book_entity_id accountBookEntityId,
+        t1.period_year periodYear,
+        t1.period_num periodNum,
+        t1.period_year_num periodYearNum,
+        IFNULL(t1.opening_balance,0) openingBalance,
+        t1.closing_balance closingBalance,
+        t1.debit_amount debitAmount,
+        t1.credit_amount creditAmount,
+        t1.post_debit_amount postDebitAmount,
+        t1.post_credit_amount postCreditAmount,
+        t1.sy_debit_amount syDebitAmount,
+        t1.sy_credit_amount syCreditAmount,
+        t1.post_sy_debit_amount postSyDebitAmount,
+        t1.post_sy_credit_amount postSyCreditAmount
+        FROM
+        wd_balance_subject t1
+        <where>
+            <if test="dto.accountBookId != null">
+                AND t1.account_book_id = #{dto.accountBookId}
+            </if>
+            <if test="dto.accountBookEntityId != null">
+                AND t1.account_book_entity_id = #{dto.accountBookEntityId}
+            </if>
+            <if test="dto.accountBookEntityIdList != null and dto.accountBookEntityIdList.size() > 0">
+                AND t1.account_book_entity_id IN
+                <foreach collection="dto.accountBookEntityIdList" item="item" index="index" open="(" close=")"
+                         separator=",">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="dto.periodYear != null and dto.periodNum != null">
+                AND t1.period_year_num = concat(#{dto.periodYear}, LPAD(#{dto.periodNum},2,0))
+            </if>
+            <if test="dto.periodYears != null and dto.periodNumbers != null">
+                AND t1.period_year_num
+                BETWEEN concat(#{dto.periodYears[0]}, LPAD(#{dto.periodNumbers[0]},2,0))
+                AND concat(#{dto.periodYears[1]}, LPAD(#{dto.periodNumbers[1]},2,0))
+            </if>
+            <if test="dto.subjectIds != null and dto.subjectIds.size() > 0">
+                AND t1.account_subject_id IN
+                <foreach collection="dto.subjectIds" item="item" index="index" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+        ORDER BY
+        t1.period_year_num,t1.account_book_entity_id ASC
+    </select>
+
+    <!-- 查询科目余额信息 -->
+    <select id="findBalanceSubjectByParams" resultType="com.njwd.entity.ledger.vo.BalanceSubjectVo">
+        SELECT
+        t1.id id,
+        t1.account_subject_id accountSubjectId,
+        t1.account_book_id accountBookId,
+        t1.account_book_entity_id accountBookEntityId,
+        t1.period_year periodYear,
+        t1.period_num periodNum,
+        t1.period_year_num periodYearNum,
+        IFNULL(t1.opening_balance,0) openingBalance,
+        t1.closing_balance closingBalance,
+        t1.debit_amount debitAmount,
+        t1.credit_amount creditAmount,
+        t1.post_debit_amount postDebitAmount,
+        t1.post_credit_amount postCreditAmount,
+        t1.sy_debit_amount syDebitAmount,
+        t1.sy_credit_amount syCreditAmount,
+        t1.post_sy_debit_amount postSyDebitAmount,
+        t1.post_sy_credit_amount postSyCreditAmount
+        FROM
+        wd_balance_subject t1
+        <where>
+            <if test="dto.accountBookId != null">
+                AND t1.account_book_id = #{dto.accountBookId}
+            </if>
+            <if test="dto.accountBookEntityId != null">
+                AND t1.account_book_entity_id = #{dto.accountBookEntityId}
+            </if>
+            <if test="dto.accountBookEntityIdList != null and dto.accountBookEntityIdList.size() > 0">
+                AND t1.account_book_entity_id IN
+                <foreach collection="dto.accountBookEntityIdList" item="item" index="index" open="(" close=")"
+                         separator=",">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="dto.periodYear != null and dto.periodNum != null">
+                AND t1.period_year_num = concat(#{dto.periodYear}, LPAD(#{dto.periodNum},2,0))
+            </if>
+            <if test="dto.periodYears != null and dto.periodNumbers != null">
+                AND t1.period_year_num > concat(#{dto.periodYears[0]}, LPAD(#{dto.periodNumbers[0]},2,0))
+                AND t1.period_year_num &lt; concat(#{dto.periodYears[1]}, LPAD(#{dto.periodNumbers[1]},2,0))
+            </if>
+            <if test="dto.subjectIds != null and dto.subjectIds.size() > 0">
+                AND t1.account_subject_id IN
+                <foreach collection="dto.subjectIds" item="item" index="index" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+        ORDER BY
+        t1.period_year_num,t1.account_book_entity_id ASC
+    </select>
+
+    <select id="selectSubjctBalanceAsList" resultType="com.njwd.entity.ledger.BalanceSubject">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_balance_subject
+        where
+        period_year = #{accountBookPeriod.periodYear,jdbcType=INTEGER}
+        and period_num = #{accountBookPeriod.periodNum,jdbcType=TINYINT}
+        and account_book_id = #{accountBookPeriod.accountBookId,jdbcType=BIGINT}
+        and account_subject_id in
+        <foreach collection="accountBookPeriod.profitLossList" item="profitLoss" open="(" separator="," close=")">
+            #{profitLoss,jdbcType=BIGINT}
+        </foreach>
+    </select>
+
+    <select id="selectSubjctBalanceList" resultType="com.njwd.entity.ledger.BalanceSubject">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_balance_subject
+        where
+        account_book_id = #{accountBookPeriod.accountBookId,jdbcType=BIGINT}
+        and period_year_num in (
+        <foreach collection="accountBookPeriod.periodYears" item="periodYearNum" separator=",">
+            #{periodYearNum}
+        </foreach>
+        )
+        order by period_year_num desc
+    </select>
+
+    <select id="selectBalanceSubjectBySubjectId" resultType="com.njwd.entity.ledger.BalanceSubject">
+        select
+        id, account_book_id, account_book_entity_id, account_subject_id, period_year, period_num,
+        sum (opening_balance) opening_balance, closing_balance, debit_amount, credit_amount, total_debit_amount,
+        total_credit_amount, post_debit_amount, post_credit_amount, post_total_debit_amount,
+        post_total_credit_amount, sy_debit_amount, sy_credit_amount, sy_total_debit_amount,
+        sy_total_credit_amount, post_sy_debit_amount, post_sy_credit_amount, post_sy_total_debit_amount,
+        post_sy_total_credit_amount
+        from
+        wd_balance_subject
+        <where>
+            account_book_id = #{dto.accountBookId}
+            <if test="dto.accountBookEntityId != null and dto.accountBookEntityId != '' ">
+                and account_book_entity_id = #{dto.accountBookEntityId}
+            </if>
+            and period_year = #{dto.periodYear}
+            and period_num = #{dto.periodNum}
+            and account_subject_id in
+            <foreach collection="dto.subjectIds" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </where>
+        group by account_book_id;
+    </select>
+    <update id="updateBatchForProfitLoss">
+        <foreach collection="balanceSubjects" item="balanceSubject" separator=";">
+            update wd_balance_subject wbs
+            <set>
+                <if test="balanceSubject.debitAmount != null">
+                    wbs.debit_amount = wbs.debit_amount
+                    <choose>
+                        <when test="updateType == 1">+</when>
+                        <otherwise>-</otherwise>
+                    </choose>
+                    #{balanceSubject.debitAmount},
+                    wbs.total_debit_amount = wbs.total_debit_amount
+                    <choose>
+                        <when test="updateType == 1">+</when>
+                        <otherwise>-</otherwise>
+                    </choose>
+                    #{balanceSubject.debitAmount},
+                </if>
+                <if test="balanceSubject.creditAmount != null">
+                    wbs.credit_amount = wbs.credit_amount
+                    <choose>
+                        <when test="updateType == 1">+</when>
+                        <otherwise>-</otherwise>
+                    </choose>
+                    #{balanceSubject.creditAmount},
+                    wbs.total_credit_amount = wbs.total_credit_amount
+                    <choose>
+                        <when test="updateType == 1">+</when>
+                        <otherwise>-</otherwise>
+                    </choose>
+                    #{balanceSubject.creditAmount},
+                </if>
+                <!-- 更新已过账数据 -->
+                <if test="balanceSubject.isPost != null and balanceSubject.isPost == 1">
+                    <if test="balanceSubject.debitAmount != null">
+                        wbs.post_debit_amount = wbs.post_debit_amount
+                        <choose>
+                            <when test="updateType == 1">+</when>
+                            <otherwise>-</otherwise>
+                        </choose>
+                        #{balanceSubject.debitAmount},
+                        wbs.post_total_debit_amount = wbs.post_total_debit_amount
+                        <choose>
+                            <when test="updateType == 1">+</when>
+                            <otherwise>-</otherwise>
+                        </choose>
+                        #{balanceSubject.debitAmount},
+                    </if>
+                    <if test="balanceSubject.creditAmount != null">
+                        wbs.post_credit_amount = wbs.post_credit_amount
+                        <choose>
+                            <when test="updateType == 1">+</when>
+                            <otherwise>-</otherwise>
+                        </choose>
+                        #{balanceSubject.creditAmount},
+                        wbs.post_total_credit_amount = wbs.post_total_credit_amount
+                        <choose>
+                            <when test="updateType == 1">+</when>
+                            <otherwise>-</otherwise>
+                        </choose>
+                        #{balanceSubject.creditAmount},
+                    </if>
+                </if>
+                <!-- 更新损益数据 -->
+                <if test="balanceSubject.isSy != null and balanceSubject.isSy ==1">
+                    <if test="balanceSubject.debitAmount != null">
+                        wbs.sy_debit_amount = wbs.sy_debit_amount
+                        <choose>
+                            <when test="updateType == 1">+</when>
+                            <otherwise>-</otherwise>
+                        </choose>
+                        #{balanceSubject.debitAmount},
+                        wbs.sy_total_debit_amount = wbs.sy_total_debit_amount
+                        <choose>
+                            <when test="updateType == 1">+</when>
+                            <otherwise>-</otherwise>
+                        </choose>
+                        #{balanceSubject.debitAmount},
+                    </if>
+                    <if test="balanceSubject.creditAmount != null">
+                        wbs.sy_credit_amount = wbs.sy_credit_amount
+                        <choose>
+                            <when test="updateType == 1">+</when>
+                            <otherwise>-</otherwise>
+                        </choose>
+                        #{balanceSubject.creditAmount},
+                        wbs.sy_total_credit_amount = wbs.sy_total_credit_amount
+                        <choose>
+                            <when test="updateType == 1">+</when>
+                            <otherwise>-</otherwise>
+                        </choose>
+                        #{balanceSubject.creditAmount},
+                    </if>
+                    <!-- 更新已过账的损益数据 -->
+                    <if test="balanceSubject.isPost != null and balanceSubject.isPost == 1">
+                        <if test="balanceSubject.debitAmount != null">
+                            wbs.post_sy_debit_amount = wbs.post_sy_debit_amount
+                            <choose>
+                                <when test="updateType == 1">+</when>
+                                <otherwise>-</otherwise>
+                            </choose>
+                            #{balanceSubject.debitAmount},
+                            wbs.post_sy_total_debit_amount = wbs.post_sy_total_debit_amount
+                            <choose>
+                                <when test="updateType == 1">+</when>
+                                <otherwise>-</otherwise>
+                            </choose>
+                            #{balanceSubject.debitAmount},
+                        </if>
+                        <if test="balanceSubject.creditAmount != null">
+                            wbs.post_sy_credit_amount = wbs.post_sy_credit_amount
+                            <choose>
+                                <when test="updateType == 1">+</when>
+                                <otherwise>-</otherwise>
+                            </choose>
+                            #{balanceSubject.creditAmount},
+                            wbs.post_sy_total_credit_amount = wbs.post_sy_total_credit_amount
+                            <choose>
+                                <when test="updateType == 1">+</when>
+                                <otherwise>-</otherwise>
+                            </choose>
+                            #{balanceSubject.creditAmount},
+                        </if>
+                    </if>
+                </if>
+            </set>
+            where
+            wbs.account_book_id = #{accountBookPeriod.accountBookId}
+            and wbs.account_book_entity_id = #{accBookEntityId}
+            and wbs.period_year_num = #{accountBookPeriod.periodYearNum}
+            and wbs.account_subject_id = #{balanceSubject.subjectId}
+        </foreach>
+    </update>
+
+</mapper>

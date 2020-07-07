@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.ledger.mapper.ParameterSetMapper">
+    <sql id="Base_Column_List">
+        wps.`id`,
+        wps.`root_enterprise_id`,
+        wps.`group_code`,
+        wps.`group_name`,
+        wps.`group_desc`,
+        wps.`key`,
+        wps.`name`,
+        wps.`desc`,
+        wps.`modify_type`,
+        wps.`is_personal`,
+        wps.`row_num`,
+        wps.`version`,
+        wps.`create_time`,
+        wps.`creator_id`,
+        wps.`creator_name`,
+        wps.`update_time`,
+        wps.`updator_id`,
+        wps.`updator_name`
+    </sql>
+    <resultMap id="BaseResultMap" type="com.njwd.entity.ledger.ParameterSet">
+      <result column="id" property="id"/>
+      <result column="root_enterprise_id" property="rootEnterpriseId"/>
+      <result column="group_code" property="groupCode"/>
+      <result column="group_name" property="groupName"/>
+      <result column="group_desc" property="groupDesc"/>
+      <result column="key" property="key"/>
+      <result column="name" property="name"/>
+      <result column="desc" property="desc"/>
+      <result column="modify_type" property="modifyType"/>
+      <result column="is_personal" property="isPersonal"/>
+      <result column="row_num" property="rowNum"/>
+      <result column="version" property="version"/>
+      <result column="create_time" property="createTime"/>
+      <result column="creator_id" property="creatorId"/>
+      <result column="creator_name" property="creatorName"/>
+      <result column="update_time" property="updateTime"/>
+      <result column="updator_id" property="updatorId"/>
+      <result column="updator_name" property="updatorName"/>
+    </resultMap>
+
+    <!-- 查询租户总账参数选项 -->
+    <select id="selectParameterSet" resultType="com.njwd.entity.ledger.vo.ParameterSetVo">
+        SELECT
+        ps.id,
+        ps.root_enterprise_id,
+        ps.group_code,
+        ps.group_name,
+        ps.group_desc,
+        ps.`key`,
+        ps.`name`,
+        ps.`desc`,
+        ps.modify_type,
+        ps.is_personal,
+        ps.row_num,
+        ps.version,
+        ps.create_time,
+        ps.creator_id,
+        ps.creator_name,
+        ps.update_time,
+        ps.updator_id,
+        ps.updator_name,
+        pss.id sub_id,
+        pss.account_book_id,
+        pss.account_book_name,
+        pss.`value`
+        FROM
+        wd_parameter_set ps
+        LEFT JOIN wd_parameter_set_sub pss ON ps.id = pss.set_id
+        <where>
+            and ps.root_enterprise_id = #{parameterSetDto.rootEnterpriseId}
+        </where>
+        ORDER BY
+            row_num,
+            pss.account_book_id,
+            ps.id,
+            pss.id
+    </select>
+
+    <!-- 查询总账参数选项行 -->
+    <select id="selectParameterSetById" resultType="com.njwd.entity.ledger.vo.ParameterSetVo">
+        select
+            ps.id,
+            ps.version,
+            pss.id subId,
+            pss.account_book_id,
+            pss.`value`
+        from
+            wd_parameter_set ps
+        left join wd_parameter_set_sub pss on ps.id = pss.set_id
+        <where>
+            <if test="parameterSetDto.parameterSetVoList != null and parameterSetDto.parameterSetVoList.size() > 0">
+                and pss.account_book_id in
+                <foreach collection="parameterSetDto.parameterSetVoList" item="psv" index="index" open="(" close=")"
+                         separator=",">
+                    #{psv.accountBookId}
+                </foreach>
+                and ps.id in
+                <foreach collection="parameterSetDto.parameterSetVoList" item="psv" index="index" open="(" close=")"
+                         separator=",">
+                    #{psv.id}
+                </foreach>
+            </if>
+            and ps.root_enterprise_id = #{parameterSetDto.rootEnterpriseId}
+        </where>
+        order by row_num,ps.id,pss.id
+    </select>
+
+    <!-- 查询租户参数设置数量[判断是否已经初始化] -->
+    <select id="selectParameterSetCount" resultType="int">
+        select COUNT(1)
+        from wd_parameter_set ps
+        where ps.root_enterprise_id = #{parameterSetDto.rootEnterpriseId}
+    </select>
+
+    <!-- 批量新增总账参数选项 -->
+    <insert id="insertParameterSetBatch" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO wd_parameter_set (
+        root_enterprise_id,
+        group_code,
+        group_name,
+        group_desc,
+        `key`,
+        `name`,
+        `desc`,
+        modify_type,
+        is_personal,
+        row_num,
+        version,
+        creator_id,
+        creator_name,
+        updator_id,
+        updator_name
+        )
+        VALUES
+        <foreach collection ="parameterSetVoList" item="psv" index="index" separator =",">
+            (#{psv.rootEnterpriseId},
+            #{psv.groupCode},
+            #{psv.groupName},
+            #{psv.groupDesc},
+            #{psv.key},
+            #{psv.name},
+            #{psv.desc},
+            #{psv.modifyType},
+            #{psv.isPersonal},
+            #{psv.rowNum},
+            #{psv.version},
+            #{psv.creatorId},
+            #{psv.creatorName},
+            #{psv.updatorId},
+            #{psv.updatorName})
+        </foreach>
+    </insert>
+
+    <!-- 批量更新总账参数选项 -->
+    <update id="updateParameterSetBatch">
+        update wd_parameter_set
+        <set>
+            version = version + 1,
+            updator_id = #{parameterSetDto.updatorId},
+            updator_name = #{parameterSetDto.updatorName}
+        </set>
+        <where>
+            and root_enterprise_id = #{parameterSetDto.rootEnterpriseId}
+            and id in
+                <if test="parameterSetDto.idList != null and parameterSetDto.idList.size() > 0">
+                    <foreach collection="parameterSetDto.idList" item="id" index="index" open="(" close=")" separator=",">
+                        #{id}
+                    </foreach>
+                </if>
+        </where>
+    </update>
+
+    <!-- 删除个性化账簿 -->
+    <delete id="deleteParameterSetBatch">
+        delete
+        from
+            wd_parameter_set_sub
+        <where>
+        and id in
+            <foreach collection="parameterSetDto.subIdList" item="id" index="index" open="(" close=")"
+                     separator=",">
+                #{id}
+            </foreach>
+        </where>
+    </delete>
+</mapper>

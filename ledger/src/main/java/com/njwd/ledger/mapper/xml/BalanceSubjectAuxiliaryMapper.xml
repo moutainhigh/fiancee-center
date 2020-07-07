@@ -1,0 +1,640 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.ledger.mapper.BalanceSubjectAuxiliaryMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.ledger.vo.BalanceSubjectAuxiliaryVo">
+    </resultMap>
+    <!--  根据账簿id 及 核算主体id 查询科目信息 -->
+    <sql id="Base_Column_List">
+            wbsa.`id`,
+            wbsa.`account_book_id`,
+            wbsa.`account_book_entity_id`,
+            wbsa.`account_subject_id`,
+            wbsa.`period_year`,
+            wbsa.`period_num`,
+            wbsa.`period_year_num`,
+            wbsa.`opening_balance`,
+            wbsa.`closing_balance`,
+            wbsa.`debit_amount`,
+            wbsa.`credit_amount`,
+            wbsa.`total_debit_amount`,
+            wbsa.`total_credit_amount`,
+            wbsa.`post_debit_amount`,
+            wbsa.`post_credit_amount`,
+            wbsa.`post_total_debit_amount`,
+            wbsa.`post_total_credit_amount`,
+            wbsa.`sy_debit_amount`,
+            wbsa.`sy_credit_amount`,
+            wbsa.`sy_total_debit_amount`,
+            wbsa.`sy_total_credit_amount`,
+            wbsa.`post_sy_debit_amount`,
+            wbsa.`post_sy_credit_amount`,
+            wbsa.`post_sy_total_debit_amount`,
+            wbsa.`post_sy_total_credit_amount`
+    </sql>
+
+    <insert id="insertBatch" useGeneratedKeys="true" keyProperty="balanceSubjectAuxiliaries.id">
+        insert into wd_balance_subject_auxiliary (
+        account_book_id,
+        account_book_entity_id,
+        account_subject_id,
+        period_year,
+        period_num,
+        period_year_num
+        ) values
+        <foreach collection="balanceSubjectAuxiliaries" item="auxiliary" separator=",">
+            (
+            #{voucherDto.accountBookId} ,
+            #{voucherDto.accountBookEntityId} ,
+            #{auxiliary.accountSubjectId} ,
+            #{voucherDto.postingPeriodYear} ,
+            #{voucherDto.postingPeriodNum} ,
+            #{voucherDto.periodYearNum}
+            )
+        </foreach>
+    </insert>
+
+    <insert id="addSubjectInitAuxiliary">
+        <selectKey resultType="long" order="AFTER" keyProperty="balSubjectInitAux.id">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+        insert into
+        wd_balance_subject_auxiliary(account_book_id,account_book_entity_id,account_subject_id,period_year,period_num,period_year_num,opening_balance,total_debit_amount,total_credit_amount,post_total_debit_amount,post_total_credit_amount)
+        values
+        (#{balSubjectInitAux.accountBookId},#{balSubjectInitAux.accountBookEntityId}
+        ,#{balSubjectInitAux.accountSubjectId},#{balSubjectInitAux.periodYear}
+        ,#{balSubjectInitAux.periodNum}
+        ,concat(#{balSubjectInitAux.periodYear},LPAD(#{balSubjectInitAux.periodNum},2,0)),#{balSubjectInitAux.openingBalance},#{balSubjectInitAux.thisYearDebitAmount}
+        ,#{balSubjectInitAux.thisYearCreditAmount}
+        ,#{balSubjectInitAux.thisYearDebitAmount} ,#{balSubjectInitAux.thisYearCreditAmount} )
+    </insert>
+
+    <insert id="addSubjectInitAuxiliaryOne">
+        <selectKey resultType="long" order="AFTER" keyProperty="balSubjectInitAux.id">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+        insert into
+        wd_balance_subject_auxiliary(account_book_id,account_book_entity_id,account_subject_id,period_year,period_num,period_year_num,opening_balance,total_debit_amount,total_credit_amount,post_total_debit_amount,post_total_credit_amount)
+        values
+        <if test="balSubjectInitAux.periodNum !=1">
+            (#{balSubjectInitAux.accountBookId},#{balSubjectInitAux.accountBookEntityId}
+            ,#{balSubjectInitAux.accountSubjectId},#{balSubjectInitAux.periodYear}
+            ,1,concat(#{balSubjectInitAux.periodYear},LPAD(1,2,0))
+            ,#{balSubjectInitAux.yearOpeningBalance} ,0.00,0.00,0.00,0.00)
+        </if>
+        <if test="balSubjectInitAux.periodNum ==1">
+            (#{balSubjectInitAux.accountBookId},#{balSubjectInitAux.accountBookEntityId}
+            ,#{balSubjectInitAux.accountSubjectId},#{balSubjectInitAux.periodYear}
+            ,#{balSubjectInitAux.periodNum},concat(#{balSubjectInitAux.periodYear},LPAD(#{balSubjectInitAux.periodNum},2,0))
+            ,#{balSubjectInitAux.openingBalance},0.00,0.00,0.00,0.00)
+        </if>
+    </insert>
+
+    <insert id="addSubjectInitAuxiliaryZero">
+        <selectKey resultType="long" order="AFTER" keyProperty="balSubjectInitAux.id">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+        insert into
+        wd_balance_subject_auxiliary(account_book_id,account_book_entity_id,account_subject_id,period_year,period_num,period_year_num,opening_balance,closing_balance,debit_amount,credit_amount,total_debit_amount,total_credit_amount,post_total_debit_amount,post_total_credit_amount,post_debit_amount,post_credit_amount)
+        values
+        <if test="balSubjectInitAux.periodNum !=1">
+            (#{balSubjectInitAux.accountBookId},#{balSubjectInitAux.accountBookEntityId}
+            ,#{balSubjectInitAux.accountSubjectId},#{balSubjectInitAux.periodYear}
+            ,0,concat(#{balSubjectInitAux.periodYear},LPAD(0,2,0))
+            ,#{balSubjectInitAux.yearOpeningBalance},#{balSubjectInitAux.openingBalance}
+            ,#{balSubjectInitAux.thisYearDebitAmount},#{balSubjectInitAux.thisYearCreditAmount},#{balSubjectInitAux.thisYearDebitAmount},#{balSubjectInitAux.thisYearCreditAmount},#{balSubjectInitAux.thisYearDebitAmount},#{balSubjectInitAux.thisYearCreditAmount},#{balSubjectInitAux.thisYearDebitAmount},#{balSubjectInitAux.thisYearCreditAmount})
+        </if>
+        <if test="balSubjectInitAux.periodNum ==1">
+            (#{balSubjectInitAux.accountBookId},#{balSubjectInitAux.accountBookEntityId}
+            ,#{balSubjectInitAux.accountSubjectId},#{balSubjectInitAux.periodYear}
+            ,0,concat(#{balSubjectInitAux.periodYear},LPAD(0,2,0))
+            ,#{balSubjectInitAux.openingBalance},#{balSubjectInitAux.openingBalance},0.00,0.00,0.00,0.00,0.00,0.00,0.00,0.00)
+        </if>
+    </insert>
+
+    <update id="updateSubjectInitAuxiliaryOne">
+        update wd_balance_subject_auxiliary wbsa
+        <set>
+            <if test="balSubjectInitAux.periodNum !=1">
+                wbsa.opening_balance = wbsa.opening_balance + #{balSubjectInitAux.yearOpeningBalance} ,
+            </if>
+            <if test="balSubjectInitAux.periodNum ==1">
+                wbsa.opening_balance = wbsa.opening_balance + #{balSubjectInitAux.openingBalance} ,
+            </if>
+        </set>
+        where
+        wbsa.id = #{balSubjectInitAux.id}
+    </update>
+
+    <update id="updateSubjectInitAuxiliaryAdd">
+        update wd_balance_subject_auxiliary wbsa
+        <set>
+            wbsa.opening_balance = wbsa.opening_balance + #{balSubjectInitAux.openingBalance} ,
+            wbsa.total_debit_amount = wbsa.total_debit_amount + #{balSubjectInitAux.thisYearDebitAmount} ,
+            wbsa.total_credit_amount = wbsa.total_credit_amount + #{balSubjectInitAux.thisYearCreditAmount} ,
+            wbsa.post_total_debit_amount = wbsa.post_total_debit_amount + #{balSubjectInitAux.thisYearDebitAmount} ,
+            wbsa.post_total_credit_amount = wbsa.post_total_credit_amount + #{balSubjectInitAux.thisYearCreditAmount}
+        </set>
+        where
+        wbsa.id = #{balSubjectInitAux.id}
+    </update>
+
+    <update id="updateSubjectInitAuxiliaryDel">
+        update wd_balance_subject_auxiliary wbsa
+        <set>
+            wbsa.opening_balance = wbsa.opening_balance - #{balSubjectInitAux.openingBalance} ,
+            wbsa.total_debit_amount = wbsa.total_debit_amount - #{balSubjectInitAux.thisYearDebitAmount} ,
+            wbsa.total_credit_amount = wbsa.total_credit_amount - #{balSubjectInitAux.thisYearCreditAmount} ,
+            wbsa.post_total_debit_amount = wbsa.post_total_debit_amount - #{balSubjectInitAux.thisYearDebitAmount} ,
+            wbsa.post_total_credit_amount = wbsa.post_total_credit_amount - #{balSubjectInitAux.thisYearCreditAmount}
+        </set>
+        where
+        wbsa.id = #{balSubjectInitAux.id}
+    </update>
+
+    <update id="updateSubjectInitAuxiliaryDelOne">
+        update wd_balance_subject_auxiliary wbsa
+        <set>
+            <if test="balSubjectInitAux.periodNum !=1">
+                wbsa.opening_balance = wbsa.opening_balance - #{balSubjectInitAux.yearOpeningBalance} ,
+            </if>
+            <if test="balSubjectInitAux.periodNum ==1">
+                wbsa.opening_balance = wbsa.opening_balance - #{balSubjectInitAux.openingBalance} ,
+            </if>
+        </set>
+        where
+        wbsa.id = #{balSubjectInitAux.id}
+    </update>
+
+    <update id="updateBatch">
+        <foreach collection="balanceSubjectAuxiliaries" item="auxiliary" separator=";">
+            update wd_balance_subject_auxiliary wbsa
+            <set>
+                <if test="auxiliary.debitAmount != null">
+                    wbsa.debit_amount = wbsa.debit_amount
+                    <choose>
+                        <when test="updateType == 1">+</when>
+                        <otherwise>-</otherwise>
+                    </choose>
+                    #{auxiliary.debitAmount},
+                    wbsa.total_debit_amount = wbsa.total_debit_amount
+                    <choose>
+                        <when test="updateType == 1">+</when>
+                        <otherwise>-</otherwise>
+                    </choose>
+                    #{auxiliary.debitAmount},
+                </if>
+                <if test="auxiliary.creditAmount != null">
+                    wbsa.credit_amount = wbsa.credit_amount
+                    <choose>
+                        <when test="updateType == 1">+</when>
+                        <otherwise>-</otherwise>
+                    </choose>
+                    #{auxiliary.creditAmount},
+                    wbsa.total_credit_amount = wbsa.total_credit_amount
+                    <choose>
+                        <when test="updateType == 1">+</when>
+                        <otherwise>-</otherwise>
+                    </choose>
+                    #{auxiliary.creditAmount},
+                </if>
+            </set>
+            where
+            wbsa.id = #{auxiliary.id}
+        </foreach>
+    </update>
+    <!--  重分类 包含未过账 -->
+    <select id="findBySubjectIdList" resultType="com.njwd.entity.ledger.vo.BalanceSubjectVo">
+        <if test="accountSubjectVoList != null accountSubjectVoList.size != 0 ">
+            select
+            sum(closing_balance) closingBalance
+            from wd_balance_subject
+            where
+            period_year = #{balanceDto.periodYear},
+            and period_num = #{balanceDto.periodNum},
+            and closing_balance &lt; 0,
+            and account_subject_id in
+            <foreach collection="list" item="item" separator="," open="(" close=")">
+                #{item.id}
+            </foreach>
+        </if>
+    </select>
+    <!--  重分类 不包含未过账 -->
+    <select id="findPostingBySubjectIdList" resultType="com.njwd.entity.ledger.vo.BalanceSubjectVo">
+        <if test="accountSubjectVoList != null accountSubjectVoList.size != 0 ">
+            select
+            sum(post_debit_amount)+sum(post_credit_amount) postAmount;
+            from wd_balance_subject
+            where
+            period_year = #{balanceDto.periodYear},
+            and period_num = #{balanceDto.periodNum},
+            and post_debit_amount &lt; 0,
+            and post_credit_amount &lt; 0,
+            and account_subject_id in
+            <foreach collection="list" item="item" separator="," open="(" close=")">
+                #{item.id}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="findInfoByAuxiliaryItem" resultMap="BaseResultMap">
+        select
+        f.id,
+        f.period_year,
+        f.account_book_id,
+        f.account_book_entity_id,
+        f.account_subject_id,
+        sum( ifnull(m.debit_amount,0) ) debit_amount,
+        sum( ifnull(m.credit_amount,0) ) credit_amount,
+        sum( ifnull(n.debit_amount,0) ) total_debit_amount,
+        sum( ifnull(n.credit_amount,0) ) total_credit_amount,
+        sum( ifnull(m.post_debit_amount,0) ) post_debit_amount,
+        sum( ifnull(m.post_credit_amount,0) ) post_credit_amount,
+        sum( ifnull(n.post_debit_amount,0) ) post_total_debit_amount,
+        sum( ifnull(n.post_credit_amount,0) ) post_total_credit_amount,
+        sum( ifnull(m.sy_debit_amount,0) ) sy_debit_amount,
+        sum( ifnull(m.sy_credit_amount,0) ) sy_credit_amount,
+        sum( ifnull(n.sy_debit_amount,0) ) sy_total_debit_amount,
+        sum( ifnull(n.sy_credit_amount,0) ) sy_total_credit_amount,
+        sum( ifnull(m.post_sy_debit_amount,0) ) post_sy_debit_amount,
+        sum( ifnull(m.post_sy_credit_amount,0) ) post_sy_credit_amount,
+        sum( ifnull(n.post_sy_debit_amount,0) ) post_sy_total_debit_amount,
+        sum( ifnull(n.post_sy_credit_amount,0) ) post_sy_total_credit_amount
+        from
+        wd_balance_subject_auxiliary f
+        left join wd_balance_subject_auxiliary m ON m.id = f.id
+        <if test="auxiliaryItemQueryDto.periodYears != null and auxiliaryItemQueryDto.periodYears.size() > 0
+        and auxiliaryItemQueryDto.periodNumbers != null and auxiliaryItemQueryDto.periodNumbers.size() > 0">
+            and m.period_year_num
+            between
+            concat(#{auxiliaryItemQueryDto.periodYears[0]}, LPAD(#{auxiliaryItemQueryDto.periodNumbers[0]},2,0))
+            and
+            concat(#{auxiliaryItemQueryDto.periodYears[1]}, LPAD(#{auxiliaryItemQueryDto.periodNumbers[1]},2,0))
+        </if>
+        left join wd_balance_subject_auxiliary n ON n.id = f.id
+        <if test="auxiliaryItemQueryDto.periodYears != null and auxiliaryItemQueryDto.periodYears.size() > 0
+        and auxiliaryItemQueryDto.periodNumbers != null and auxiliaryItemQueryDto.periodNumbers.size() > 0">
+            and n.period_year_num
+            between
+            concat(#{auxiliaryItemQueryDto.periodYears[0]}, '00')
+            and
+            concat(#{auxiliaryItemQueryDto.periodYears[1]}, LPAD(#{auxiliaryItemQueryDto.periodNumbers[1]},2,0))
+        </if>
+        where
+        1 = 1
+        <if test="auxiliaryItemQueryDto.balanceAuxiliaryIds != null and auxiliaryItemQueryDto.balanceAuxiliaryIds != ''">
+            and find_in_set(f.id,#{auxiliaryItemQueryDto.balanceAuxiliaryIds})
+        </if>
+        group by
+        f.id
+    </select>
+
+    <select id="findStartPeriodBalance" resultMap="BaseResultMap">
+        select f.id,f.account_book_id,f.account_book_entity_id,f.account_subject_id,f.period_year_num,
+        f.opening_balance opening_balance,f.closing_balance closing_balance
+        from wd_balance_subject_auxiliary f
+        where 1=1
+        and f.id in (
+        <foreach collection="list" item="item" index="index" separator=",">
+            <foreach collection="item.auxiliaryIds" item="it" index="index" separator=",">
+                ${it}
+            </foreach>
+        </foreach>
+        )
+        group by f.id
+    </select>
+
+    <select id="findInfoByPeriod" resultMap="BaseResultMap">
+        select t.opening_balance opening_balance, t.closing_balance closing_balance
+        from wd_balance_subject_auxiliary t
+        left join wd_balance_subject_auxiliary_item f on t.id = f.balance_auxiliary_id
+        where t.account_book_entity_id = #{auxiliaryItemQueryDto.accountBookEntityId}
+        and t.account_subject_id = #{auxiliaryItemQueryDto.accountSubjectId}
+        and t.period_year = #{auxiliaryItemQueryDto.periodYear}
+        and t.period_num = #{auxiliaryItemQueryDto.periodNum}
+        and find_in_set(f.item_value_id, #{auxiliaryItemQueryDto.itemValueIds})
+        group by t.id
+    </select>
+
+    <select id="findInfoByPeriods" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_balance_subject_auxiliary wbsa
+        left join wd_balance_subject_auxiliary_item f on wbsa.id = f.balance_auxiliary_id
+        where wbsa.account_book_entity_id = #{auxiliaryItemQueryDto.accountBookEntityId}
+        and wbsa.account_subject_id = #{auxiliaryItemQueryDto.accountSubjectId}
+        and find_in_set(f.item_value_id, #{auxiliaryItemQueryDto.itemValueIds})
+        <if test="auxiliaryItemQueryDto.periodYears != null and auxiliaryItemQueryDto.periodYears.size() > 0
+        and auxiliaryItemQueryDto.periodNumbers != null and auxiliaryItemQueryDto.periodNumbers.size() > 0">
+            and wbsa.period_year_num >
+            concat(#{auxiliaryItemQueryDto.periodYears[0]}, LPAD(#{auxiliaryItemQueryDto.periodNumbers[0]},2,0))
+            and wbsa.period_year_num &lt;=
+            concat(#{auxiliaryItemQueryDto.periodYears[1]}, LPAD(#{auxiliaryItemQueryDto.periodNumbers[1]},2,0))
+        </if>
+        group by wbsa.id
+        order by wbsa.period_year_num
+    </select>
+
+    <select id="findFirstBalanceSubjectAuxiliaryByParams"
+            resultType="com.njwd.entity.ledger.vo.BalanceSubjectAuxiliaryVo">
+        SELECT
+        t1.id id,
+        t1.account_book_id accountBookId,
+        t1.account_book_entity_id accountBookEntityId,
+        t1.period_year periodYear,
+        t1.period_num periodNum,
+        t1.period_year_num periodYearNum,
+        t1.opening_balance openingBalance,
+        t1.closing_balance closingBalance,
+        t1.debit_amount debitAmount,
+        t1.credit_amount creditAmount,
+        t1.post_debit_amount postDebitAmount,
+        t1.post_credit_amount postCreditAmount,
+        t1.sy_debit_amount syDebitAmount,
+        t1.sy_credit_amount syCreditAmount,
+        t1.post_sy_debit_amount postSyDebitAmount,
+        t1.post_sy_credit_amount postSyCreditAmount
+        FROM
+        wd_balance_subject_auxiliary t1
+        LEFT JOIN wd_balance_subject_auxiliary_item t2 ON t2.account_subject_id = t1.account_subject_id
+        AND t2.account_book_id = t1.account_book_id
+        AND t2.account_book_entity_id = t1.account_book_entity_id
+        <where>
+            <if test="dto.accountBookId != null">
+                AND t1.account_book_id = #{dto.accountBookId}
+            </if>
+            <if test="dto.accountBookEntityId != null">
+                AND t1.account_book_entity_id = #{dto.accountBookEntityId}
+            </if>
+            <if test="dto.itemValueIdList != null and dto.itemValueIdList.size() > 0">
+                AND t2.item_value_id IN
+                <foreach collection="dto.itemValueIdList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+        ORDER BY
+        t1.period_year_num DESC
+        LIMIT 1
+    </select>
+
+    <select id="findBalanceSubjectAuxiliaryByParams" resultType="com.njwd.entity.ledger.vo.BalanceSubjectAuxiliaryVo">
+        SELECT
+        t1.id id,
+        t1.account_subject_id accountSubjectId,
+        t1.account_book_id accountBookId,
+        t1.account_book_entity_id accountBookEntityId,
+        t1.period_year periodYear,
+        t1.period_num periodNum,
+        t1.period_year_num periodYearNum,
+        t1.debit_amount debitAmount,
+        t1.credit_amount creditAmount,
+        t1.post_debit_amount postDebitAmount,
+        t1.post_credit_amount postCreditAmount,
+        t1.sy_debit_amount syDebitAmount,
+        t1.sy_credit_amount syCreditAmount,
+        t1.post_sy_debit_amount postSyDebitAmount,
+        t1.post_sy_credit_amount postSyCreditAmount,
+        t1.opening_balance openingBalance,
+        t1.closing_balance closingBalance
+        FROM
+        wd_balance_subject_auxiliary t1
+        LEFT JOIN wd_balance_subject_auxiliary_item t2 ON t2.account_subject_id = t1.account_subject_id
+        AND t2.account_book_id = t1.account_book_id
+        AND t2.account_book_entity_id = t1.account_book_entity_id
+        <where>
+            <if test="dto.accountBookId != null">
+                AND t1.account_book_id = #{dto.accountBookId}
+            </if>
+            <if test="dto.accountBookEntityId != null">
+                AND t1.account_book_entity_id = #{dto.accountBookEntityId}
+            </if>
+            <if test="dto.accountBookEntityIds != null">
+                AND t1.account_book_entity_id IN
+                <foreach collection="dto.accountBookEntityIds" item="item" index="index" open="(" close=")"
+                         separator=",">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="dto.periodYear != null and dto.periodNum != null">
+                AND t1.period_year_num = concat(#{dto.periodYear}, LPAD(#{dto.periodNum},2,0))
+            </if>
+            <if test="dto.periodYears != null and dto.periodNumbers != null">
+                AND t1.period_year_num
+                BETWEEN concat(#{dto.periodYears[0]}, LPAD(#{dto.periodNumbers[0]},2,0))
+                AND concat(#{dto.periodYears[1]}, LPAD(#{dto.periodNumbers[1]},2,0))
+            </if>
+            <if test="dto.subjectIds != null and dto.subjectIds.size() > 0">
+                AND t1.account_subject_id IN
+                <foreach collection="dto.subjectIds" item="item" index="index" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="dto.itemValueIdList != null and dto.itemValueIdList.size() > 0">
+                AND t2.item_value_id IN
+                <foreach collection="dto.itemValueIdList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+        ORDER BY
+        t1.period_year_num,t1.account_book_entity_id ASC
+    </select>
+
+    <select id="selectSubjctAuxiliaryBalanceList" resultType="com.njwd.entity.ledger.dto.BalanceSubjectAuxiliaryDto">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_balance_subject_auxiliary wbsa
+        where
+        wbsa.account_book_id = #{accountBookPeriod.accountBookId,jdbcType=BIGINT}
+        and period_year_num in (
+        <foreach collection="accountBookPeriod.periodYears" item="periodYearNum" separator=",">
+            #{periodYearNum}
+        </foreach>
+        )
+        order by period_year_num desc
+    </select>
+    <select id="selectAuxiliaryList" resultType="com.njwd.entity.ledger.dto.BalanceSubjectAuxiliaryDto">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_balance_subject_auxiliary wbsa
+        where
+        wbsa.period_year_num = #{accountBookPeriod.periodYearNum,jdbcType=INTEGER}
+        and wbsa.account_book_id = #{accountBookPeriod.accountBookId,jdbcType=BIGINT}
+        and wbsa.account_subject_id in
+        <foreach collection="accountBookPeriod.profitLossList" item="profitLoss" open="(" separator="," close=")">
+            #{profitLoss,jdbcType=BIGINT}
+        </foreach>
+    </select>
+    <update id="updateBatchForProfitLoss">
+        <foreach collection="balanceSubjectAuxiliaries" item="auxiliary" separator=";">
+            update wd_balance_subject_auxiliary wbsa
+            <set>
+                <if test="auxiliary.debitAmount != null">
+                    wbsa.debit_amount = wbsa.debit_amount
+                    <choose>
+                        <when test="updateType == 1">+</when>
+                        <otherwise>-</otherwise>
+                    </choose>
+                    #{auxiliary.debitAmount},
+                    wbsa.total_debit_amount = wbsa.total_debit_amount
+                    <choose>
+                        <when test="updateType == 1">+</when>
+                        <otherwise>-</otherwise>
+                    </choose>
+                    #{auxiliary.debitAmount},
+                </if>
+                <if test="auxiliary.creditAmount != null">
+                    wbsa.credit_amount = wbsa.credit_amount
+                    <choose>
+                        <when test="updateType == 1">+</when>
+                        <otherwise>-</otherwise>
+                    </choose>
+                    #{auxiliary.creditAmount},
+                    wbsa.total_credit_amount = wbsa.total_credit_amount
+                    <choose>
+                        <when test="updateType == 1">+</when>
+                        <otherwise>-</otherwise>
+                    </choose>
+                    #{auxiliary.creditAmount},
+                </if>
+                <!-- 更新已过账数据 -->
+                <if test="auxiliary.isPost != null and auxiliary.isPost == 1">
+                    <if test="auxiliary.debitAmount != null">
+                        wbsa.post_debit_amount = wbsa.post_debit_amount
+                        <choose>
+                            <when test="updateType == 1">+</when>
+                            <otherwise>-</otherwise>
+                        </choose>
+                        #{auxiliary.debitAmount},
+                        wbsa.post_total_debit_amount = wbsa.post_total_debit_amount
+                        <choose>
+                            <when test="updateType == 1">+</when>
+                            <otherwise>-</otherwise>
+                        </choose>
+                        #{auxiliary.debitAmount},
+                    </if>
+                    <if test="auxiliary.creditAmount != null">
+                        wbsa.post_credit_amount = wbsa.post_credit_amount
+                        <choose>
+                            <when test="updateType == 1">+</when>
+                            <otherwise>-</otherwise>
+                        </choose>
+                        #{auxiliary.creditAmount},
+                        wbsa.post_total_credit_amount = wbsa.post_total_credit_amount
+                        <choose>
+                            <when test="updateType == 1">+</when>
+                            <otherwise>-</otherwise>
+                        </choose>
+                        #{auxiliary.creditAmount},
+                    </if>
+                </if>
+                <!-- 更新损益数据 -->
+                <if test="auxiliary.isSy != null and auxiliary.isSy == 1">
+                    <if test="auxiliary.debitAmount != null">
+                        wbsa.sy_debit_amount = wbsa.sy_debit_amount
+                        <choose>
+                            <when test="updateType == 1">+</when>
+                            <otherwise>-</otherwise>
+                        </choose>
+                        #{auxiliary.debitAmount},
+                        wbsa.sy_total_debit_amount = wbsa.sy_total_debit_amount
+                        <choose>
+                            <when test="updateType == 1">+</when>
+                            <otherwise>-</otherwise>
+                        </choose>
+                        #{auxiliary.debitAmount},
+                    </if>
+                    <if test="auxiliary.creditAmount != null">
+                        wbsa.sy_credit_amount = wbsa.sy_credit_amount
+                        <choose>
+                            <when test="updateType == 1">+</when>
+                            <otherwise>-</otherwise>
+                        </choose>
+                        #{auxiliary.creditAmount},
+                        wbsa.sy_total_credit_amount = wbsa.sy_total_credit_amount
+                        <choose>
+                            <when test="updateType == 1">+</when>
+                            <otherwise>-</otherwise>
+                        </choose>
+                        #{auxiliary.creditAmount},
+                    </if>
+                    <!-- 更新已过账的损益数据 -->
+                    <if test="auxiliary.isPost != null and auxiliary.isPost == 1">
+                        <if test="auxiliary.debitAmount != null">
+                            wbsa.post_sy_debit_amount = wbsa.post_sy_debit_amount
+                            <choose>
+                                <when test="updateType == 1">+</when>
+                                <otherwise>-</otherwise>
+                            </choose>
+                            #{auxiliary.debitAmount},
+                            wbsa.post_sy_total_debit_amount = wbsa.post_sy_total_debit_amount
+                            <choose>
+                                <when test="updateType == 1">+</when>
+                                <otherwise>-</otherwise>
+                            </choose>
+                            #{auxiliary.debitAmount},
+                        </if>
+                        <if test="auxiliary.creditAmount != null">
+                            wbsa.post_sy_credit_amount = wbsa.post_sy_credit_amount
+                            <choose>
+                                <when test="updateType == 1">+</when>
+                                <otherwise>-</otherwise>
+                            </choose>
+                            #{auxiliary.creditAmount},
+                            wbsa.post_sy_total_credit_amount = wbsa.post_sy_total_credit_amount
+                            <choose>
+                                <when test="updateType == 1">+</when>
+                                <otherwise>-</otherwise>
+                            </choose>
+                            #{auxiliary.creditAmount},
+                        </if>
+                    </if>
+                </if>
+            </set>
+            where
+            wbsa.id = #{auxiliary.id}
+        </foreach>
+    </update>
+    <insert id="insertBatchForNextPeriod" useGeneratedKeys="true" keyProperty="nextWithAuxiliaryBalanceSubjectList.id">
+        insert into wd_balance_subject_auxiliary (
+        account_book_id,
+        account_book_entity_id,
+        account_subject_id,
+        period_year,
+        period_num,
+        period_year_num,
+        opening_balance
+        ) values
+        <foreach collection="nextWithAuxiliaryBalanceSubjectList" item="auxiliary" separator=",">
+            (
+            #{auxiliary.accountBookId} ,
+            #{auxiliary.accountBookEntityId} ,
+            #{auxiliary.accountSubjectId} ,
+            #{auxiliary.periodYear} ,
+            #{auxiliary.periodNum} ,
+            #{auxiliary.periodYearNum},
+            #{auxiliary.openingBalance}
+            )
+        </foreach>
+    </insert>
+
+    <!--更新辅助核算余额-->
+    <update id="updateAuxBalanceForPostPeriod">
+        <foreach collection="balanceList" item="item" separator=";">
+            update wd_balance_subject_auxiliary a
+            <set>
+                <if test="item.debitAmount!=null">
+                    a.post_debit_amount = a.post_debit_amount + #{item.debitAmount,jdbcType=DECIMAL} ,
+                    a.post_total_debit_amount = a.post_total_debit_amount + #{item.debitAmount,jdbcType=DECIMAL} ,
+                </if>
+                <if test="item.creditAmount!=null">
+                    a.post_credit_amount = a.post_credit_amount + #{item.creditAmount,jdbcType=DECIMAL} ,
+                    a.post_total_credit_amount = a.post_total_credit_amount + #{item.creditAmount,jdbcType=DECIMAL} ,
+                </if>
+            </set>
+            where a.id = #{item.balanceAuxiliaryId,jdbcType=BIGINT}
+        </foreach>
+    </update>
+
+
+</mapper>

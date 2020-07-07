@@ -1,0 +1,564 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.basedata.mapper.DeptMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.basedata.Dept">
+        <!--@mbg.generated-->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="code_type" jdbcType="BOOLEAN" property="codeType"/>
+        <result column="code" jdbcType="VARCHAR" property="code"/>
+        <result column="prarent_id" jdbcType="BIGINT" property="prarentId"/>
+        <result column="dept_level" jdbcType="TINYINT" property="deptLevel"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="company_id" jdbcType="BIGINT" property="companyId"/>
+        <result column="attr_business_unit_id" jdbcType="BIGINT" property="attrBusinessUnitId"/>
+        <result column="dept_type" jdbcType="BIGINT" property="deptType"/>
+        <result column="dept_type_name" jdbcType="VARCHAR" property="deptTypeName"/>
+        <result column="remark" jdbcType="VARCHAR" property="remark"/>
+        <result column="is_enable" jdbcType="TINYINT" property="isEnable"/>
+        <result column="is_del" jdbcType="TINYINT" property="isDel"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="creator_id" jdbcType="BIGINT" property="creatorId"/>
+        <result column="creator_name" jdbcType="VARCHAR" property="creatorName"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+        <result column="updator_id" jdbcType="BIGINT" property="updatorId"/>
+        <result column="updator_name" jdbcType="VARCHAR" property="updatorName"/>
+        <result column="is_end" jdbcType="TINYINT" property="isEnd"/>
+        <result column="version" jdbcType="TINYINT" property="version"/>
+        <result column="root_enterprise_id" jdbcType="BIGINT" property="rootEnterpriseId"/>
+
+    </resultMap>
+
+
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        id, code_type, code,prarent_id,dept_level, `name`, company_id,attr_business_unit_id,use_company_id,business_unit_id,dept_type,dept_type_name,
+        remark, is_enable, is_del,is_end,create_time, creator_id, creator_name, update_time, updator_id,
+        updator_name
+    </sql>
+    <!--and uwc.is_del = 0-->
+    <!--and wc.is_del = 0-->
+    <!--and wbu.is_del=0-->
+    <!--and wbu.is_enable=1-->
+
+
+    <sql id="Find_Page_Where">
+        wd.is_del=0
+        and wd.root_enterprise_id=#{deptDto.rootEnterpriseId}
+        <if test="deptDto.userId != null and deptDto.isEnterpriseAdmin == 0">
+            and wd.use_company_id in (
+            select company_id from wd_sys_user_role where user_id = #{deptDto.userId}
+            )
+        </if>
+        <if test="(deptDto.companyIdList != null and deptDto.companyIdList.size() != 0)  and (deptDto.isEnterpriseAdmin==0 or deptDto.queryConditions==0 )">
+            and (wd.use_company_id in
+            <foreach collection="deptDto.companyIdList" item="company" separator="," open="(" close=")">
+                #{company}
+            </foreach>
+            or wd.company_id in
+            <foreach collection="deptDto.companyIdList" item="company" separator="," open="(" close=")">
+                #{company}
+            </foreach>
+            )
+        </if>
+        <if test="(deptDto.companyIdList != null and deptDto.companyIdList.size() != 0 )and ( deptDto.isEnterpriseAdmin==1 or deptDto.queryConditions==1)">
+            and wd.company_id in
+            <foreach collection="deptDto.companyIdList" item="company" separator="," open="(" close=")">
+                #{company}
+            </foreach>
+        </if>
+        <if test="deptDto.companyIdList != null and deptDto.companyIdList.size() != 0 and deptDto.queryConditions==2 ">
+            and wd.use_company_id in
+            <foreach collection="deptDto.companyIdList" item="company" separator="," open="(" close=")">
+                #{company}
+            </foreach>
+        </if>
+        <if test="deptDto.deptType != null ">
+            and wd.dept_type=#{deptDto.deptType}
+        </if>
+        <if test="deptDto.attrBusinessUnitId!=null">
+            and wd.attr_business_unit_id=#{deptDto.attrBusinessUnitId}
+        </if>
+        <if test="deptDto.isEnd != null ">
+            and wd.is_end=#{deptDto.isEnd}
+        </if>
+        <if test="deptDto.isEnable != null">
+            and wd.is_enable=#{deptDto.isEnable}
+        </if>
+        <if test="deptDto.deptCodeOrDeptName != null and deptDto.deptCodeOrDeptName != ''">
+            and (wd.code like CONCAT('%',#{deptDto.deptCodeOrDeptName},'%')
+            or wd.name like CONCAT('%',#{deptDto.deptCodeOrDeptName},'%'))
+        </if>
+
+    </sql>
+
+    <!-- 查询部门列表分页 -->
+    <select id="findPage" resultType="com.njwd.entity.basedata.vo.DeptVo">
+        select
+        wd.id,
+        wd.code_type,
+        wd.`code`,
+        wd.prarent_id,
+        wd.dept_level,
+        wd.`name`,
+        wd.company_id,
+        wd.attr_business_unit_id,
+        wd.use_company_id,
+        wd.business_unit_id,
+        wd.dept_type,
+        wd.dept_type_name,
+        wd.remark,
+        wd.is_enable,
+        wd.is_del,
+        wd.create_time,
+        wd.creator_id,
+        wd.creator_name,
+        wd.update_time,
+        wd.updator_id,
+        wd.updator_name,
+        wc.name as companyName,
+        bu.name as attrBusinessUnitName,
+        uwc.name as useCompanyName,
+        wbu.name as businessUnitName,
+        pwd.name as prarentName,
+        pwd.code as prarentCode,
+        duc.create_time as changeTime,
+        duc.creator_id as changePersonId,
+        duc.creator_name as changePersonName,
+        duc.id as usedId,
+        wd.is_end,
+        wd.version ,
+        wd.manage_info
+        from wd_dept wd
+        left join wd_company wc ON wd.company_id = wc.id
+        left join wd_business_unit bu on wd.attr_business_unit_id=bu.id
+        left join wd_company uwc ON wd.use_company_id = uwc.id
+        left join wd_business_unit wbu on wd.business_unit_id=wbu.id
+        left join wd_dept pwd on wd.prarent_id=pwd.id
+        LEFT JOIN
+        (SELECT max(duc.id) id,duc.dept_id
+        FROM wd_dept_use_company duc
+        GROUP BY dept_id) mduc on wd.id = mduc.dept_id
+        LEFT JOIN wd_dept_use_company duc ON mduc.id = duc.id
+        where
+        <include refid="Find_Page_Where"/>
+        ORDER BY wd.code
+    </select>
+
+
+    <!-- 批量查询部门 -->
+    <select id="findDeptByIdList" resultType="com.njwd.entity.basedata.vo.DeptVo">
+        select
+        wd.id,
+        wd.code_type,
+        wd.`code`,
+        wd.prarent_id,
+        wd.dept_level,
+        wd.`name`,
+        wd.company_id,
+        wd.attr_business_unit_id,
+        wd.use_company_id,
+        wd.business_unit_id,
+        wd.dept_type,
+        wd.dept_type_name,
+        wd.remark,
+        wd.is_enable,
+        wd.is_del,
+        wd.create_time,
+        wd.creator_id,
+        wd.creator_name,
+        wd.update_time,
+        wd.updator_id,
+        wd.updator_name,
+        wd.is_end,
+        wd.version ,
+        wd.manage_info
+        from wd_dept wd
+        where
+        id in
+        <foreach collection="deptDto.idList" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+        ORDER BY wd.code
+    </select>
+
+    <!-- 查询未删除部门 -->
+    <select id="findDeptList" resultType="com.njwd.entity.basedata.vo.DeptVo"
+            parameterType="com.njwd.entity.basedata.dto.DeptDto">
+        select
+        wd.id ,
+        wd.name,
+        wd.prarent_id,
+        wd.is_enable,
+        pwd.is_enable as parentIsEnable
+        from wd_dept wd
+        left join wd_dept pwd on wd.prarent_id=pwd.id
+        where
+        wd.is_del=0
+        <if test="deptDto.isEnable != null">
+            and wd.is_enable=#{deptDto.isEnable}
+        </if>
+        and wd.root_enterprise_id=#{deptDto.rootEnterpriseId}  order by wd.code
+    </select>
+
+    <!-- 获取上级部门列表 -->
+    <select id="findParentDeptList" resultType="com.njwd.entity.basedata.vo.DeptVo">
+        select
+        wd.id ,
+        wd.name ,
+        wd.code,
+        wd.is_enable,
+        wd.dept_level,
+        wd.`name`,
+        wd.company_id,
+        wd.attr_business_unit_id,
+        wd.use_company_id,
+        wd.business_unit_id,
+        wd.dept_type,
+        wd.dept_type_name,
+        wc.name as companyName,
+        bu.name as attrBusinessUnitName,
+        uwc.name as useCompanyName,
+        wbu.name as businessUnitName
+        from wd_dept wd
+        left join wd_company wc ON wd.company_id = wc.id
+        left join wd_business_unit bu on wd.attr_business_unit_id=bu.id
+        left join wd_company uwc ON wd.use_company_id = uwc.id
+        left join wd_business_unit wbu on wd.business_unit_id=wbu.id
+        where
+        wd.is_del=0
+        and wd.dept_level in (1,2,3)
+        and wd.company_id=#{deptDto.companyId}
+        and wd.is_enable=1
+        <if test="deptDto.deptType != null ">
+            and wd.dept_type=#{deptDto.deptType}
+        </if>
+        <if test="deptDto.deptCodeOrDeptName != null and deptDto.deptCodeOrDeptName != ''">
+            and (wd.code like CONCAT('%',#{deptDto.deptCodeOrDeptName},'%')
+            or wd.name like CONCAT('%',#{deptDto.deptCodeOrDeptName},'%'))
+        </if>
+        <if test="deptDto.id!=null">
+            and wd.id!=#{deptDto.id}
+        </if>
+        <if test="deptDto.attrBusinessUnitId!=null">
+            and wd.attr_business_unit_id=#{deptDto.attrBusinessUnitId}
+        </if>
+        <if test="deptDto.idList!=null">
+            and wd.id not in
+            <foreach collection="deptDto.idList" item="id" separator="," open="(" close=")">
+                #{id}
+            </foreach>
+        </if>
+        order by wd.code
+    </select>
+
+    <!-- 获取公司下的部门列表 -->
+    <select id="findDeptListByCompany" resultType="com.njwd.entity.basedata.vo.DeptVo">
+        select  id ,
+        name ,
+        `code`,
+        dept_level
+        from wd_dept
+        where
+        is_del=0
+        and company_id=#{deptDto.companyId}
+        <if test="deptDto.isEnable!=null">
+            and is_enable=#{deptDto.isEnable}
+        </if>
+        <if test="deptDto.deptType!=null">
+            and dept_type=#{deptDto.deptType}
+        </if>
+        <if test="deptDto.attrBusinessUnitId!=null">
+            and attr_business_unit_id=#{deptDto.attrBusinessUnitId}
+        </if>
+        <if test="deptDto.deptCodeOrDeptName != null and deptDto.deptCodeOrDeptName != ''">
+            and (`code` like CONCAT('%',#{deptDto.deptCodeOrDeptName},'%')
+            or name like CONCAT('%',#{deptDto.deptCodeOrDeptName},'%'))
+        </if>
+        <if test="deptDto.idList!=null">
+            and id not in
+            <foreach collection="deptDto.idList" item="id" separator="," open="(" close=")">
+                #{id}
+            </foreach>
+        </if>
+    </select>
+
+
+    <!-- 查询是否是末吉 -->
+    <select id="findChild"  resultType="Long"  parameterType="com.njwd.entity.basedata.dto.DeptDto">
+        select prarent_id  from wd_dept where  prarent_id in
+        <foreach collection="deptDto.idList" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+        and is_del=0
+        group by prarent_id
+    </select>
+
+    <!-- 查询变更历史数量 -->
+    <select id="findChangeCount"  resultType="com.njwd.entity.basedata.vo.DeptVo"  parameterType="com.njwd.entity.basedata.dto.DeptDto">
+        select wd.id,(select count(1)from wd_dept_use_company uc where uc.dept_id=wd.id ) as changeCount   from wd_dept wd where  wd.id in
+        <foreach collection="deptDto.idList" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+    </select>
+
+    <!-- 查询上级ID -->
+    <select id="findParentId"  resultType="Long"  parameterType="com.njwd.entity.basedata.dto.DeptDto">
+        select prarent_id  from wd_dept where  id in
+        <foreach collection="deptDto.idList" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+        and prarent_id IS NOT NULL
+        and prarent_id not in
+        <foreach collection="deptDto.idList" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+        group by prarent_id
+    </select>
+
+    <!-- 查询除已知外的下级ID -->
+    <select id="findChidrenIds"  resultType="Long"  parameterType="com.njwd.entity.basedata.dto.DeptDto">
+        select  id from wd_dept where  prarent_id in
+        <foreach collection="deptDto.idList" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+        and id not in
+        <foreach collection="deptDto.idList" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+        and is_del=0
+    </select>
+
+
+
+    <!-- 根据ID查询部门 -->
+    <select id="findById" resultType="com.njwd.entity.basedata.vo.DeptVo"
+            parameterType="com.njwd.entity.basedata.dto.DeptDto">
+        select
+            wd.id,
+            wd.code_type,
+            wd.code,
+            wd.prarent_id,
+            wd.dept_level,
+            wd.`name`,
+            wd.company_id,
+            wd.attr_business_unit_id,
+            wd.use_company_id,
+            wd.business_unit_id,
+            wd.dept_type,
+            wd.dept_type_name,
+            wd.remark,
+            wd.is_enable,
+            wd.is_del,
+            wd.create_time,
+            wd.creator_id,
+            wd.creator_name,
+            wd.update_time,
+            wd.updator_id,
+            wd.updator_name,
+            wd.is_end,
+            wc.name as companyName,
+            bu.name as attrBusinessUnitName,
+            uwc.name as useCompanyName,
+            wbu.name as businessUnitName,
+            pwd.name as prarentName,
+            pwd.code as prarentCode,
+            duc.id as usedId,
+            wd.version ,
+            wd.manage_info
+        from wd_dept wd
+                 left join wd_company wc on wd.company_id = wc.id
+                 left join wd_business_unit bu on wd.attr_business_unit_id=bu.id
+                 left join wd_company uwc ON wd.use_company_id = uwc.id
+                 left join wd_business_unit wbu on wd.business_unit_id=wbu.id
+                 left join wd_dept pwd on wd.prarent_id=pwd.id
+                 LEFT JOIN
+             (SELECT max(duc.id) id,duc.dept_id
+              FROM wd_dept_use_company duc
+              GROUP BY dept_id) mduc on wd.id = mduc.dept_id
+                 LEFT JOIN wd_dept_use_company duc ON mduc.id = duc.id
+        where
+            wd.id=#{deptDto.id}
+    </select>
+
+
+    <!-- 根据编码查询部门 -->
+    <select id="findByCode" resultType="com.njwd.entity.basedata.vo.DeptVo"
+            parameterType="com.njwd.entity.basedata.dto.DeptDto">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_dept where is_del=0 and is_enable=1 and code=#{deptDto.code} and root_enterprise_id=#{deptDto.rootEnterpriseId}
+    </select>
+
+    <!--查询已删除-->
+    <select id="findIsDel" resultType="long" parameterType="com.njwd.entity.basedata.dto.DeptDto">
+        select id from wd_dept where
+        id in
+        <foreach collection="deptDto.idList" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+        and is_del=1
+    </select>
+
+    <!--查询已禁用-->
+    <select id="findIsEnable" resultType="long" parameterType="com.njwd.entity.basedata.dto.DeptDto">
+        select id from wd_dept where
+        id in
+        <foreach collection="deptDto.idList" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+        and is_enable=#{deptDto.isEnable}
+    </select>
+
+
+    <!--新增并返回自增的id-->
+    <insert id="addDept" parameterType="com.njwd.entity.basedata.dto.DeptDto" useGeneratedKeys="true" keyProperty="id"
+            keyColumn="id">
+        <selectKey resultType="long" order="AFTER" keyProperty="deptDto.id">
+            SELECT LAST_INSERT_ID()
+        </selectKey>
+        insert into wd_dept(
+        code_type,
+        code,
+        prarent_id,
+        dept_level,
+        `name`,
+        company_id,
+        attr_business_unit_id,
+        use_company_id,
+        business_unit_id,
+        dept_type,
+        dept_type_name,
+        remark,
+        creator_id,
+        creator_name,
+        root_enterprise_id
+        )values (
+        #{deptDto.codeType},
+        #{deptDto.code},
+        #{deptDto.prarentId},
+        #{deptDto.deptLevel},
+        #{deptDto.name},
+        #{deptDto.companyId},
+        #{deptDto.attrBusinessUnitId},
+        #{deptDto.useCompanyId},
+        #{deptDto.businessUnitId},
+        #{deptDto.deptType},
+        #{deptDto.deptTypeName},
+        #{deptDto.remark},
+        #{deptDto.creatorId} ,
+        #{deptDto.creatorName},
+        #{deptDto.rootEnterpriseId}
+        )
+    </insert>
+
+
+    <!--批量新增-->
+    <insert id="addDeptBatch"  useGeneratedKeys="true" keyProperty="id" parameterType="com.njwd.entity.basedata.dto.DeptDto">
+        insert into wd_dept(
+        code_type,
+        code,
+        prarent_id,
+        dept_level,
+        `name`,
+        company_id,
+        attr_business_unit_id,
+        use_company_id,
+        business_unit_id,
+        dept_type,
+        dept_type_name,
+        remark,
+        creator_id,
+        creator_name,
+        root_enterprise_id
+        )values
+        <foreach collection="list" item="deptDto" separator=",">
+            (
+            #{deptDto.codeType},
+            #{deptDto.code},
+            #{deptDto.prarentId},
+            #{deptDto.deptLevel,jdbcType=TINYINT},
+            #{deptDto.name},
+            #{deptDto.companyId},
+            #{deptDto.attrBusinessUnitId},
+            #{deptDto.useCompanyId},
+            #{deptDto.businessUnitId},
+            #{deptDto.deptType},
+            #{deptDto.deptTypeName},
+            #{deptDto.remark},
+            #{deptDto.creatorId} ,
+            #{deptDto.creatorName},
+            #{deptDto.rootEnterpriseId}
+            )
+        </foreach>
+    </insert>
+
+    <!-- 批量删除部门并变更版本号-->
+    <update id="deleteByIds">
+        update wd_dept
+        set
+        is_del = 1,
+        version = version + 1,
+        updator_id = #{deptDto.updatorId},
+        updator_name = #{deptDto.updatorName},
+        update_time = #{deptDto.updateTime}
+        where
+        is_del = 0
+        and id in
+        <foreach collection="deptDto.idList" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+
+
+    <!-- 变更使用公司-->
+    <update id="updatUseCompanyId">
+        update wd_dept
+        set
+            use_company_id = #{deptDto.useCompanyId},
+            business_unit_id = #{deptDto.businessUnitId}
+        where
+            id=#{deptDto.id}
+    </update>
+
+    <!--验证部门编码-->
+    <select id="checkDuplicateCode" resultType="int">
+        SELECT COUNT(1) FROM wd_dept wd
+        WHERE 1=1
+        <if test="deptDto.id != null and deptDto.id != ''">
+            AND wd.id != #{deptDto.id}
+        </if>
+        <if test="deptDto.code != null and deptDto.code != ''">
+            AND wd.code = #{deptDto.code}
+        </if>
+        AND wd.is_del = 0
+        and company_id=#{deptDto.companyId}
+        and dept_level=#{deptDto.deptLevel}
+        and wd.root_enterprise_id=#{deptDto.rootEnterpriseId}
+    </select>
+
+    <!--验证部门名称-->
+    <select id="checkDuplicateName" resultType="int">
+        SELECT COUNT(1) FROM wd_dept wd
+        WHERE 1=1
+        <if test="deptDto.id != null ">
+            AND wd.id != #{deptDto.id}
+        </if>
+        <if test="deptDto.name != null and deptDto.name != ''">
+            AND wd.name = #{deptDto.name}
+        </if>
+        AND wd.is_del = 0
+        and company_id=#{deptDto.companyId}
+        and business_unit_id = #{deptDto.businessUnitId}
+        and dept_level=#{deptDto.deptLevel}
+        and wd.root_enterprise_id=#{deptDto.rootEnterpriseId}
+    </select>
+
+
+    <!--根据公司ID、部门名称 查询部门ID-->
+    <select id="findIdByCompanyIdAndDeptName" parameterType="com.njwd.entity.basedata.dto.DeptDto"
+            resultType="java.lang.String">
+        SELECT wd.id FROM wd_dept wd
+        WHERE wd.company_id = #{deptDto.companyId}
+          AND wd.name = #{deptDto.name}
+    </select>
+</mapper>

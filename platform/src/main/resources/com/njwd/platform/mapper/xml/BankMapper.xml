@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.BankMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.platform.vo.BankVo">
+    </resultMap>
+
+    <sql id="Base_Column_List">
+    t.id, t.code, t.name, t.category_id, t.status, t.province, t.city, t.line_number, t.is_approved, t.is_released,
+    t.is_enable, t.is_del, t.creator_id, t.create_time, t.creator_name, t.updator_id, t.update_time, t.updator_name, t.manage_info
+    </sql>
+
+    <select id="findBankPage" resultMap="BaseResultMap">
+        select<include refid="Base_Column_List"/>,
+        f.CODE as bankCategoryCode,
+        f.NAME as bankCategoryName
+        from wd_bank t
+        left join wd_bank_category f on t.category_id = f.id
+        <where>
+            and t.is_del=0
+            <if test="bankDto.categoryIdList != null and bankDto.categoryIdList.size() > 0">
+                and t.category_id in
+                <foreach collection="bankDto.categoryIdList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="bankDto.isApproved != null">
+                and t.is_approved = #{bankDto.isApproved}
+            </if>
+            <if test="bankDto.isReleased != null">
+                and t.is_released = #{bankDto.isReleased}
+            </if>
+            <if test="bankDto.codeOrName != null and bankDto.codeOrName != ''">
+                and (t.code like concat('%',#{bankDto.codeOrName},'%')
+                or t.name like concat('%',#{bankDto.codeOrName},'%'))
+            </if>
+        </where>
+    </select>
+
+    <select id="findBankById" resultMap="BaseResultMap">
+        select<include refid="Base_Column_List"/>,
+        f.CODE as bankCategoryCode,
+        f.NAME as bankCategoryName
+        from wd_bank t
+        left join wd_bank_category f on t.category_id = f.id
+        where t.id = #{bankDto.id}
+    </select>
+</mapper>

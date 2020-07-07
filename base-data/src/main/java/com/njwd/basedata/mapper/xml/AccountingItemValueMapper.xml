@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.basedata.mapper.AccountingItemValueMapper">
+	<resultMap id="BaseResultMap" type="com.njwd.entity.basedata.AccountingItemValue">
+	</resultMap>
+	<sql id="Base_Column_List">
+		<!--@mbg.generated-->
+		id, company_id, use_company_id, item_id, `name`, code_type, code, is_enable, is_del,manage_info,version,
+		create_time, creator_id, creator_name, update_time, updator_id, updator_name,remark,data_type
+	</sql>
+	<!-- 根据id查询自定义核算项目大区值-->
+	<select id="findById" resultType="com.njwd.entity.basedata.vo.AccountingItemValueVo">
+		select
+		t.id, t.company_id, t.use_company_id, t.item_id, t.`name`, t.code_type, t.code, t.is_enable, t.is_del,t.manage_info,t.version,
+		t.create_time, t.creator_id, t.creator_name, t.update_time, t.updator_id, t.updator_name,t.remark,t.data_type
+		,case t.company_id when 0 then "集团" else c.name end companyName
+		,case t.use_company_id when 0 then "集团" else cm.name end useCompanyName
+		,t.is_enable
+		from wd_accounting_item_value t
+		left join wd_company c ON t.company_id = c.id
+		left join wd_company cm ON t.use_company_id = cm.id
+		where  t.id = #{id}
+    </select>
+	<!-- 查询自定义核算项目大区值列表分页 -->
+	<select id="findPage" parameterType="com.njwd.entity.basedata.dto.AccountingItemValueDto"
+			resultType="com.njwd.entity.basedata.vo.AccountingItemValueVo">
+		select
+		t.id, t.company_id, t.use_company_id, t.item_id, t.`name`, t.code_type, t.code, t.is_enable, t.is_del,t.manage_info,t.version,
+		t.create_time, t.creator_id, t.creator_name, t.update_time, t.updator_id, t.updator_name,t.remark,t.data_type
+		,case t.company_id when 0 then "集团" else c.name end companyName
+		,case t.use_company_id when 0 then "集团" else cm.name end useCompanyName
+		,t.is_enable
+		from wd_accounting_item_value t
+		left join wd_company c ON t.company_id = c.id
+		left join wd_company cm ON t.use_company_id = cm.id
+		where
+		t.is_del = 0
+		<if test="accountingItemValueDto.isEnable != null">
+			and t.is_enable = #{accountingItemValueDto.isEnable}
+		</if>
+		<if test="accountingItemValueDto.codeOrName != null and accountingItemValueDto.codeOrName != ''">
+			and (t.code like concat('%',#{accountingItemValueDto.codeOrName},'%')
+			or t.name like concat('%',#{accountingItemValueDto.codeOrName},'%'))
+		</if>
+		<if test="accountingItemValueDto.itemId != null">
+			and t.item_id = #{accountingItemValueDto.itemId}
+		</if>
+		<if test="accountingItemValueDto.companyIds != null and accountingItemValueDto.companyIds.size()>0">
+			and (t.company_id in
+			<foreach collection="accountingItemValueDto.companyIds" item="accountingItemValueDto.companyIds"
+					 index="index" open="(" separator="," close=")">
+				#{accountingItemValueDto.companyIds}
+			</foreach>
+			or t.use_company_id in
+			<foreach collection="accountingItemValueDto.companyIds" item="accountingItemValueDto.companyIds"
+					 index="index" open="(" separator="," close=")">
+				#{accountingItemValueDto.companyIds}
+			</foreach>
+			)
+		</if>
+		<if test="accountingItemValueDto.exportIds != null and accountingItemValueDto.exportIds != ''">
+			and FIND_IN_SET(t.id,#{accountingItemValueDto.exportIds})
+		</if>
+		<if test="accountingItemValueDto.rootEnterpriseId != null">
+			and t.root_enterprise_id = #{accountingItemValueDto.rootEnterpriseId}
+		</if>
+		order by t.code
+	</select>
+	<!-- 根据ids查询自定义核算项目大区值 -->
+	<select id="findItemValueListById" parameterType="com.njwd.entity.basedata.dto.AccountingItemValueDto"
+			resultType="com.njwd.entity.basedata.vo.AccountingItemValueVo">
+		select
+		t.id, t.company_id, t.use_company_id, t.item_id, t.`name`, t.code_type, t.code, t.is_enable, t.is_del,t.manage_info,t.version,
+		t.create_time, t.creator_id, t.creator_name, t.update_time, t.updator_id, t.updator_name,t.remark,t.data_type
+		,case t.company_id when 0 then "集团" else c.name end companyName
+		,case t.use_company_id when 0 then "集团" else cm.name end useCompanyName
+		,t.is_enable
+		from wd_accounting_item_value t
+		left join wd_company c ON t.company_id = c.id
+		left join wd_company cm ON t.use_company_id = cm.id
+		where 1=1
+		<if test="accountingItemValueDto.ids != null and accountingItemValueDto.ids.size() != 0">
+			and t.id in
+			<foreach collection="accountingItemValueDto.ids" item="id" separator="," open="(" close=")">
+				#{id}
+			</foreach>
+		</if>
+	</select>
+	<!-- 根据 编码名称 查询自定义核算项目大区值 -->
+	<select id="findAccountingItemValueByName" parameterType="com.njwd.entity.basedata.dto.AccountingItemValueDto"
+			resultType="int">
+		select count(1)
+		from wd_accounting_item_value t
+		where
+		t.is_del = 0
+		and t.name = #{name}
+		<if test="id != null ">
+			and t.id != #{id}
+		</if>
+		<if test="rootEnterpriseId != null">
+			and t.root_enterprise_id = #{rootEnterpriseId}
+		</if>
+    </select>
+	<!--  校验自定义核算项目值版本号是否一致 -->
+	<select id="findAccountingItemValueByVersion" parameterType="com.njwd.entity.basedata.dto.AccountingItemDto"
+			resultType="int">
+		select count(1)
+		from wd_accounting_item_value t
+		where
+		t.is_del = 0
+		<if test="id != null ">
+			and t.id = #{id}
+		</if>
+		<if test="version != null ">
+			and t.version = #{version}
+		</if>
+		<if test="rootEnterpriseId != null">
+			and t.root_enterprise_id = #{rootEnterpriseId}
+		</if>
+	</select>
+	<!-- 根据 编码 查询自定义核算项目大区值 -->
+	<select id="findAccountingItemValueByCode" parameterType="com.njwd.entity.basedata.dto.AccountingItemValueDto"
+			resultType="int">
+		select count(1)
+		from wd_accounting_item_value t
+		where
+		t.is_del = 0
+		and t.code = #{code}
+		<if test="id != null ">
+			and t.id != #{id}
+		</if>
+		<if test="companyId != null">
+			and t.company_id = #{companyId}
+		</if>
+    </select>
+	<!-- 查询自定义核算项目大区值是否被删除,被禁用明细 -->
+	<select id="findIsDel" parameterType="com.njwd.entity.basedata.dto.AccountingItemValueDto"
+			resultType="com.njwd.entity.basedata.vo.AccountingItemValueVo">
+		select
+		<include refid="Base_Column_List"/>
+		from wd_accounting_item_value t
+		where
+		<if test="isDel != null ">
+			t.is_del = #{isDel}
+		</if>
+		<if test="isEnable != null ">
+			t.is_enable = #{isEnable}
+		</if>
+		<if test="ids != null and ids.size()>0 ">
+			and t.id in
+			<foreach collection="ids" item="id" index="index" open="(" separator="," close=")">
+				#{id}
+			</foreach>
+		</if>
+	</select>
+	<!--批量新增-->
+	<insert id="addBatchAccountingItemValue" parameterType="com.njwd.entity.basedata.AccountingItemValue">
+		insert into wd_accounting_item_value
+		(
+		company_id,
+		use_company_id,
+		item_id,
+		code_type,
+		code,
+		name,
+		creator_id,
+		creator_name,
+		create_time,
+		root_enterprise_id,
+		remark,
+		data_type)
+		values
+		<foreach collection="list" item="accountingItemValue" separator=",">
+			(
+			#{accountingItemValue.companyId},
+			#{accountingItemValue.useCompanyId},
+			#{accountingItemValue.itemId},
+			#{accountingItemValue.codeType},
+			#{accountingItemValue.code},
+			#{accountingItemValue.name},
+			#{accountingItemValue.creatorId},
+			#{accountingItemValue.creatorName},
+			#{accountingItemValue.createTime},
+			#{accountingItemValue.rootEnterpriseId},
+			#{accountingItemValue.remark},
+			#{accountingItemValue.dataType}
+			)
+		</foreach>
+	</insert>
+
+	<!-- 查询所有未删除的自定义核算 -->
+	<select id="findAllAccountItemValueByItemId" parameterType="com.njwd.entity.basedata.dto.AccountingItemValueDto"
+			resultType="com.njwd.entity.basedata.vo.AccountingItemValueVo">
+		SELECT
+		t1.id id,
+		t1.item_id itemId,
+		t1.`name` name,
+		t1.is_enable isEnable
+		FROM
+		wd_accounting_item_value t1
+		<where>
+			AND t1.is_del = 0
+			AND	t1.item_id = #{accountingItemValueDto.itemId}
+		</where>
+		ORDER BY t1.id
+	</select>
+
+	<!--查询所有未删除的辅助核算-->
+	<select id="findAllAuxiliaryItemValue" parameterType="com.njwd.entity.basedata.dto.AccountingItemValueDto"
+			resultType="com.njwd.entity.basedata.vo.AccountingItemValueVo">
+		SELECT
+		t1.id id,
+		t1.`name` name
+		FROM
+		${accountingItemValueDto.sourceTable} t1
+		<where>
+			t1.is_del = 0
+		</where>
+		ORDER BY t1.id
+	</select>
+</mapper>

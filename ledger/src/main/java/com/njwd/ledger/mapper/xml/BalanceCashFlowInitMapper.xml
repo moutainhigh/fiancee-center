@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.ledger.mapper.BalanceCashFlowInitMapper">
+  <resultMap id="BaseResultMap" type="com.njwd.entity.ledger.BalanceCashFlowInit">
+    <!--@mbg.generated-->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="account_book_system_id" jdbcType="BIGINT" property="accountBookSystemId" />
+    <result column="account_book_id" jdbcType="BIGINT" property="accountBookId" />
+    <result column="account_book_entity_id" jdbcType="BIGINT" property="accountBookEntityId" />
+    <result column="period_year" jdbcType="BIGINT" property="periodYear" />
+    <result column="period_num" jdbcType="BIGINT" property="periodNum" />
+    <result column="item_id" jdbcType="BIGINT" property="itemId" />
+    <result column="opening_balance" jdbcType="DECIMAL" property="openingBalance" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, account_book_system_id, account_book_id, account_book_entity_id,period_year,period_num, item_id, opening_balance
+  </sql>
+    <insert id="addCashFlowInitBatch">
+      insert into wd_balance_cash_flow_init(account_book_system_id,account_book_id,account_book_entity_id,period_year,period_num,item_id,opening_balance)
+      values
+      <foreach collection="balanceCashFlowInits" item="item" index="index" separator=",">
+        (#{item.accountBookSystemId},#{item.accountBookId},#{item.accountBookEntityId} ,#{item.periodYear},#{item.periodNum},#{item.itemId},#{item.openingBalance})
+      </foreach>
+    </insert>
+
+  <select id="findCashFlowItemIdFromInit" resultType="com.njwd.entity.ledger.vo.BalanceCashFlowInitVo">
+    select distinct item_id from wd_balance_cash_flow_init
+  </select>
+  <select id="selectBalanceCashFlowInitList" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List"/>
+    from wd_balance_cash_flow_init t
+    <where>
+      <if test="accountBookId != null">
+        t.account_book_id=#{accountBookId}
+      </if>
+      <if test="accountBookSystemId != null">
+        and t.account_book_system_id=#{accountBookSystemId}
+      </if>
+      <if test="periodYear != null">
+        and t.period_year=#{periodYear}
+      </if>
+      <if test="periodNum != null">
+        and t.period_num=#{periodNum}
+      </if>
+    </where>
+  </select>
+</mapper>

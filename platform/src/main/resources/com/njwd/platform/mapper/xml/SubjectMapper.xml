@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.SubjectMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.platform.vo.SubjectVo">
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="code" jdbcType="VARCHAR" property="code"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="acc_standard_id" jdbcType="BIGINT" property="accStandardId"/>
+        <result column="is_base" jdbcType="TINYINT" property="isBase"/>
+        <result column="account_type_id" jdbcType="BIGINT" property="accountTypeId"/>
+        <result column="parent_id" jdbcType="BIGINT" property="parentId"/>
+        <result column="max_level" jdbcType="VARCHAR" property="maxLevel"/>
+        <result column="data_type" jdbcType="TINYINT" property="dataType"/>
+        <result column="is_init" jdbcType="TINYINT" property="isInit"/>
+        <result column="is_enable" jdbcType="TINYINT" property="isEnable"/>
+        <result column="is_del" jdbcType="TINYINT" property="isDel"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="creator_id" jdbcType="BIGINT" property="creatorId"/>
+        <result column="creator_name" jdbcType="VARCHAR" property="creatorName"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+        <result column="updator_id" jdbcType="BIGINT" property="updatorId"/>
+        <result column="updator_name" jdbcType="VARCHAR" property="updatorName"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+    wca.id, wca.code, wca.`name`,wca.account_book_type_id,wca.account_book_type_name,wca.subject_id,wca.subject_name,wca.template_subject_id,
+    wca.template_subject_name, wca.acc_standard_id, wca.is_base, wca.account_type_id, wca.parent_id, wca.max_level,
+    wca.is_init, wca.is_enable,wca.is_del, wca.create_time, wca.creator_id, wca.creator_name, wca.update_time,
+    wca.updator_id, wca.updator_name,wca.data_type
+  </sql>
+    <sql id="new_column_list">
+            ws.`id`,
+            ws.`root_enterprise_id`,
+            ws.`account_book_type_id`,
+            ws.`account_book_type_name`,
+            ws.`code`,
+            ws.`name`,
+            ws.`acc_standard_id`,
+            ws.`acc_standard_name`,
+            ws.`subject_id`,
+            ws.`template_subject_id`,
+            ws.`template_subject_name`,
+            ws.`is_base`,
+            ws.`account_type_id`,
+            ws.`parent_id`,
+            ws.`max_level`,
+            ws.`maximum_level`,
+            ws.`element_id`,
+            ws.`data_type`,
+            ws.`is_init`,
+            ws.`is_enable`,
+            ws.`is_del`,
+            ws.`is_approved`,
+            ws.`is_released`,
+            ws.`create_time`,
+            ws.`creator_id`,
+            ws.`creator_name`,
+            ws.`update_time`,
+            ws.`updator_id`,
+            ws.`updator_name`,
+            ws.`manage_info`,
+            ws.`version`
+    </sql>
+    <select id="findSubjectList" resultMap="BaseResultMap">
+        select<include refid="Base_Column_List"/>,
+            was.name as accStandardName,
+            wabt.name as accountTypeName,
+            ws.name as parentName
+        from wd_subject wca left join wd_accounting_standard was on wca.acc_standard_id=was.id
+        left join wd_account_book_type wabt on wca.account_type_id=wabt.id
+        left join wd_subject ws on wca.parent_id=ws.id
+        <where>
+            wca.is_enable=1 and wca.is_del=0
+            <if test="isBase!=null">
+                and wca.is_base=#{isBase}
+            </if>
+            <if test="accStandardId != null">
+                and wca.acc_standard_id=#{accStandardId}
+            </if>
+            <if test="accountTypeId != null">
+                and wca.account_type_id=#{accountTypeId}
+            </if>
+            <if test="parentId != null">
+                and wca.parent_id=#{parentId}
+            </if>
+            <if test="id != null">
+                and wca.id=#{id}
+            </if>
+        </where>
+        order by wca.id asc
+    </select>
+    <select id="findSubjectListPage" resultMap="BaseResultMap">
+        select<include refid="Base_Column_List"/>,
+        was.name as accStandardName,
+        wabt.name as accountTypeName,
+        wae.name as elementName
+        from wd_subject wca left join wd_accounting_standard was on wca.acc_standard_id=was.id
+        left join wd_account_book_type wabt on wca.account_type_id=wabt.id
+        left join wd_account_element wae on wca.element_id= wae.id
+        <where>
+            wca.is_enable=1 and wca.is_del=0
+            <if test="subjectDto.isBase!=null">
+                and wca.is_base=#{subjectDto.isBase}
+            </if>
+            <if test="subjectDto.accStandardId != null">
+                and wca.acc_standard_id=#{subjectDto.accStandardId}
+            </if>
+            <if test="subjectDto.accountTypeId != null">
+                and wca.account_type_id=#{subjectDto.accountTypeId}
+            </if>
+            <if test="subjectDto.parentId != null">
+                and wca.parent_id=#{subjectDto.parentId}
+            </if>
+            <if test="subjectDto.id != null">
+                and wca.id=#{subjectDto.id}
+            </if>
+            <if test="subjectDto.name != null and subjectDto.name != ''">
+                and wca.name like concat('%',#{subjectDto.name}
+                ,'%')
+            </if>
+        </where>
+        order by wca.id asc
+    </select>
+    <select id="findPage" resultMap="BaseResultMap">
+        select
+        wae.name elementName,
+        pws.name subjectName,
+        wabt.name accountTypeName,
+        <include refid="new_column_list"/>
+        from wd_subject ws
+        left join wd_account_element wae on wae.id = ws.element_id
+        left join wd_subject pws on pws.id = ws.subject_id
+        left join wd_account_book_type wabt on wabt.id = ws.account_type_id
+        <where>
+            <if test="subjectDto.accStandardIds != null and subjectDto.accStandardIds.length != 0">
+                ws.acc_standard_id in
+                <foreach collection="subjectDto.accStandardIds" item="accStandardId" separator="," open="(" close=")">
+                    #{accStandardId}
+                </foreach>
+            </if>
+            <if test="subjectDto.elementIds != null and subjectDto.elementIds.length != 0">
+                and ws.element_id in
+                <foreach collection="subjectDto.elementIds" item="elementId" separator="," open="(" close=")">
+                    #{elementId}
+                </foreach>
+            </if>
+            <if test="subjectDto.isApproved != null">
+                and ws.is_approved = #{subjectDto.isApproved}
+            </if>
+            <if test="subjectDto.isReleased != null">
+                and ws.is_released = #{subjectDto.isReleased}
+            </if>
+            <if test="subjectDto.codeOrName != null and subjectDto.codeOrName != ''">
+                and (
+                ws.code like concat('%',#{subjectDto.codeOrName},'%')
+                or ws.name like concat('%',#{subjectDto.codeOrName},'%')
+                )
+            </if>
+            and ws.is_del = 0
+        </where>
+        order by ws.code
+    </select>
+    <select id="findDetail" resultMap="BaseResultMap">
+        select
+        wae.name elementName,
+        pws.name subjectName,
+        wabt.name accountTypeName,
+        <include refid="new_column_list"/>
+        from wd_subject ws
+        left join wd_account_element wae on wae.id = ws.element_id
+        left join wd_subject pws on pws.id = ws.subject_id
+        left join wd_account_book_type wabt on wabt.id = ws.account_type_id
+        where ws.id = #{id}
+    </select>
+</mapper>

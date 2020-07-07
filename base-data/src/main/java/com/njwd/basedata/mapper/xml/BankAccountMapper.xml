@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.basedata.mapper.BankAccountMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.basedata.BankAccount">
+        <!--@mbg.generated-->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="up_id" jdbcType="BIGINT" property="upId"/>
+        <result column="root_enterprise_id" jdbcType="BIGINT" property="rootEnterpriseId"/>
+        <result column="company_id" jdbcType="BIGINT" property="companyId"/>
+        <result column="use_company_id" jdbcType="BIGINT" property="useCompanyId"/>
+        <result column="business_unit_id" jdbcType="BIGINT" property="businessUnitId"/>
+        <result column="deposit_bank_id" jdbcType="BIGINT" property="depositBankId"/>
+        <result column="deposit_bank_name" jdbcType="BIGINT" property="depositBankName"/>
+        <result column="account" jdbcType="VARCHAR" property="account"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="acc_type" jdbcType="BIGINT" property="accType"/>
+        <result column="acc_type_name" jdbcType="BIGINT" property="accTypeName"/>
+        <result column="acc_usage" jdbcType="BIGINT" property="accUsage"/>
+        <result column="acc_usage_name" jdbcType="BIGINT" property="accUsageName"/>
+        <result column="is_enable" jdbcType="TINYINT" property="isEnable"/>
+        <result column="is_del" jdbcType="TINYINT" property="isDel"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="creator_id" jdbcType="BIGINT" property="creatorId"/>
+        <result column="creator_name" jdbcType="VARCHAR" property="creatorName"/>
+        <result column="create_company_id" jdbcType="BIGINT" property="createCompanyId"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+        <result column="updator_id" jdbcType="BIGINT" property="updatorId"/>
+        <result column="updator_name" jdbcType="VARCHAR" property="updatorName"/>
+    </resultMap>
+
+    <resultMap id="BankAccountResultMap" type="com.njwd.entity.basedata.vo.BankAccountVo">
+        <!--@mbg.generated-->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="up_id" jdbcType="BIGINT" property="upId"/>
+        <result column="company_id" jdbcType="BIGINT" property="companyId"/>
+        <result column="company_name" jdbcType="VARCHAR" property="companyName"/>
+        <result column="use_company_id" jdbcType="BIGINT" property="useCompanyId"/>
+        <result column="use_company_name" jdbcType="VARCHAR" property="useCompanyName"/>
+        <result column="deposit_bank_id" jdbcType="BIGINT" property="depositBankId"/>
+        <result column="deposit_bank_name" jdbcType="BIGINT" property="depositBankName"/>
+        <result column="account" jdbcType="VARCHAR" property="account"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="acc_type" jdbcType="BIGINT" property="accType"/>
+        <result column="acc_type_name" jdbcType="BIGINT" property="accTypeName"/>
+        <result column="acc_usage" jdbcType="BIGINT" property="accUsage"/>
+        <result column="acc_usage_name" jdbcType="BIGINT" property="accUsageName"/>
+        <result column="business_unit_id" jdbcType="BIGINT" property="businessUnitId"/>
+        <result column="business_unit_name" jdbcType="VARCHAR" property="businessUnitName"/>
+        <result column="is_enable" jdbcType="BIGINT" property="isEnable"/>
+        <result column="is_del" jdbcType="BIGINT" property="isDel"/>
+        <result column="is_del" jdbcType="BIGINT" property="isDel"/>
+        <result column="creator_name" jdbcType="BIGINT" property="creatorName"/>
+        <result column="create_time" jdbcType="BIGINT" property="createTime"/>
+        <result column="updator_name" jdbcType="BIGINT" property="updatorName"/>
+        <result column="update_time" jdbcType="BIGINT" property="updateTime"/>
+        <result column="version" jdbcType="TIMESTAMP" property="version"/>
+        <collection property="bankAccountCurrencyList" ofType="com.njwd.entity.basedata.BankAccountCurrency">
+            <id column="bank_account_currency_id" property="id"/>
+            <id column="currency_id" property="currencyId"/>
+            <result column="currency_name" property="currencyName"/>
+        </collection>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        id, up_id, company_id, use_company_id, auxiliary_id, deposit_bank_id, account, `name`,
+        acc_type, acc_type_name, acc_usage, acc_usage_name, is_enable, is_del, create_time, creator_id, creator_name,
+        update_time, updator_id, updator_name
+    </sql>
+
+    <!-- 查询内容 -->
+    <select id="findOne" resultMap="BankAccountResultMap">
+        select ba.id,ba.company_id,c.`name` company_name,ba.use_company_id,c2.`name` use_company_name,ba.deposit_bank_id,ba.deposit_bank_name,ba.account,ba.`name`,
+        ba.acc_type,ba.acc_type_name,ba.acc_usage,ba.acc_usage_name,bac.id `bank_account_currency_id`,ba.business_unit_id,bu.name `business_unit_name`,bac.currency_id,bac.currency_name,ba.is_enable,
+        ba.version,ba.is_del
+        from wd_bank_account ba
+        left join wd_bank_account_currency bac on ba.id = bac.bank_account_id
+        left join wd_company c on ba.company_id = c.id
+        left join wd_company c2 on ba.use_company_id = c2.id
+        left join wd_business_unit bu on ba.business_unit_id = bu.id
+        <where>
+            <if test="BankAccountDto.id != null">
+                and ba.id = #{BankAccountDto.id}
+            </if>
+            <if test="BankAccountDto.companyIdList != null">
+                and ba.company_id in
+                <foreach collection="BankAccountDto.companyIdList" item="companyId" index="index" open="(" close=")"
+                         separator=",">
+                    #{companyId}
+                </foreach>
+            </if>
+            <if test="BankAccountDto.accType != null">
+                and ba.acc_type = #{BankAccountDto.accType}
+            </if>
+            <if test="BankAccountDto.accUsage != null">
+                and ba.acc_usage = #{BankAccountDto.accUsage}
+            </if>
+            <if test="BankAccountDto.isEnable != null">
+                and ba.is_enable = #{BankAccountDto.isEnable}
+            </if>
+            <if test="BankAccountDto.accountOrBankName != null and BankAccountDto.accountOrBankName != ''">
+                and (ba.account like CONCAT('%',#{BankAccountDto.accountOrBankName},'%')
+                OR ba.deposit_bank_name like CONCAT('%',#{BankAccountDto.accountOrBankName},'%'))
+            </if>
+        </where>
+        order by ba.account
+        limit 1
+    </select>
+
+    <!-- 查询上一个 下一个 首个 末个 -->
+    <select id="findPreviousNextId" resultType="java.lang.Long">
+        select
+        case
+        when SIGN(ba.id - #{BankAccountDto.id}) &gt; 0 then MIN(ba.id)
+        when SIGN(ba.id - #{BankAccountDto.id}) &lt; 0 then MAX(ba.id)
+        else ba.id
+        end `id`
+        from wd_bank_account ba
+        <where>
+            <if test="BankAccountDto.companyIdList != null">
+                and ba.company_id in
+                <foreach collection="BankAccountDto.companyIdList" item="companyId" index="index" open="(" close=")"
+                         separator=",">
+                    #{companyId}
+                </foreach>
+            </if>
+            <if test="BankAccountDto.accType != null">
+                and ba.acc_type = #{BankAccountDto.accType}
+            </if>
+            <if test="BankAccountDto.accUsage != null">
+                and ba.acc_usage = #{BankAccountDto.accUsage}
+            </if>
+            <if test="BankAccountDto.isEnable != null">
+                and ba.is_enable = #{BankAccountDto.isEnable}
+            </if>
+            <if test="BankAccountDto.accountOrBankName != null and BankAccountDto.accountOrBankName != ''">
+                and (ba.account like CONCAT('%',#{BankAccountDto.accountOrBankName},'%')
+                OR ba.deposit_bank_name like CONCAT('%',#{BankAccountDto.accountOrBankName},'%'))
+            </if>
+            and ba.is_del = 0
+        </where>
+        group by SIGN(ba.id - #{BankAccountDto.id})
+    </select>
+
+    <!-- 查询是否存在 -->
+    <select id="findHasOne" resultType="com.njwd.entity.basedata.BankAccount">
+        select account,`name`
+        from wd_bank_account ba
+        <where>
+            (ba.account = #{BankAccountDto.account} OR ba.`name` = #{BankAccountDto.name})
+            <if test="BankAccountDto.id != null">
+                and id != #{BankAccountDto.id}
+            </if>
+            and ba.root_enterprise_id = #{BankAccountDto.rootEnterpriseId}
+            and ba.is_del = 0
+        </where>
+        LIMIT 1
+    </select>
+
+    <!-- 查询禁用状态删除状态 -->
+    <select id="findEnableAndDel" resultType="com.njwd.entity.basedata.BankAccount">
+        select bc.id,bc.is_enable,bc.is_del,bc.version
+        from wd_bank_account bc
+        <where>
+            and bc.id = #{BankAccountDto.id}
+        </where>
+    </select>
+
+    <!-- findEnableAndDelInIds -->
+    <select id="findEnableAndDelInIds" resultType="com.njwd.entity.basedata.BankAccount">
+        SELECT id,use_company_id,version,is_enable,is_del
+        from wd_bank_account ba
+        <where>
+            and ba.id in
+            <foreach collection="BankAccountDto.idList" item="id" index="index" open="(" close=")" separator=",">
+            #{id}
+            </foreach>
+        </where>
+    </select>
+
+    <!-- 查询是否存在同样的银行账号或者账户名称 -->
+    <select id="findHasAccountOrName" resultType="java.lang.Integer">
+        select COUNT(1)
+        from wd_bank_account ba
+        <where>
+            <if test="BankAccountDto.account != null">
+                and ba.account = #{BankAccountDto.account}
+            </if>
+            <if test="BankAccountDto.name != null">
+                and ba.name = #{BankAccountDto.name}
+            </if>
+            <if test="BankAccountDto.id != null">
+                and id != #{BankAccountDto.id}
+            </if>
+            and ba.root_enterprise_id = #{BankAccountDto.rootEnterpriseId}
+            and ba.is_del = 0
+        </where>
+    </select>
+
+    <!-- 查询银行账户分页 -->
+    <select id="findPage" resultType="com.njwd.entity.basedata.vo.BankAccountVo">
+        select ba.id,ba.account,ba.`name`,ba.deposit_bank_name,ba.acc_type_name,ba.acc_usage_name,c.`name` `company_name`,
+        c2.`name` `use_company_name`,bu.name `business_unit_name`,ba.is_enable,
+        ba.creator_name,ba.create_time,ba.updator_name,ba.update_time,ba.version version,ba.manage_info
+        from wd_bank_account ba
+        left join wd_company c on ba.company_id = c.id
+        left join wd_company c2 on ba.use_company_id = c2.id
+        left join wd_business_unit bu on ba.business_unit_id = bu.id
+        <where>
+            <if test="BankAccountDto.companyIdList != null and BankAccountDto.companyIdList.size() > 0">
+                and (
+                ba.company_id in
+                <foreach collection="BankAccountDto.companyIdList" item="companyId" index="index" open="(" close=")"
+                         separator=",">
+                    #{companyId}
+                </foreach>
+                <if test="BankAccountDto.isEnterpriseAdmin == 0">
+                or
+                ba.use_company_id in
+                <foreach collection="BankAccountDto.companyIdList" item="companyId" index="index" open="(" close=")"
+                         separator=",">
+                    #{companyId}
+                </foreach>
+                </if>
+                )
+            </if>
+            <if test="BankAccountDto.accType != null">
+                and ba.acc_type = #{BankAccountDto.accType}
+            </if>
+            <if test="BankAccountDto.accUsage != null">
+                and ba.acc_usage = #{BankAccountDto.accUsage}
+            </if>
+            <if test="BankAccountDto.isEnable != null">
+                and ba.is_enable = #{BankAccountDto.isEnable}
+            </if>
+            <if test="BankAccountDto.accountOrBankName != null and BankAccountDto.accountOrBankName != ''">
+                and (ba.account like CONCAT('%',#{BankAccountDto.accountOrBankName},'%')
+                OR ba.name like CONCAT('%',#{BankAccountDto.accountOrBankName},'%')
+                )
+            </if>
+            and ba.is_del = 0
+            <if test="BankAccountDto.rootEnterpriseId != null">
+                and ba.root_enterprise_id = #{BankAccountDto.rootEnterpriseId}
+            </if>
+        </where>
+        order by ba.account
+    </select>
+
+    <!--  批量修改　-->
+    <update id="deleteBatch">
+            update wd_bank_account
+            set is_del = #{BankAccountDto.isDel},
+            version = version +1,
+            updator_id =#{BankAccountDto.updatorId},
+            update_time=#{BankAccountDto.updateTime},
+            updator_name=#{BankAccountDto.updatorName}
+            <where>
+                and id in
+                <foreach collection="BankAccountDto.batchIds" item="id" index="index" open="(" close=")" separator=",">
+                    #{id}
+                </foreach>
+            </where>
+    </update>
+
+</mapper>

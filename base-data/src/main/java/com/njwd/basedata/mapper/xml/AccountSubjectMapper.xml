@@ -1,0 +1,971 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.basedata.mapper.AccountSubjectMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.platform.vo.AccountSubjectVo">
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        t.id, t.root_enterprise_id, t.up_code, t.code, t.name, t.full_name, t.level, t.create_company_id,t.company_id,
+        t.use_company_id, t.subject_id, t.balance_direction, t.account_element_item, t.account_element_item_name,
+        t.is_profit_and_loss, t.is_off_balance, t.subject_category, t.subject_category_name, t.account_category,
+        t.is_interior, t.cash_flow_id, t.cash_inflow_id, t.cash_inflow_code, t.cash_inflow_name,
+        t.cash_outflow_id, t.cash_outflow_code, t.cash_outflow_name,
+        t.is_final, t.is_init, t.is_enable, t.is_del, t.create_time,
+        t.creator_id, t.creator_name, t.update_time, t.updator_id,
+        t.updator_name, t.manage_info, t.version, t.platform_id, t.platform_name
+    </sql>
+
+    <delete id="delete">
+        delete from wd_account_subject
+        where subject_id = #{accountSubjectDto.subjectId}
+    </delete>
+
+    <update id="updateIsFinal">
+        update wd_account_subject
+        set is_final = #{accountSubjectDto.isFinal},
+            version = version + 1
+        where id = #{accountSubjectDto.id}
+    </update>
+
+    <update id="updateSingleDelete">
+        update wd_account_subject
+        set is_del = #{accountSubjectDto.isDel},
+            version = version + 1
+        where id = #{accountSubjectDto.id}
+    </update>
+
+    <update id="updateBatchDelete">
+        update wd_account_subject
+        set is_del = #{accountSubjectDto.isDel},
+        version = version + 1
+        where id in (
+        <foreach collection="accountSubjectDto.ids" item="item" index="index" separator=",">
+            #{item}
+        </foreach>
+        )
+    </update>
+
+    <update id="updateSingleEnable">
+        update wd_account_subject
+        set is_enable = #{accountSubjectDto.isEnable},
+            version = version + 1
+        where id = #{accountSubjectDto.id}
+    </update>
+
+    <update id="updateBatchEnable">
+        update wd_account_subject
+        set is_enable = #{accountSubjectDto.isEnable},
+        version = version + 1
+        where id in (
+        <foreach collection="accountSubjectDto.ids" item="item" index="index" separator=",">
+            #{item}
+        </foreach>
+        ) and is_enable != #{accountSubjectDto.isEnable}
+    </update>
+
+    <select id="findInfoById" resultMap="BaseResultMap">
+        select<include refid="Base_Column_List"/>,
+        (select count(n.id) from wd_account_subject n where n.up_code = t.code and n.subject_id = t.subject_id)
+        childNum,m.max_level maxLevel,m.subject_name subjectName,m.data_type dataType,
+        p.id upId, p.code upCode,p.name upName,p.full_name upFullName, p.version upVersion,
+        group_concat(f.currency_id) currencyIds,group_concat(f.currency_name) currencyNames,
+        a.name createCompanyName,b.name companyName,d.company_form_name useCompanyName
+        from wd_account_subject t
+        left join wd_subject m on m.id = t.subject_id
+        left join wd_account_subject p on p.code = t.up_code and p.subject_id = t.subject_id
+        left join wd_account_subject_currency f on t.id = f.account_subject_id
+        left join wd_company a on a.id = t.create_company_id
+        left join wd_company b on b.id = t.company_id
+        left join wd_company d on d.id = t.use_company_id
+        where 1=1
+        <if test="accountSubjectDto.id != null">
+            and t.id = #{accountSubjectDto.id}
+        </if>
+    </select>
+
+    <select id="findParentInfoByParam" resultMap="BaseResultMap">
+        select t.id, count(f.id) childNum
+        from wd_account_subject t
+        left join wd_account_subject f on f.up_code = t.code
+        and f.subject_id = t.subject_id
+        and f.is_del = 0
+        where 1=1
+        <if test="accountSubjectDto.upCode != null and accountSubjectDto.upCode != ''">
+            and t.code = #{accountSubjectDto.upCode}
+        </if>
+        <if test="accountSubjectDto.subjectId != null">
+            and t.subject_id = #{accountSubjectDto.subjectId}
+        </if>
+        and t.is_del = 0
+    </select>
+
+    <select id="findPage" resultMap="BaseResultMap">
+        select a.* from (
+        select<include refid="Base_Column_List"/>,
+        n.max_level maxLevel,n.subject_name subjectName,n.data_type dataType,
+        case when t.cash_inflow_name = '' or t.cash_outflow_name = ''
+        then concat(ifnull(t.cash_inflow_name,''), ifnull(t.cash_outflow_name,''))
+        else concat(ifnull(t.cash_inflow_name,''), '/', ifnull(t.cash_outflow_name,'')) end cashFlowNames,
+        group_concat( m.NAME SEPARATOR '/' ) auxiliaryNames,
+        a.name createCompanyName,b.name companyName,e.company_form_name useCompanyName
+        from wd_account_subject t
+        left join wd_subject n on t.subject_id = n.id
+        left join wd_account_subject_auxiliary f on f.account_subject_id = t.id
+        left join wd_subject_auxiliary m ON m.CODE = f.auxiliary_code and m.subject_id = t.subject_id
+        left join wd_company a on t.create_company_id = a.id
+        left join wd_company b on t.company_id = b.id
+        left join wd_company e on t.use_company_id = e.id
+        where t.is_del = 0
+        <if test="accountSubjectDto.rootEnterpriseId != null">
+            and n.root_enterprise_id = #{accountSubjectDto.rootEnterpriseId}
+        </if>
+        <if test="accountSubjectDto.subjectIds != null and accountSubjectDto.subjectIds.size() > 0">
+            and t.subject_id in (
+            <foreach collection="accountSubjectDto.subjectIds" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        <if test="accountSubjectDto.baseSubjectId != null">
+            and n.subject_id = #{accountSubjectDto.baseSubjectId}
+        </if>
+        <if test="accountSubjectDto.isEnable != null">
+            and t.is_enable = #{accountSubjectDto.isEnable}
+        </if>
+        <if test="accountSubjectDto.code != null">
+            and t.code like concat(#{accountSubjectDto.code},'%')
+        </if>
+        <if test="accountSubjectDto.ifFindChildOnly != null and accountSubjectDto.ifFindChildOnly == 1 and accountSubjectDto.code != null">
+            and t.code != #{accountSubjectDto.code}
+        </if>
+        <if test="accountSubjectDto.isFinal != null">
+            and t.is_final = #{accountSubjectDto.isFinal}
+        </if>
+        <if test="accountSubjectDto.accountElementItem != null">
+            and t.account_element_item = #{accountSubjectDto.accountElementItem}
+        </if>
+        <if test="accountSubjectDto.subjectCategory != null">
+            and t.subject_category = #{accountSubjectDto.subjectCategory}
+        </if>
+        <if test="accountSubjectDto.accountCategory != null and accountSubjectDto.accountCategory != ''">
+            and t.account_category = #{accountSubjectDto.accountCategory}
+        </if>
+        <if test="accountSubjectDto.isInterior != null">
+            and t.is_interior = #{accountSubjectDto.isInterior}
+        </if>
+        <if test="accountSubjectDto.codeOrName != null and accountSubjectDto.codeOrName != ''">
+            and (t.code like concat(#{accountSubjectDto.codeOrName},'%') or t.name like
+            concat('%',#{accountSubjectDto.codeOrName},'%'))
+        </if>
+        <if test="accountSubjectDto.ids != null">
+            and t.id in (
+            <foreach collection="accountSubjectDto.ids" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        <if test="accountSubjectDto.ifFindCouldInsertFlag != null and accountSubjectDto.ifFindCouldInsertFlag == true">
+            and t.id not in (
+            select m.id from wd_account_subject m
+            left join wd_account_subject n on m.code = n.up_code
+            and m.subject_id = n.subject_id
+            where 1=1
+            and m.subject_id = t.subject_id
+            and n.is_del = 0
+            and n.is_init = 1
+            )
+            and t.is_enable = 1
+            and t.is_interior = 0
+            <if test="accountSubjectDto.isCitedList != null">
+                and t.id not in (
+                <foreach collection="accountSubjectDto.isCitedList" item="item" index="index" separator=",">
+                    #{item.businessId}
+                </foreach>
+                )
+            </if>
+        </if>
+        group by t.id
+        order by RPAD( t.code, 14, 0 )
+        )a
+        where 1=1
+        <if test="accountSubjectDto.auxiliaryName != null and accountSubjectDto.auxiliaryName != ''">
+            and a.auxiliaryNames like concat('%',#{accountSubjectDto.auxiliaryName},'%')
+        </if>
+        <if test="accountSubjectDto.ifFindHasAuxiliaryOnly != null and accountSubjectDto.ifFindHasAuxiliaryOnly == 0">
+            and a.auxiliaryNames is null
+        </if>
+        <if test="accountSubjectDto.ifFindHasAuxiliaryOnly != null and accountSubjectDto.ifFindHasAuxiliaryOnly == 1">
+            and a.auxiliaryNames is not null
+        </if>
+    </select>
+
+    <select id="findIds" resultType="java.lang.Long">
+        select
+        <if test="accountSubjectDto.ifFindPlatformId == null">
+            t.id
+        </if>
+        <if test="accountSubjectDto.ifFindPlatformId != null and accountSubjectDto.ifFindPlatformId == 1">
+            t.platform_id
+        </if>
+        from wd_account_subject t
+        inner join wd_subject m on t.subject_id = m.id
+        where t.is_del = 0
+        and m.root_enterprise_id = #{accountSubjectDto.rootEnterpriseId}
+        <if test="accountSubjectDto.subjectId != null">
+            and m.subject_id = #{accountSubjectDto.subjectId}
+        </if>
+        <if test="accountSubjectDto.isInit != null">
+            and t.is_init = #{accountSubjectDto.isInit}
+        </if>
+        <if test="accountSubjectDto.isFinal != null">
+            and t.is_final = #{accountSubjectDto.isFinal}
+        </if>
+    </select>
+
+    <select id="findOperateIdsByParam" resultType="java.lang.Long">
+        select t.id
+        from wd_account_subject t
+        where 1=1
+        <if test="accountSubjectDto.subjectId != null">
+            and t.subject_id = #{accountSubjectDto.subjectId}
+        </if>
+        <if test="accountSubjectDto.codes != null and accountSubjectDto.codes.size() > 0
+        and accountSubjectDto.isEnable != null">
+            <!-- 不考虑传入参数对应数据是否已删除和已变更状态 -->
+            and ((t.is_del = 0 and t.is_enable != #{accountSubjectDto.isEnable}) or t.code in(
+            <foreach collection="accountSubjectDto.codes" item="item" index="index"
+                     separator=",">
+                #{item}
+            </foreach>
+            ))
+            and (
+            <foreach collection="accountSubjectDto.codes" item="item" index="index"
+                     separator="or">
+                <if test="accountSubjectDto.isEnable == 0">
+                    t.code like concat(#{item},'%')
+                </if>
+                <if test="accountSubjectDto.isEnable == 1">
+                    t.code = left(#{item},LENGTH(t.code))
+                </if>
+            </foreach>
+            )
+        </if>
+    </select>
+
+    <select id="findByParam" resultMap="BaseResultMap">
+        select<include refid="Base_Column_List"/>,m.max_level maxLevel,
+        group_concat(f.currency_id) currencyIds,group_concat(f.currency_name) currencyNames
+        from wd_account_subject t
+        left join wd_account_subject_currency f on t.id = f.account_subject_id
+        left join wd_subject m on t.subject_id = m.id
+        where t.is_del = 0
+        <if test="accountSubjectDto.id != null">
+            and t.id = #{accountSubjectDto.id}
+        </if>
+        <if test="accountSubjectDto.upCode != null and accountSubjectDto.upCode != ''">
+            and t.code = #{accountSubjectDto.upCode}
+        </if>
+        <if test="accountSubjectDto.subjectId != null">
+            and t.subject_id = #{accountSubjectDto.subjectId}
+        </if>
+    </select>
+
+    <select id="findToBeFinalList" resultType="java.lang.Long">
+        select id from(
+        select f.id,t.up_code,t.subject_id
+        from wd_account_subject t
+        inner join wd_account_subject f on t.up_code = f.code and f.subject_id = t.subject_id
+        where t.id in(
+        <foreach collection="list" item="item" index="index" separator=",">
+            #{item}
+        </foreach>
+        )group by t.up_code
+        having (select count(id) from wd_account_subject where up_code = t.up_code
+        and subject_id = t.subject_id and is_del = 0) = 0
+        )m
+    </select>
+
+    <select id="findInfoForLedger" resultMap="BaseResultMap">
+        select<include refid="Base_Column_List"/>,count(m.id) auxiliaryNum,
+        group_concat( m.name separator '/') auxiliaryNames
+        from wd_account_subject t
+        left join wd_account_subject_auxiliary f on t.id = f.account_subject_id
+        left join wd_subject_auxiliary m on t.subject_id = m.subject_id and f.auxiliary_code = m.code
+        where 1=1
+        <if test="accountSubjectDto.ifFindNotDelOnly == null">
+            and t.is_del = 0
+        </if>
+        <if test="accountSubjectDto.rootEnterpriseId != null">
+            and t.root_enterprise_id = #{accountSubjectDto.rootEnterpriseId}
+        </if>
+        <if test="accountSubjectDto.subjectId != null">
+            and t.subject_id = #{accountSubjectDto.subjectId}
+        </if>
+        <if test="accountSubjectDto.upCode != null">
+            and t.up_code = #{accountSubjectDto.upCode}
+        </if>
+        <if test="accountSubjectDto.isFinal != null">
+            and t.is_final = #{accountSubjectDto.isFinal}
+        </if>
+        <if test="accountSubjectDto.isInterior != null">
+            and t.is_interior = #{accountSubjectDto.isInterior}
+        </if>
+        <if test="accountSubjectDto.isIncludeEnable != null and accountSubjectDto.isIncludeEnable == 0">
+            and t.is_enable = 1
+        </if>
+        <if test="accountSubjectDto.id != null">
+            and t.id = #{accountSubjectDto.id}
+        </if>
+        <if test="accountSubjectDto.code != null and accountSubjectDto.code != ''">
+            and t.code like CONCAT(#{accountSubjectDto.code}, '%')
+        </if>
+        <if test="accountSubjectDto.accountCategory != null and accountSubjectDto.accountCategory != ''">
+            and t.account_category = #{accountSubjectDto.accountCategory}
+        </if>
+        <if test="accountSubjectDto.subjectCodeOperator != null ">
+            <if test="accountSubjectDto.subjectCodeOperator == 0 and accountSubjectDto.ids != null and accountSubjectDto.ids.size() > 0">
+                and t.id in (
+                <foreach collection="accountSubjectDto.ids" item="item" index="index" separator=",">
+                    #{item}
+                </foreach>
+                )
+            </if>
+            <if test="accountSubjectDto.subjectCodeOperator == 1 and accountSubjectDto.subjectCodes != null and accountSubjectDto.subjectCodes.size() > 0">
+                and RPAD( t.code, 14, 0 ) between RPAD( #{accountSubjectDto.subjectCodes[0]} , 14, 0 ) and
+                RPAD( #{accountSubjectDto.subjectCodes[1]}, 14, 0 )
+            </if>
+        </if>
+        <if test="accountSubjectDto.subjectLevelOperator != null and accountSubjectDto.subjectLevels != null and accountSubjectDto.subjectLevels.size() > 0">
+            <if test="accountSubjectDto.subjectLevelOperator == 0">
+                and t.level in (
+                <foreach collection="accountSubjectDto.subjectLevels" item="item" index="index" separator=",">
+                    #{item}
+                </foreach>
+                )
+            </if>
+            <if test="accountSubjectDto.subjectLevelOperator == 1">
+                and t.level between #{accountSubjectDto.subjectLevels[0]} and
+                #{accountSubjectDto.subjectLevels[1]}
+            </if>
+        </if>
+        <if test="accountSubjectDto.finalIds != null and accountSubjectDto.finalIds.size() > 0">
+            and t.id in (
+            <foreach collection="accountSubjectDto.finalIds" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        <if test="accountSubjectDto.codes != null and accountSubjectDto.codes.size() > 0">
+            and (
+            <foreach collection="accountSubjectDto.codes" item="item" index="index"
+                     separator="or">
+                t.code like concat(#{item},'%')
+            </foreach>
+            )
+        </if>
+        group by t.id
+        order by RPAD( t.code, 14, 0 )
+    </select>
+
+    <select id="findSourceTableInfo" resultType="map">
+        select t.*
+        from ${accountSubjectDto.sourceTable} t
+        where 1=1
+        and t.is_del = 0
+        <if test="accountSubjectDto.rootEnterpriseId != null">
+            and t.root_enterprise_id = #{accountSubjectDto.rootEnterpriseId}
+        </if>
+        <if test="accountSubjectDto.ids != null">
+            and t.id in (
+            <foreach collection="accountSubjectDto.ids" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        group by t.id
+    </select>
+
+    <select id="findEntityIdList" resultType="com.njwd.entity.basedata.vo.AccountBookEntityVo">
+        select t.id, t.form, t.entity_id, f.company_id
+        from wd_account_book_entity t
+        left join wd_account_book f on t.account_book_id = f.id
+        where t.is_del = 0 and t.id in(
+        <foreach collection="accountSubjectDto.businessUnitIds" item="item" index="index" separator=",">
+            #{item}
+        </foreach>
+        )
+    </select>
+
+    <select id="findStaffInfo" resultType="map">
+        select t.id, t.code_type, t.code, t.name, t.email, t.bank_account, t.remark,
+        t.id_card_num, t.contact_number, t.is_enable, t.is_del,
+        f.name deptName, m.name useCompanyName, '员工' auxiliaryName, #{accountSubjectDto.sourceTable} sourceTable
+        from wd_staff t
+        left join wd_dept f on f.id = t.dept_id
+        left join wd_company m on m.id = t.use_company_id
+        left join wd_staff_use_company n on n.staff_id = t.id
+        where t.is_del = 0
+        <if test="accountSubjectDto.rootEnterpriseId != null">
+            and t.root_enterprise_id = #{accountSubjectDto.rootEnterpriseId}
+        </if>
+        <if test="accountSubjectDto.companyAndEntityList != null and accountSubjectDto.companyAndEntityList.size() > 0
+        and accountSubjectDto.ifFindUseCompanyDataOnly != null">
+            and (
+            <if test="accountSubjectDto.ifFindUseCompanyDataOnly == 1">
+                <foreach collection="accountSubjectDto.companyAndEntityList" item="item" index="index" separator="or">
+                    t.use_company_id = #{item.companyId}
+                    <if test="item.entityId != ''">
+                        and t.business_unit_id = #{item.entityId}
+                    </if>
+                </foreach>
+            </if>
+            <if test="accountSubjectDto.ifFindUseCompanyDataOnly == 0">
+                <foreach collection="accountSubjectDto.companyAndEntityList" item="item" index="index" separator="or">
+                    t.company_id = #{item.companyId}
+                    <if test="item.entityId != ''">
+                        and t.attr_business_unit_id = #{item.entityId}
+                    </if>
+                    or n.use_company_id = #{item.companyId}
+                    <if test="item.entityId != ''">
+                        and n.business_unit_id = #{item.entityId}
+                    </if>
+                </foreach>
+            </if>
+            )
+        </if>
+        <if test="accountSubjectDto.codeOrName != null and accountSubjectDto.codeOrName != ''">
+            and (t.code like concat('%',#{accountSubjectDto.codeOrName},'%') or t.name like
+            concat('%',#{accountSubjectDto.codeOrName},'%'))
+        </if>
+        <if test="accountSubjectDto.isEnable != null">
+            and t.is_enable = #{accountSubjectDto.isEnable}
+        </if>
+        <if test="accountSubjectDto.ids != null">
+            and t.id in (
+            <foreach collection="accountSubjectDto.ids" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        <if test="accountSubjectDto.codes != null">
+            and t.code in (
+            <foreach collection="accountSubjectDto.codes" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        <if test="accountSubjectDto.attribute != null and accountSubjectDto.attribute != ''">
+            and t.dept_id = #{accountSubjectDto.attribute}
+        </if>
+        group by t.id
+        order by t.code
+    </select>
+
+    <select id="findDeptInfo" resultType="map">
+        select t.id, t.code_type, t.code, t.prarent_id, t.dept_level, t.name, t.company_id,
+        t.attr_business_unit_id, t.dept_type, t.dept_type_name, t.remark, t.is_enable, t.is_del,
+        p.name parentName, f.name businessUnitName, n.name useCompanyName,
+        '部门' auxiliaryName, #{accountSubjectDto.sourceTable} sourceTable
+        from wd_dept t
+        left join wd_dept p on p.id = t.prarent_id
+        left join wd_business_unit f on f.id = t.business_unit_id
+        left join wd_dept_use_company m on m.dept_id = t.id
+        left join wd_company n on n.id = t.use_company_id
+        where t.is_del = 0
+        <if test="accountSubjectDto.rootEnterpriseId != null">
+            and t.root_enterprise_id = #{accountSubjectDto.rootEnterpriseId}
+        </if>
+        <if test="accountSubjectDto.companyAndEntityList != null and accountSubjectDto.companyAndEntityList.size() > 0
+        and accountSubjectDto.ifFindUseCompanyDataOnly != null">
+            and (
+            <if test="accountSubjectDto.ifFindUseCompanyDataOnly == 1">
+                <foreach collection="accountSubjectDto.companyAndEntityList" item="item" index="index" separator="or">
+                    t.use_company_id = #{item.companyId}
+                    <if test="item.entityId != ''">
+                        and t.business_unit_id = #{item.entityId}
+                    </if>
+                </foreach>
+            </if>
+            <if test="accountSubjectDto.ifFindUseCompanyDataOnly == 0">
+                <foreach collection="accountSubjectDto.companyAndEntityList" item="item" index="index" separator="or">
+                    t.company_id = #{item.companyId}
+                    <if test="item.entityId != ''">
+                        and t.attr_business_unit_id = #{item.entityId}
+                    </if>
+                    or m.use_company_id = #{item.companyId}
+                    <if test="item.entityId != ''">
+                        and m.business_unit_id = #{item.entityId}
+                    </if>
+                </foreach>
+            </if>
+            )
+        </if>
+        <if test="accountSubjectDto.codeOrName != null and accountSubjectDto.codeOrName != ''">
+            and (t.code like concat('%',#{accountSubjectDto.codeOrName},'%') or t.name like
+            concat('%',#{accountSubjectDto.codeOrName},'%'))
+        </if>
+        <if test="accountSubjectDto.isEnable != null">
+            and t.is_enable = #{accountSubjectDto.isEnable}
+        </if>
+        <if test="accountSubjectDto.ids != null">
+            and t.id in (
+            <foreach collection="accountSubjectDto.ids" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        <if test="accountSubjectDto.codes != null">
+            and t.code in (
+            <foreach collection="accountSubjectDto.codes" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        <if test="accountSubjectDto.isFinal != null">
+            and t.is_end = #{accountSubjectDto.isFinal}
+        </if>
+        <if test="accountSubjectDto.attribute != null and accountSubjectDto.attribute != ''">
+            and t.dept_type = #{accountSubjectDto.attribute}
+        </if>
+        group by t.id
+        order by t.code
+    </select>
+
+    <select id="findProjectInfo" resultType="map">
+        select t.id, t.up_id, t.code_type, t.code, t.name, t.company_id, t.use_company_id, t.department_id,
+        t.person_in_charge, t.mobile, t.start_date, t.inspection_date, t.data_type, t.remark, t.is_enable, t.is_del,
+        '项目' auxiliaryName, #{accountSubjectDto.sourceTable} sourceTable
+        from wd_project t
+        left join wd_project_use_company f on f.project_id = t.id and f.is_del = 0
+        where t.is_del = 0
+        <if test="accountSubjectDto.rootEnterpriseId != null">
+            and t.root_enterprise_id = #{accountSubjectDto.rootEnterpriseId}
+        </if>
+        <if test="accountSubjectDto.companyIds != null">
+            and (t.data_type = 1
+            <if test="accountSubjectDto.ifFindUseCompanyDataOnly != null and accountSubjectDto.ifFindUseCompanyDataOnly == 0">
+                or t.company_id in (
+                <foreach collection="accountSubjectDto.companyIds" item="item" index="index" separator=",">
+                    #{item}
+                </foreach>
+                )
+            </if>
+            or f.use_company_id in (
+            <foreach collection="accountSubjectDto.companyIds" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            ))
+        </if>
+        <if test="accountSubjectDto.codeOrName != null and accountSubjectDto.codeOrName != ''">
+            and (t.code like concat('%',#{accountSubjectDto.codeOrName},'%') or t.name like
+            concat('%',#{accountSubjectDto.codeOrName},'%'))
+        </if>
+        <if test="accountSubjectDto.isEnable != null">
+            and t.is_enable = #{accountSubjectDto.isEnable}
+        </if>
+        <if test="accountSubjectDto.ids != null">
+            and t.id in (
+            <foreach collection="accountSubjectDto.ids" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        <if test="accountSubjectDto.codes != null">
+            and t.code in (
+            <foreach collection="accountSubjectDto.codes" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        group by t.id
+        order by t.code
+    </select>
+
+    <select id="findCustomerInfo" resultType="map">
+        select t.id, t.company_id, t.code_type, t.code, t.name, t.customer_type, t.data_types, t.is_internal_customer,
+        t.unified_social_credit_code, t.id_card_num, t.business_address, t.linkman, t.contact_number, t.is_enable,
+        t.is_del, '客户' auxiliaryName, #{accountSubjectDto.sourceTable} sourceTable
+        from wd_customer t
+        left join wd_customer_company f on f.customer_id = t.id and f.is_del = 0
+        where t.is_del = 0
+        <if test="accountSubjectDto.rootEnterpriseId != null">
+            and t.root_enterprise_id = #{accountSubjectDto.rootEnterpriseId}
+        </if>
+        <if test="accountSubjectDto.companyIds != null">
+            and (t.data_types = 1
+            <if test="accountSubjectDto.ifFindUseCompanyDataOnly != null and accountSubjectDto.ifFindUseCompanyDataOnly == 0">
+                or t.company_id in (
+                <foreach collection="accountSubjectDto.companyIds" item="item" index="index" separator=",">
+                    #{item}
+                </foreach>
+                )
+            </if>
+            or f.company_id in (
+            <foreach collection="accountSubjectDto.companyIds" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            ))
+        </if>
+        <if test="accountSubjectDto.codeOrName != null and accountSubjectDto.codeOrName != ''">
+            and (t.code like concat('%',#{accountSubjectDto.codeOrName},'%') or t.name like
+            concat('%',#{accountSubjectDto.codeOrName},'%'))
+        </if>
+        <if test="accountSubjectDto.isEnable != null">
+            and t.is_enable = #{accountSubjectDto.isEnable}
+        </if>
+        <if test="accountSubjectDto.ids != null">
+            and t.id in (
+            <foreach collection="accountSubjectDto.ids" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        <if test="accountSubjectDto.codes != null">
+            and t.code in (
+            <foreach collection="accountSubjectDto.codes" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        <if test="accountSubjectDto.attribute != null and accountSubjectDto.attribute != ''">
+            and t.customer_type = #{accountSubjectDto.attribute}
+        </if>
+        <if test="accountSubjectDto.isInterior != null">
+            and t.is_internal_customer = #{accountSubjectDto.isInterior}
+        </if>
+        group by t.id
+        order by t.code
+    </select>
+
+    <select id="findSupplierInfo" resultType="map">
+        select t.id, t.company_id, t.code_type, t.code, t.name, t.supplier_type, t.data_types, t.is_internal_supplier,
+        t.unified_social_credit_code, t.id_card_num, t.business_address, t.linkman, t.contact_number, t.is_enable,
+        t.is_del, '供应商' auxiliaryName, #{accountSubjectDto.sourceTable} sourceTable
+        from wd_supplier t
+        left join wd_supplier_company f on f.supplier_id = t.id and f.is_del = 0
+        where t.is_del = 0
+        <if test="accountSubjectDto.rootEnterpriseId != null">
+            and t.root_enterprise_id = #{accountSubjectDto.rootEnterpriseId}
+        </if>
+        <if test="accountSubjectDto.companyIds != null">
+            and (t.data_types = 1
+            <if test="accountSubjectDto.ifFindUseCompanyDataOnly != null and accountSubjectDto.ifFindUseCompanyDataOnly == 0">
+                or t.company_id in (
+                <foreach collection="accountSubjectDto.companyIds" item="item" index="index" separator=",">
+                    #{item}
+                </foreach>
+                )
+            </if>
+            or f.company_id in (
+            <foreach collection="accountSubjectDto.companyIds" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            ))
+        </if>
+        <if test="accountSubjectDto.codeOrName != null and accountSubjectDto.codeOrName != ''">
+            and (t.code like concat('%',#{accountSubjectDto.codeOrName},'%') or t.name like
+            concat('%',#{accountSubjectDto.codeOrName},'%'))
+        </if>
+        <if test="accountSubjectDto.isEnable != null">
+            and t.is_enable = #{accountSubjectDto.isEnable}
+        </if>
+        <if test="accountSubjectDto.ids != null">
+            and t.id in (
+            <foreach collection="accountSubjectDto.ids" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        <if test="accountSubjectDto.codes != null">
+            and t.code in (
+            <foreach collection="accountSubjectDto.codes" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        <if test="accountSubjectDto.attribute != null and accountSubjectDto.attribute != ''">
+            and t.supplier_type = #{accountSubjectDto.attribute}
+        </if>
+        <if test="accountSubjectDto.isInterior != null">
+            and t.is_internal_supplier = #{accountSubjectDto.isInterior}
+        </if>
+        group by t.id
+        order by t.code
+    </select>
+
+    <select id="findBankAccountInfo" resultType="map">
+        select t.id, t.up_id, t.company_id, t.use_company_id, t.auxiliary_id, t.deposit_bank_id, t.deposit_bank_name,
+        t.account, t.account as code, t.name, t.acc_type, t.acc_type_name, t.acc_usage, t.acc_usage_name, t.is_enable,
+        t.is_del, f.name useCompanyName, '银行账号' auxiliaryName, #{accountSubjectDto.sourceTable} sourceTable
+        from wd_bank_account t
+        left join wd_company f on f.id = t.use_company_id
+        where t.is_del = 0
+        <if test="accountSubjectDto.rootEnterpriseId != null">
+            and t.root_enterprise_id = #{accountSubjectDto.rootEnterpriseId}
+        </if>
+        <if test="accountSubjectDto.companyIds != null">
+            and (t.company_id in (
+            <foreach collection="accountSubjectDto.companyIds" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            )
+            or t.use_company_id in (
+            <foreach collection="accountSubjectDto.companyIds" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            ))
+        </if>
+        <if test="accountSubjectDto.businessUnitIds != null">
+            and t.auxiliary_id in (
+            <foreach collection="accountSubjectDto.businessUnitIds" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        <if test="accountSubjectDto.codeOrName != null and accountSubjectDto.codeOrName != ''">
+            and (t.account like concat('%',#{accountSubjectDto.codeOrName},'%') or t.name like
+            concat('%',#{accountSubjectDto.codeOrName},'%'))
+        </if>
+        <if test="accountSubjectDto.isEnable != null">
+            and t.is_enable = #{accountSubjectDto.isEnable}
+        </if>
+        <if test="accountSubjectDto.ids != null">
+            and t.id in (
+            <foreach collection="accountSubjectDto.ids" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        <if test="accountSubjectDto.codes != null">
+            and t.account in (
+            <foreach collection="accountSubjectDto.codes" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        group by t.id
+        order by t.code
+    </select>
+
+    <select id="findAccountBookEntityInfo" resultType="map">
+        select a.* from (
+        select t.id, t.account_book_id, t.account_book_name, t.form, t.entity_id, t.is_del,
+        case t.form when 2 then (select code from wd_company where id = t.entity_id)
+        when 3 then (select code from wd_business_unit where id = t.entity_id) end code,
+        case t.form when 2 then (select name from wd_company where id = t.entity_id)
+        when 3 then (select name from wd_business_unit where id = t.entity_id) end name,
+        '核算主体' auxiliaryName, #{accountSubjectDto.sourceTable} sourceTable
+        from wd_account_book_entity t
+        left join wd_account_book f on t.account_book_id = f.id
+        where t.is_del = 0
+        <if test="accountSubjectDto.rootEnterpriseId != null">
+            and t.root_enterprise_id = #{accountSubjectDto.rootEnterpriseId}
+        </if>
+        <if test="accountSubjectDto.ids != null">
+            and t.id in (
+            <foreach collection="accountSubjectDto.ids" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        <if test="accountSubjectDto.companyIds != null">
+            and f.company_id in (
+            <foreach collection="accountSubjectDto.companyIds" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        <if test="accountSubjectDto.businessUnitIds != null">
+            and t.id not in (
+            <foreach collection="accountSubjectDto.businessUnitIds" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        group by t.id
+        )a
+        <if test="accountSubjectDto.codeOrName != null and accountSubjectDto.codeOrName != ''">
+            and (a.code like concat('%',#{accountSubjectDto.codeOrName},'%') or a.name like
+            concat('%',#{accountSubjectDto.codeOrName},'%'))
+        </if>
+        <if test="accountSubjectDto.codes != null">
+            and a.code in (
+            <foreach collection="accountSubjectDto.codes" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        order by a.code
+    </select>
+
+    <select id="findAccountingItemValueInfo" resultType="map">
+        select t.id, t.company_id, t.use_company_id, t.item_id, t.name, t.code_type, t.code,
+        t.is_enable, t.is_del, f.name auxiliaryName, f.code auxiliaryCode, #{accountSubjectDto.sourceTable} sourceTable
+        from wd_accounting_item_value t
+        left join wd_accounting_item f on f.id = t.item_id
+        where t.is_del = 0
+        <if test="accountSubjectDto.rootEnterpriseId != null">
+            and t.root_enterprise_id = #{accountSubjectDto.rootEnterpriseId}
+        </if>
+        <if test="accountSubjectDto.companyIds != null">
+            and (t.company_id = 0
+            or t.company_id in (
+            <foreach collection="accountSubjectDto.companyIds" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            ))
+        </if>
+        <if test="accountSubjectDto.code != null">
+            and f.code = #{accountSubjectDto.code}
+        </if>
+        <if test="accountSubjectDto.codeOrName != null and accountSubjectDto.codeOrName != ''">
+            and (t.code like concat('%',#{accountSubjectDto.codeOrName},'%') or t.name like
+            concat('%',#{accountSubjectDto.codeOrName},'%'))
+        </if>
+        <if test="accountSubjectDto.isEnable != null">
+            and t.is_enable = #{accountSubjectDto.isEnable}
+        </if>
+        <if test="accountSubjectDto.ids != null">
+            and t.id in (
+            <foreach collection="accountSubjectDto.ids" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        <if test="accountSubjectDto.codes != null">
+            and t.code in (
+            <foreach collection="accountSubjectDto.codes" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        group by t.id
+        order by t.code
+    </select>
+
+    <select id="findSubjectInfoByParam" resultType="com.njwd.entity.platform.vo.AccountSubjectVo">
+        select
+        t.id id,
+        t.up_code,
+        t.code,
+        t.name,
+        t.full_name,
+        t.level,
+        t.subject_id,
+        t.balance_direction,
+        t.is_final,
+        t.is_enable,
+        t.is_del,
+        t.account_element_item,
+        t.account_element_item_name
+        from
+        wd_account_subject t
+        where t.is_del = 0
+        <if test="dto.rootEnterpriseId != null">
+            and t.root_enterprise_id = #{dto.rootEnterpriseId}
+        </if>
+        <if test="dto.subjectId != null">
+            and t.subject_id = #{dto.subjectId}
+        </if>
+        <if test="dto.accountCategory != null and dto.accountCategory != ''">
+            and t.account_category = #{dto.accountCategory}
+        </if>
+        <if test="dto.ids != null and dto.ids.size() > 0">
+            and t.id in
+            <foreach collection="dto.ids" item="item" index="index" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+        <if test="dto.codes != null and dto.codes.size() > 0 and dto.subjectCodeOperator != null">
+            <if test="dto.subjectCodeOperator == 0">
+                and t.code in
+                <foreach collection="dto.codes" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="dto.subjectCodeOperator == 1">
+                and t.code between #{dto.codes[0]} and #{dto.codes[1]}
+            </if>
+        </if>
+        <if test="dto.level != null">
+            and t.level = #{dto.level}
+        </if>
+        <if test="dto.subjectLevels != null and dto.subjectLevels.size() > 0">
+            and t.level
+            between #{dto.subjectLevels[0]} and #{dto.subjectLevels[1]}
+        </if>
+        <if test="dto.isFinal != null and dto.isFinal == 1">
+            and t.is_final = 1
+        </if>
+        <if test="dto.isEnable != null">
+            and t.is_enable = #{dto.isEnable}
+        </if>
+        <if test="dto.isIncludeEnable != null and dto.isIncludeEnable == 0">
+            and t.is_enable = 1
+        </if>
+        <if test="dto.isProfitAndLoss != null">
+            and t.is_profit_and_loss = #{dto.isProfitAndLoss}
+        </if>
+        <if test="dto.cashFlowId != null">
+            and (t.cash_inflow_id is not null or t.cash_outflow_id is not null)
+            and t.cash_flow_id = #{dto.cashFlowId}
+        </if>
+        <if test="dto.codes != null and dto.codes.size() > 0 and dto.subjectCodeOperator == null">
+            and
+            <foreach collection="dto.codes" item="item" open="(" separator="or" close=")">
+                locate(t.code, #{item}) = 1
+            </foreach>
+        </if>
+        order by
+        t.code,t.up_code
+    </select>
+
+
+    <select id="checkDuplicateCode" resultType="int">
+        select count(1)
+        from wd_account_subject t
+        where 1=1
+        <if test="accountSubjectDto.id != null and accountSubjectDto.id != ''">
+            and t.id != #{accountSubjectDto.id}
+        </if>
+        <if test="accountSubjectDto.subjectId != null">
+            and t.subject_id = #{accountSubjectDto.subjectId}
+        </if>
+        <if test="accountSubjectDto.code != null and accountSubjectDto.code != ''">
+            and BINARY t.code = #{accountSubjectDto.code}
+        </if>
+        and t.is_del = 0
+    </select>
+
+    <select id="checkDuplicateName" resultType="int">
+        select count(1)
+        from wd_account_subject t
+        where 1=1
+        <if test="accountSubjectDto.id != null and accountSubjectDto.id != ''">
+            and t.id != #{accountSubjectDto.id}
+        </if>
+        <if test="accountSubjectDto.subjectId != null">
+            and t.subject_id = #{accountSubjectDto.subjectId}
+        </if>
+        <if test="accountSubjectDto.fullName != null and accountSubjectDto.fullName != ''">
+            and BINARY t.full_name = #{accountSubjectDto.fullName}
+        </if>
+        and t.is_del = 0
+    </select>
+
+    <select id="checkNextInitInfo" resultType="int">
+        select count(1)
+        from wd_account_subject t
+        where 1=1
+        <if test="accountSubjectDto.rootEnterpriseId != null">
+            and t.root_enterprise_id = #{accountSubjectDto.rootEnterpriseId}
+        </if>
+        <if test="accountSubjectDto.upCode != null and accountSubjectDto.upCode != ''">
+            and t.up_code = #{accountSubjectDto.upCode}
+        </if>
+        <if test="accountSubjectDto.subjectId != null">
+            and t.subject_id = #{accountSubjectDto.subjectId}
+        </if>
+        and t.is_del = 0 and t.is_init = 1
+    </select>
+</mapper>

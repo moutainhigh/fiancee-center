@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.financeback.mapper.UnitMapper">
+    <insert id="addBatch">
+        INSERT INTO `wd_unit` (
+            `code`
+            ,`name`
+            ,`rounding_type`
+            ,`precision`
+            ,`conversion_id`
+            ,`is_base`
+            ,`conversion_value`
+            ,`is_approved`
+            ,`is_released`
+            ,`creator_id`
+            ,`creator_name`
+            ,`root_enterprise_id`
+            ,`platform_id`
+            )
+        VALUES
+        <foreach collection="list" item="p" separator=",">
+            (
+              #{p.code} ,
+              #{p.name} ,
+              #{p.roundingType} ,
+              #{p.precision} ,
+              #{p.conversionId} ,
+              #{p.isBase} ,
+              #{p.conversionValue} ,
+            #{p.isApproved} ,
+            #{p.isReleased} ,
+            #{p.creatorId} ,
+            #{p.creatorName} ,
+            #{p.rootEnterpriseId} ,
+            #{p.platformId}
+            )
+        </foreach>
+    </insert>
+</mapper>

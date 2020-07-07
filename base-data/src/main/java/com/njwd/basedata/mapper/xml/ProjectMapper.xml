@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.basedata.mapper.ProjectMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.basedata.Project">
+        <!--@mbg.generated-->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="code_type" jdbcType="TINYINT" property="codeType"/>
+        <result column="code" jdbcType="VARCHAR" property="code"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="company_id" jdbcType="BIGINT" property="companyId"/>
+        <result column="department_id" jdbcType="BIGINT" property="departmentId"/>
+        <result column="person_in_charge" jdbcType="VARCHAR" property="personInCharge"/>
+        <result column="mobile" jdbcType="VARCHAR" property="mobile"/>
+        <result column="start_date" jdbcType="DATE" property="startDate"/>
+        <result column="inspection_date" jdbcType="DATE" property="inspectionDate"/>
+        <result column="data_type" jdbcType="VARCHAR" property="dataType"/>
+        <result column="remark" jdbcType="VARCHAR" property="remark"/>
+        <result column="is_enable" jdbcType="TINYINT" property="isEnable"/>
+        <result column="is_del" jdbcType="TINYINT" property="isDel"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="creator_id" jdbcType="BIGINT" property="creatorId"/>
+        <result column="creator_name" jdbcType="VARCHAR" property="creatorName"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+        <result column="updator_id" jdbcType="BIGINT" property="updatorId"/>
+        <result column="updator_name" jdbcType="VARCHAR" property="updatorName"/>
+        <result column="root_enterprise_id" jdbcType="VARCHAR" property="rootEnterpriseId"/>
+        <result column="create_company_id" jdbcType="BIGINT" property="createCompanyId"/>
+        <result column="version" jdbcType="BIGINT" property="version"/>
+    </resultMap>
+    <resultMap id="BaseResultMapVo" type="com.njwd.entity.basedata.vo.ProjectVo">
+        <!--@mbg.generated-->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="code_type" jdbcType="TINYINT" property="codeType"/>
+        <result column="code" jdbcType="VARCHAR" property="code"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="company_id" jdbcType="BIGINT" property="companyId"/>
+        <result column="company_name" jdbcType="VARCHAR" property="companyName"/>
+        <result column="department_id" jdbcType="BIGINT" property="departmentId"/>
+        <result column="department_name" jdbcType="BIGINT" property="departmentName"/>
+        <result column="person_in_charge" jdbcType="VARCHAR" property="personInCharge"/>
+        <result column="mobile" jdbcType="VARCHAR" property="mobile"/>
+        <result column="start_date" jdbcType="DATE" property="startDate"/>
+        <result column="inspection_date" jdbcType="DATE" property="inspectionDate"/>
+        <result column="data_type" jdbcType="VARCHAR" property="dataType"/>
+        <result column="remark" jdbcType="VARCHAR" property="remark"/>
+        <result column="is_enable" jdbcType="TINYINT" property="isEnable"/>
+        <result column="is_del" jdbcType="TINYINT" property="isDel"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="creator_id" jdbcType="BIGINT" property="creatorId"/>
+        <result column="creator_name" jdbcType="VARCHAR" property="creatorName"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+        <result column="updator_id" jdbcType="BIGINT" property="updatorId"/>
+        <result column="updator_name" jdbcType="VARCHAR" property="updatorName"/>
+        <result column="root_enterprise_id" jdbcType="VARCHAR" property="rootEnterpriseId"/>
+        <result column="create_company_id" jdbcType="BIGINT" property="createCompanyId"/>
+        <result column="person_incharge_name" jdbcType="VARCHAR" property="personInChargeName"/>
+        <result column="version" jdbcType="BIGINT" property="version"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        id, up_id, code_type, code, `name`, company_id, use_company_id, department_id, person_in_charge,
+        mobile,start_date, inspection_date, data_type, remark, is_enable, is_del, create_time,
+        creator_id, creator_name, update_time, updator_id, updator_name,create_company_id,version,manage_info
+    </sql>
+
+    <sql id="Find_Page_Where">
+        p.is_del = 0
+        and p.root_enterprise_id = #{projectDto.rootEnterpriseId}
+        <if test="projectDto.companyId != null">
+            and p.company_id = #{projectDto.companyId}
+        </if>
+        <if test="projectDto.isEnable != null">
+            and p.is_enable = #{projectDto.isEnable}
+        </if>
+        <if test="projectDto.codeOrName != null">
+            AND (p.code like concat('%',#{projectDto.codeOrName},'%')
+            OR p.name like concat('%',#{projectDto.codeOrName},'%'))
+        </if>
+        <if test="projectDto.companyIds != null and projectDto.companyIds.size()>0">
+            and p.company_id in
+            <foreach collection="projectDto.companyIds" open="(" separator="," close=")" item="item" >
+                #{item}
+            </foreach>
+        </if>
+        <if test="projectDto.useCompanyIds != null and projectDto.useCompanyIds.size()>0">
+            and p.use_company_id in
+            <foreach collection="projectDto.useCompanyIds" open="(" separator="," close=")" item="item" >
+                #{item}
+            </foreach>
+        </if>
+    </sql>
+
+    <!--根据条件查询项目信息-->
+    <select id="findProjectsByCondition" parameterType="com.njwd.entity.basedata.dto.ProjectDto" resultMap="BaseResultMapVo">
+        select
+            p.id,
+            p.up_id,
+            p.code_type,
+            p.code,
+            p.name,
+            p.company_id,
+            c.name as company_name,
+            p.use_company_id,
+            c1.name as use_company_name,
+            p.department_id,
+            d.name as department_name,
+            p.person_in_charge,
+            p.mobile,
+            p.start_date,
+            p.inspection_date,
+            p.data_type,
+            p.remark,
+            p.is_enable,
+            p.is_del,
+            p.version,
+            p.create_time,
+            p.creator_name,
+            p.update_time,
+            p.updator_name,
+            p.manage_info,
+            s.name as person_incharge_name
+        from wd_project p
+        left join wd_dept d on p.department_id = d.id
+        left join wd_company c on p.company_id = c.id
+        left join wd_company c1 on p.use_company_id = c1.id
+        left join wd_staff s on p.root_enterprise_id = s.root_enterprise_id and p.person_in_charge = s.id
+        <where>
+            <include refid="Find_Page_Where"/>
+            <!--<if test="projectDto.userId != null">
+                and p.company_id in
+                ( select distinct wsur.company_id from wd_sys_user_role wsur
+                inner join wd_sys_role_menu wsrm on wsrm.role_id = wsur.role_id
+                inner join wd_sys_menu wsm on wsm.menu_id = wsrm.menu_id
+                where wsur.user_id = #{projectDto.userId}
+                and wsm.code = #{projectDto.menuCode}
+                )
+            </if>-->
+        </where>
+        order by code
+    </select>
+
+    <!--根据id查询项目信息-->
+    <select id="findProjectById" parameterType="com.njwd.entity.basedata.dto.ProjectDto" resultMap="BaseResultMapVo">
+        select
+            p.id,
+            p.up_id,
+            p.code_type,
+            p.code,
+            p.name,
+            p.company_id,
+            ifnull(c.name,'') as company_name,
+            p.department_id,
+            ifnull(d.name,'') as department_name,
+            p.person_in_charge,
+            p.mobile,
+            p.start_date,
+            p.inspection_date,
+            p.data_type,
+            p.remark,
+            p.is_enable,
+            p.is_del,
+            p.version,
+            p.manage_info,
+            ifnull(s.name,'') as person_incharge_name
+        from wd_project p
+        left join wd_dept d on p.department_id = d.id
+        left join wd_company c on p.company_id = c.id
+        left join wd_staff s on p.root_enterprise_id = s.root_enterprise_id and p.person_in_charge = s.id
+        <where>
+            p.id = #{projectDto.id}
+            and p.root_enterprise_id = #{projectDto.rootEnterpriseId}
+        </where>
+    </select>
+
+    <!--查询项目编码是否重复-->
+    <select id="selectCountByCode" resultType="java.lang.Integer">
+        select count(1) from wd_project
+        <where>
+            is_del =0
+            and code = #{project.code}
+        </where>
+    </select>
+
+    <!--根据id查询项目信息-->
+    <select id="findProjectByIds" resultMap="BaseResultMapVo" parameterType="com.njwd.entity.basedata.dto.ProjectDto">
+        select
+            p.id,
+            p.up_id,
+            p.code_type,
+            p.code,
+            p.name,
+            p.company_id,
+            c.name as company_name,
+            p.department_id,
+            d.name as department_name,
+            p.person_in_charge,
+            p.mobile,
+            p.start_date,
+            p.inspection_date,
+            p.data_type,
+            p.remark,
+            p.is_enable,
+            p.is_del,
+            p.version,
+            p.create_time,
+            p.creator_name,
+            p.update_time,
+            p.updator_name,
+            p.manage_info,
+            s.name as person_incharge_name
+        from wd_project p
+        left join wd_dept d on p.department_id = d.id
+        left join wd_company c on p.company_id = c.id
+        left join wd_staff s on p.root_enterprise_id = s.root_enterprise_id and p.person_in_charge = s.id
+        <where>
+            p.id in
+            <foreach collection="projectDto.ids" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+            <if test="projectDto.isDel!=null">
+                and p.is_del = #{projectDto.isDel}
+            </if>
+            <if test="projectDto.isEnable!=null">
+                and p.is_enable = #{projectDto.isEnable}
+            </if>
+            <if test="projectDto.codeOrName != null">
+                and (p.code like concat('%',#{projectDto.codeOrName},'%')
+                or p.name like concat('%',#{projectDto.codeOrName},'%'))
+            </if>
+            order by p.code
+        </where>
+    </select>
+
+    <!--批量新增项目-->
+    <insert id="addBatchProject">
+        insert into wd_project (
+            code_type,
+            code,
+            name,
+            company_id,
+            use_company_id,
+            department_id,
+            person_in_charge,
+            mobile,
+            start_date,
+            inspection_date,
+            remark,
+            is_enable,
+            is_del,
+            create_time,
+            creator_id,
+            creator_name,
+            root_enterprise_id,
+            create_company_id
+        )
+        values
+        <foreach collection="list" index="index" item="item" separator=",">
+            (
+                #{item.codeType},
+                #{item.code},
+                #{item.name},
+                #{item.companyId},
+                #{item.useCompanyId},
+                #{item.departmentId},
+                #{item.personInCharge},
+                #{item.mobile},
+                #{item.startDate},
+                #{item.inspectionDate},
+                #{item.remark},
+                #{item.isEnable},
+                #{item.isDel},
+                #{item.createTime},
+                #{item.creatorId},
+                #{item.creatorName},
+                #{item.rootEnterpriseId},
+                #{item.createCompanyId}
+            )
+        </foreach>
+    </insert>
+
+    <select id="findProjectIdsByCompanyIds" parameterType="com.njwd.entity.basedata.dto.ProjectDto" resultType="Long">
+        SELECT DISTINCT
+        (id)
+        FROM
+        wd_project
+        WHERE 1=1
+        and (
+        company_id IN
+        <foreach collection="projectDto.useCompanyIds" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+        <if test="projectDto.userId != null">
+            and company_id in
+            ( select distinct wsur.company_id from wd_sys_user_role wsur
+            inner join wd_sys_role_menu wsrm on wsrm.role_id = wsur.role_id
+            inner join wd_sys_menu wsm on wsm.menu_id = wsrm.menu_id
+            where wsur.user_id = #{projectDto.userId}
+            and wsm.code = #{projectDto.menuCode}
+            )
+        </if>)
+        OR (data_type = '1'
+        AND root_enterprise_id = #{projectDto.rootEnterpriseId})
+        AND is_del = '0'
+
+    </select>
+
+    <select id="findProjectIdsForCheck" parameterType="com.njwd.entity.basedata.dto.ProjectDto" resultType="Long">
+        SELECT DISTINCT
+        (id)
+        FROM
+        wd_project
+        WHERE 1=1
+        and (
+        company_id IN
+        <foreach collection="projectDto.useCompanyIds" item="item" separator="," open="(" close=")">
+            #{item}
+        </foreach>
+        <if test="projectDto.userId != null">
+            and company_id in
+            ( select distinct wsur.company_id from wd_sys_user_role wsur
+            inner join wd_sys_role_menu wsrm on wsrm.role_id = wsur.role_id
+            inner join wd_sys_menu wsm on wsm.menu_id = wsrm.menu_id
+            where wsur.user_id = #{projectDto.userId}
+            and wsm.code = #{projectDto.menuCode}
+            )
+        </if>)
+        AND is_del = '0'
+
+    </select>
+
+
+    <update id="updateProjectById" parameterType="com.njwd.entity.basedata.Project">
+        update wd_project
+        set version = version+1,
+            update_time = #{updateTime},
+            updator_id = #{updatorId},
+            updator_name = #{updatorName}
+        <where>
+            id = #{id}
+        </where>
+    </update>
+
+    <select id="selectProjectVersionById" parameterType="com.njwd.entity.basedata.dto.ProjectDto" resultType="Integer">
+        select
+        count(id)
+        from
+            wd_project
+        where
+            is_del = 0
+            and id = #{id}
+            and version &lt;&gt; #{version}
+    </select>
+
+    <select id="checkProjectUseCompanyByProjectId" resultType="int">
+        SELECT
+            count(*)
+        FROM
+        wd_project p
+        LEFT JOIN wd_project_use_company y ON p.id = y.project_id
+        WHERE
+        y.is_del = '0'
+        AND p.id = #{id}
+        AND y.use_company_id &lt;&gt; p.company_id
+    </select>
+</mapper>

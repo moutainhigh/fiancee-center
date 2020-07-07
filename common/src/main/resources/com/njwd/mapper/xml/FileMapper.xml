@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.mapper.FileMapper">
+
+  <resultMap id="excelRuleMap" type="com.njwd.entity.basedata.excel.ExcelRule" >
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="type" jdbcType="VARCHAR" property="type" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="col_type" jdbcType="VARCHAR" property="colType" />
+    <result column="is_empty" jdbcType="VARCHAR" property="isEmpty" />
+  </resultMap>
+
+  <select id="findExcelRule" resultMap="excelRuleMap">
+    select * from wd_excel_rule ${ew.customSqlSegment}
+  </select>
+
+  <select id="findBusinessCount" resultType="int">
+    select count(1) from ${table} ${ew.customSqlSegment}
+  </select>
+
+  <insert id="insertBusinessDataBatch" >
+    insert into ${table}
+      <foreach collection="columns" item="column" open="(" close=")" separator="," >
+        ${column }
+      </foreach>
+      values
+      <foreach collection="rowDataList" item="rowData" separator="," >
+          <foreach collection="rowData.excelCellDataList" item="cellData" open="(" close=")" separator=",">
+            #{cellData.data}
+          </foreach>
+      </foreach>
+  </insert>
+
+  <insert id="insertBusinessExtendDataBatch">
+    insert into ${table} (
+      <foreach collection="columns" item="column" separator=",">
+        ${column }
+      </foreach>
+      ,
+      <foreach collection="extendColumnList" item="extendColumn" separator=",">
+        ${extendColumn.column}
+      </foreach>
+    )
+    values
+    <foreach collection="rowDataList" item="rowData" separator="," >
+      (
+        <foreach collection="rowData.excelCellDataList" item="cellData" separator=",">
+          #{cellData.data}
+        </foreach>
+      ,
+        <foreach collection="extendColumnList" item="extendColumn" separator=",">
+          #{extendColumn.data}
+        </foreach>
+      )
+    </foreach>
+  </insert>
+
+
+  <insert id="insertBusinessData">
+    insert into ${table}
+    <foreach collection="columns" item="column" open="(" close=")" separator="," >
+      ${column }
+    </foreach>
+    values
+    <foreach collection="rowData.excelCellDataList" item="cellData" open="(" close=")" separator=",">
+      #{cellData.data}
+    </foreach>
+  </insert>
+
+  <insert id="insertBusinessExtendData">
+    insert into ${table}
+    (
+      <foreach collection="columns" item="column" separator=",">
+        ${column }
+      </foreach>
+    ,
+      <foreach collection="extendColumnList" item="extendColumn" separator=",">
+        ${extendColumn.column}
+      </foreach>
+    )
+    values
+    (
+      <foreach collection="rowData.excelCellDataList" item="cellData" separator=",">
+        #{cellData.data}
+      </foreach>
+      ,
+      <foreach collection="extendColumnList" item="extendColumn" separator=",">
+        #{extendColumn.data}
+      </foreach>
+    )
+  </insert>
+
+</mapper>

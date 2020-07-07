@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.basedata.mapper.CommonAbstractMapper">
+  <resultMap id="BaseResultMap" type="com.njwd.entity.basedata.CommonAbstract">
+    <!--@mbg.generated-->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="root_enterprise_id" jdbcType="BIGINT" property="rootEnterpriseId" />
+    <result column="create_enterprise_id" jdbcType="BIGINT" property="createEnterpriseId" />
+    <result column="use_enterprise_id" jdbcType="BIGINT" property="useEnterpriseId" />
+    <result column="abstract_content" jdbcType="VARCHAR" property="abstractContent" />
+    <result column="abstract_code" jdbcType="VARCHAR" property="abstractCode" />
+    <result column="is_del" jdbcType="TINYINT" property="isDel" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="creator_id" jdbcType="BIGINT" property="creatorId" />
+    <result column="creator_name" jdbcType="VARCHAR" property="creatorName" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="updator_id" jdbcType="BIGINT" property="updatorId" />
+    <result column="updator_name" jdbcType="VARCHAR" property="updatorName" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, root_enterprise_id, create_enterprise_id, use_enterprise_id, abstract_content,
+    abstract_code, is_del, create_time, creator_id, creator_name, update_time, updator_id,
+    updator_name
+  </sql>
+
+    <insert id="addBatch">
+        INSERT INTO `wd_common_abstract` ( `root_enterprise_id`, `create_enterprise_id`, `use_enterprise_id`,`code`, `abstract_content`, `abstract_code`, `creator_id`, `creator_name`,`platform_id` )
+        VALUES
+        <foreach collection="list" item="p" separator=",">
+            (#{p.rootEnterpriseId} ,#{p.createEnterpriseId} ,#{p.useEnterpriseId} ,#{p.code},#{p.abstractContent} ,#{p.abstractCode} ,#{p.creatorId} ,#{p.creatorName},#{p.platformId}  )
+        </foreach>
+    </insert>
+
+    <!-- 查询常用摘要 -->
+    <select id="findOne"  resultType="com.njwd.entity.basedata.vo.CommonAbstractVo">
+     select ca.id,
+        ca.create_enterprise_id,c.`name` `create_enterprise_name`,
+        ca.use_enterprise_id,c2.`name` `use_enterprise_name`,
+        ca.abstract_content,ca.abstract_code,ca.is_del,ca.update_time last_update_time,ca.update_time
+     from wd_common_abstract ca
+     left join wd_company c on ca.create_enterprise_id = c.id
+     left join wd_company c2 on ca.use_enterprise_id = c2.id
+     <where>
+        and ca.id = #{commonAbstractDto.id}
+     </where>
+    </select>
+
+    <!-- 查询常用摘要列表分页 -->
+    <select id="findPage"  resultType="com.njwd.entity.basedata.vo.CommonAbstractVo">
+        select * from(
+        select ca.id,
+        ca.create_enterprise_id,'集团' `create_enterprise_name`,
+        ca.use_enterprise_id,'全部' `use_enterprise_name`,
+        ca.abstract_content,ca.abstract_code,ca.is_del,ca.creator_name,ca.create_time,ca.updator_name,ca.update_time
+        from wd_common_abstract ca
+        where ca.root_enterprise_id = #{commonAbstractDto.rootEnterpriseId} and ca.use_enterprise_id = 0 and ca.is_del = 0
+        union
+        (select ca.id,
+        ca.create_enterprise_id,c.`name` `create_enterprise_name`,
+        ca.use_enterprise_id,c2.`name` `use_enterprise_name`,
+        ca.abstract_content,ca.abstract_code,ca.is_del,ca.creator_name,ca.create_time,ca.updator_name,ca.update_time
+        from wd_common_abstract ca
+        left join wd_company c on ca.create_enterprise_id = c.id
+        left join wd_company c2 on ca.use_enterprise_id = c2.id
+        <where>
+            and ca.root_enterprise_id = #{commonAbstractDto.rootEnterpriseId}
+            and ca.is_del = 0
+            and ca.use_enterprise_id != 0
+            <if test="commonAbstractDto.companyIdList != null">
+                and (ca.use_enterprise_id in
+                <foreach collection="commonAbstractDto.companyIdList" item="companyId" index="index" open="(" close=")"
+                         separator=",">
+                    #{companyId}
+                </foreach>)
+            </if>
+            <if test="commonAbstractDto.isEnterpriseAdmin == 0 and commonAbstractDto.companyIdList == null">
+                and ca.use_enterprise_id in
+                (select company_id from wd_sys_user_role ur where ur.user_id = #{commonAbstractDto.userId})
+            </if>
+            <if test="commonAbstractDto.accountBookId != null">
+                AND ca.use_enterprise_id in(
+                select ab.company_id from wd_account_book ab where ab.id = #{commonAbstractDto.accountBookId}
+                )
+            </if>
+        </where>
+        order by `create_enterprise_name` desc,ca.create_time desc)
+        )ca
+        <where>
+            <if test="commonAbstractDto.contentOrCode != null and commonAbstractDto.contentOrCode != ''">
+                and (ca.abstract_content like CONCAT('%',#{commonAbstractDto.contentOrCode},'%')
+                or ca.abstract_code like CONCAT('%',#{commonAbstractDto.contentOrCode},'%'))
+            </if>
+        </where>
+    </select>
+
+  <!-- 查询是否存在重复的 -->
+  <select id="findHasRepeat" resultType="java.lang.Integer">
+    select COUNT(1)
+    from wd_common_abstract ca
+    <where>
+        <if test="commonAbstractDto.useEnterpriseId != 0">
+        and ((ca.create_enterprise_id = #{commonAbstractDto.createEnterpriseId} and ca.use_enterprise_id = #{commonAbstractDto.useEnterpriseId})
+            or
+            (ca.use_enterprise_id = 0))
+        </if>
+        <if test="commonAbstractDto.id != null">
+            and id != #{commonAbstractDto.id}
+        </if>
+        and ca.root_enterprise_id = #{commonAbstractDto.rootEnterpriseId}
+        and ca.abstract_content = #{commonAbstractDto.abstractContent}
+        and ca.is_del = 0
+    </where>
+  </select>
+
+  <!-- 查询是否已经被删除 -->
+  <select id="findStatusById" resultType="com.njwd.entity.basedata.CommonAbstract">
+    select ca.id,ca.is_del,ca.use_enterprise_id,ca.update_time
+    from wd_common_abstract ca
+    <where>
+        ca.id = #{commonAbstractDto.id}
+    </where>
+  </select>
+
+    <!-- 查询是否已经被删除 -->
+    <select id="findStatusByIdList" resultType="com.njwd.entity.basedata.CommonAbstract">
+        select ca.id,ca.is_del,ca.use_enterprise_id
+        from wd_common_abstract ca
+        <where>
+            and ca.id in
+            <foreach collection="commonAbstractDto.idList" item="id" index="index" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
+        </where>
+    </select>
+
+    <select id="findPlatformCommonAbstract" resultType="com.njwd.entity.basedata.vo.CommonAbstractVo">
+        select * from wd_common_abstract
+        where  root_enterprise_id = #{rootEnterpriseId}
+        and platform_id > 0
+    </select>
+
+</mapper>

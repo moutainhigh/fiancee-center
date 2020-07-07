@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.ledger.mapper.VoucherEntryAuxiliaryMapper">
+    <sql id="Base_Column_List">
+            wvea.`id`,
+            wvea.`voucher_id`,
+            wvea.`entry_id`,
+            wvea.`source_table`,
+            wvea.`item_value_id`
+    </sql>
+    <resultMap id="BaseResultMap" type="com.njwd.entity.ledger.vo.VoucherEntryAuxiliaryVo">
+    </resultMap>
+    <insert id="insertBatch">
+        insert into wd_voucher_entry_auxiliary_%s(voucher_id, entry_id, source_table, item_value_id) VALUES
+        <foreach collection="editAuxiliaryList" item="editAuxiliary" separator=",">
+            (#{voucherId} ,#{editAuxiliary.entryId} ,#{editAuxiliary.sourceTable}
+            ,#{editAuxiliary.itemValueId} )
+        </foreach>
+
+    </insert>
+
+
+    <select id="findList" resultType="com.njwd.entity.ledger.dto.VoucherEntryAuxiliaryDto">
+        select
+        wvea.`voucher_id`,
+        wvea.`entry_id`,
+        wvea.`source_table`,
+        wvea.`item_value_id`
+        from wd_voucher_entry_auxiliary_%s wvea
+        where wvea.voucher_id in
+        <foreach collection="voucherIds" item="voucherId" open="(" close=")" separator=",">
+            #{voucherId}
+        </foreach>
+    </select>
+
+
+    <select id="findListByEntryId" resultType="com.njwd.entity.ledger.vo.VoucherEntryAuxiliaryVo">
+        select
+        wvea.`voucher_id`,
+        wvea.`entry_id`,
+        wvea.`source_table`,
+        wvea.`item_value_id`
+        from wd_voucher_entry_auxiliary_%s wvea
+        where wvea.entry_id in
+        <foreach collection="entryIds" item="entryId" open="(" close=")" separator=",">
+            #{entryId}
+        </foreach>
+    </select>
+
+    <select id="findListByAuxiliary" resultMap="BaseResultMap">
+        select
+        t.sourceTables,
+        t.itemValueIds,
+        group_concat( t.entryId ) entryIds
+        from
+        (
+        select
+        wbs.entry_id entryId,
+        group_concat( wbs.source_table order by field(source_table,
+        <if test="voucherEntryAuxiliaryDto.sourceTableAndIdList != null and voucherEntryAuxiliaryDto.sourceTableAndIdList.size() > 0">
+            <foreach collection="voucherEntryAuxiliaryDto.sourceTableAndIdList" item="item" index="index"
+                     separator=",">
+                #{item.sourceTable}
+            </foreach>
+        </if>
+        <if test="voucherEntryAuxiliaryDto.sourceTableAndIdList == null or voucherEntryAuxiliaryDto.sourceTableAndIdList.size() == 0">
+            ''
+        </if>
+        ) ) sourceTables,
+        group_concat( wbs.item_value_id order by field(source_table,
+        <if test="voucherEntryAuxiliaryDto.sourceTableAndIdList != null and voucherEntryAuxiliaryDto.sourceTableAndIdList.size() > 0">
+            <foreach collection="voucherEntryAuxiliaryDto.sourceTableAndIdList" item="item" index="index"
+                     separator=",">
+                #{item.sourceTable}
+            </foreach>
+        </if>
+        <if test="voucherEntryAuxiliaryDto.sourceTableAndIdList == null or voucherEntryAuxiliaryDto.sourceTableAndIdList.size() == 0">
+            ''
+        </if>
+        ) ) itemValueIds
+        from
+        wd_voucher_entry_auxiliary_%s wbs
+        where 1=1
+        <if test="voucherEntryAuxiliaryDto.sourceTableAndIdList != null and voucherEntryAuxiliaryDto.sourceTableAndIdList.size() > 0">
+            and (
+            <foreach collection="voucherEntryAuxiliaryDto.sourceTableAndIdList" item="item" index="index"
+                     separator="or">
+                (wbs.source_table = #{item.sourceTable}
+                <if test="item.itemValueId !=null ">
+                    and wbs.item_value_id = #{item.itemValueId}
+                </if>
+                <if test="item.itemValueIdList != null and item.itemValueIdList.size() > 0">
+                    and wbs.item_value_id in (
+                    <foreach collection="item.itemValueIdList" item="idItem" index="idIndex"
+                             separator=",">
+                        #{idItem}
+                    </foreach>
+                    )
+                </if>
+                )
+            </foreach>
+            )
+        </if>
+        group by
+        wbs.entry_id
+        )t  group by
+        t.sourceTables,
+        t.itemValueIds
+    </select>
+
+    <!--根据凭证列表查询辅助核算明细-->
+    <select id="findAuxForPostPeriod" resultType="com.njwd.entity.ledger.vo.PostPeriodBalanceVo">
+        select a.entry_id, a.source_table ,a.item_value_id
+        from wd_voucher_entry_auxiliary_%s a
+        where a.voucher_id in (
+        <foreach collection="voucherList" item="item" index="index" separator=",">
+            #{item.id,jdbcType=BIGINT}
+        </foreach>
+        )
+        order by a.entry_id, a.source_table ,a.item_value_id
+    </select>
+
+
+    <!--根据凭证列表查询分录-->
+    <select id="findEntryForPostPeriod" resultType="com.njwd.entity.ledger.vo.PostPeriodBalanceVo">
+        select e.id as entry_id, e.account_subject_id,e.debit_amount, e.credit_amount
+        from wd_voucher_entry_%s e
+        where e.voucher_id in (
+        <foreach collection="voucherList" item="item" index="index" separator=",">
+            #{item.id,jdbcType=BIGINT}
+        </foreach>
+        )
+        order by entry_id
+    </select>
+</mapper>

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.basedata.mapper.DeptUseCompanyMapper">
+  <resultMap id="BaseResultMap" type="com.njwd.entity.basedata.DeptUseCompany">
+    <!--@mbg.generated-->
+    <id column="id" jdbcType="BIGINT" property="id"/>
+    <result column="dept_id" jdbcType="BIGINT" property="deptId"/>
+    <result column="use_company_id" jdbcType="BIGINT" property="useCompanyId"/>
+    <result column="business_unit_id" jdbcType="BIGINT" property="businessUnitId"/>
+    <result column="create_time" jdbcType="VARCHAR" property="createTime" />
+    <result column="creator_id" jdbcType="BIGINT" property="creatorId"/>
+    <result column="creator_name" jdbcType="VARCHAR" property="creatorName" />
+    <result column="use_company_name" jdbcType="VARCHAR" property="useCompanyName" />
+    <result column="business_unit_name" jdbcType="VARCHAR" property="businessUnitName" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id,dept_id, use_company_id,business_unit_id,start_time,end_time,create_time,creator_id,creator_name,updator_id,update_time,updator_name
+  </sql>
+
+
+
+<!--查询列表记录-->
+  <select id="findUseCompanyList" parameterType="com.njwd.entity.basedata.DeptUseCompany" resultType="com.njwd.entity.basedata.DeptUseCompany">
+    select
+    duc.id,
+    duc.dept_id,
+    duc.use_company_id,
+    duc.business_unit_id,
+    duc.create_time,
+    duc.creator_id,
+    duc.creator_name,
+    uwc.name as use_company_name,
+    wbu.name as business_unit_name
+    from
+    wd_dept_use_company duc
+    left join wd_company uwc ON duc.use_company_id = uwc.id
+    left join wd_business_unit wbu on duc.business_unit_id=wbu.id
+    where
+    dept_id=#{deptUseCompany.deptId}
+    order by duc.create_time desc
+  </select>
+
+
+
+
+  <insert id="addUseCompany" parameterType="com.njwd.entity.basedata.DeptUseCompany">
+    insert into wd_dept_use_company(
+    dept_id,
+    use_company_id,
+    business_unit_id,
+    create_time,
+    creator_id,
+    creator_name
+    )values (
+    #{deptUseCompany.deptId},
+    #{deptUseCompany.useCompanyId},
+    #{deptUseCompany.businessUnitId},
+    #{deptUseCompany.createTime},
+    #{deptUseCompany.creatorId},
+    #{deptUseCompany.creatorName}
+    )
+  </insert>
+
+
+  <insert id="addUseCompanyBatch" parameterType="com.njwd.entity.basedata.DeptUseCompany">
+    insert into wd_dept_use_company(
+    dept_id,
+    use_company_id,
+    business_unit_id,
+    creator_id,
+    creator_name
+    )values
+    <foreach collection="list" item="deptUseCompany" separator=",">
+    (
+    #{deptUseCompany.deptId},
+    #{deptUseCompany.useCompanyId},
+    #{deptUseCompany.businessUnitId},
+    #{deptUseCompany.creatorId},
+    #{deptUseCompany.creatorName}
+    )
+    </foreach>
+  </insert>
+
+  <delete id="deleteDept" parameterType="java.util.List">
+    delete from wd_dept_use_company
+    where dept_id in
+    <foreach collection="list" item="id" separator="," open="(" close=")">
+      #{id}
+    </foreach>
+  </delete>
+
+</mapper>

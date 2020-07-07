@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.FinancialReportMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.platform.vo.FinancialReportVo">
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="code" jdbcType="VARCHAR" property="code"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="report_type_id" jdbcType="BIGINT" property="reportTypeId"/>
+        <result column="year" jdbcType="INTEGER" property="year"/>
+        <result column="acc_standard_id" jdbcType="BIGINT" property="accStandardId"/>
+        <result column="is_default" jdbcType="TINYINT" property="isDefault"/>
+        <result column="status" jdbcType="TINYINT" property="status"/>
+        <result column="is_released" jdbcType="TINYINT" property="isReleased"/>
+        <result column="is_approved" jdbcType="TINYINT" property="isApproved"/>
+        <result column="is_del" jdbcType="TINYINT" property="isDel"/>
+        <result column="description" jdbcType="VARCHAR" property="description"/>
+        <result column="is_enable" jdbcType="TINYINT" property="isEnable"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="creator_id" jdbcType="BIGINT" property="creatorId"/>
+        <result column="creator_name" jdbcType="VARCHAR" property="creatorName"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+        <result column="updator_id" jdbcType="BIGINT" property="updatorId"/>
+        <result column="updator_name" jdbcType="VARCHAR" property="updatorName"/>
+        <result column="version" jdbcType="INTEGER" property="version"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--@mbg.generated generated on Tue Jun 25 09:39:48 CST 2019.-->
+        wfr.id, wfr.code, wfr.`name`, wfr.report_type_id, wfr.`year`, wfr.acc_standard_id, wfr.is_default, wfr.`status`,
+        wfr.is_released, wfr.is_approved, wfr.is_del, wfr.is_enable, wfr.create_time, wfr.creator_id, wfr.creator_name, wfr.update_time, wfr.updator_id,
+        wfr.description,wfr.updator_name,wfr.version
+    </sql>
+    <select id="findAssetListByAccStandardId" resultMap="BaseResultMap">
+        select
+            a.id, a.code, a.`name`, a.report_type_id, a.`year`, a.acc_standard_id, a.is_default, a.`status`,
+            a.ssued_status, a.is_enable, a.create_time, a.creator_id, a.creator_name, a.update_time, a.updator_id,
+            a.updator_name,b.code reportTypeCode,b.name reportTypeName
+        from wd_financial_report a
+        left join wd_financial_report_type b on a.report_type_id=b.id
+        <where>
+            <if test="accStandardId != null">
+                and a.acc_standard_id=#{accStandardId}
+            </if>
+            and b.code=1
+            and a.is_enable=1
+            and a.ssued_status=1
+        </where>
+        order by a.is_default desc
+    </select>
+
+    <select id="findProfitListByAccStandardId" resultMap="BaseResultMap">
+        select
+            a.id, a.code, a.`name`, a.report_type_id, a.`year`, a.acc_standard_id, a.is_default, a.`status`,
+            a.ssued_status, a.is_enable, a.create_time, a.creator_id, a.creator_name, a.update_time, a.updator_id,
+            a.updator_name,b.code reportTypeCode,b.name reportTypeName
+        from wd_financial_report a
+        left join wd_financial_report_type b on a.report_type_id=b.id
+        <where>
+            <if test="accStandardId != null">
+                and a.acc_standard_id=#{accStandardId}
+            </if>
+            and b.code=2
+            and a.is_enable=1
+            and a.ssued_status=1
+        </where>
+        order by a.is_default desc
+    </select>
+    <select id="findCashFlowListByAccStandardId" resultMap="BaseResultMap">
+        select
+            a.id, a.code, a.`name`, a.report_type_id, a.`year`, a.acc_standard_id, a.is_default, a.`status`,
+            a.ssued_status, a.is_enable, a.create_time, a.creator_id, a.creator_name, a.update_time, a.updator_id,
+            a.updator_name,b.code reportTypeCode,b.name reportTypeName
+        from wd_financial_report a
+        left join wd_financial_report_type b on a.report_type_id=b.id
+        <where>
+            <if test="accStandardId != null">
+                and a.acc_standard_id=#{accStandardId}
+            </if>
+            and a.report_type_id=3
+            and a.is_enable=1
+            and a.ssued_status=1
+        </where>
+        order by a.is_default desc
+    </select>
+    <select id="findProfitList" resultMap="BaseResultMap">
+        SELECT
+	    c.`code` reportItemCode,
+	    c.`name` reportItemName,
+	    c.item_type reportItemType,
+        b.`code`,
+        a.NAME reportTypeName
+        FROM
+        wd_financial_report_type a
+        LEFT JOIN wd_financial_report b ON a.id = b.report_type_id
+        LEFT JOIN wd_financial_report_item c ON a.id = c.report_type_id
+        WHERE
+	        b.is_default =1
+	        AND b.is_enable=1
+	     and c.item_type=2
+    </select>
+
+    <select id="findAssetList" resultMap="BaseResultMap">
+        SELECT
+	    c.`code` reportItemCode,
+	    c.`name` reportItemName,
+	    c.item_type reportItemType,
+        b.`code`,
+        a.NAME reportTypeName
+        FROM
+        wd_financial_report_type a
+        LEFT JOIN wd_financial_report b ON a.id = b.report_type_id
+        LEFT JOIN wd_financial_report_item c ON a.id = c.report_type_id
+        WHERE
+	        b.is_default =1
+	        AND b.is_enable=1
+	     and c.item_type=1
+    </select>
+
+    <select id="findCashFlowList" resultMap="BaseResultMap">
+        SELECT
+	    c.`code` reportItemCode,
+	    c.`name` reportItemName,
+	    c.item_type reportItemType,
+        b.`code`,
+        a.NAME reportTypeName
+        FROM
+        wd_financial_report_type a
+        LEFT JOIN wd_financial_report b ON a.id = b.report_type_id
+        LEFT JOIN wd_financial_report_item c ON a.id = c.report_type_id
+        WHERE
+	        b.is_default =1
+	        AND b.is_enable=1
+	     and c.item_type=3
+    </select>
+    <select id="findFinancialReportListPage" resultMap="BaseResultMap">
+        select <include refid="Base_Column_List"/>,
+        was.name as accStandardName,
+        wfrt.name as reportTypeName
+        from wd_financial_report wfr
+        left join wd_accounting_standard was on wfr.acc_standard_id=was.id
+        left join wd_financial_report_type wfrt on wfr.report_type_id=wfrt.id
+        <where>
+            wfr.is_del=0
+            <if test="financialReportDto.isApproved != null">
+                and wfr.is_approved=#{financialReportDto.isApproved}
+            </if>
+            <if test="financialReportDto.accStandardId != null">
+                and wfr.acc_standard_id=#{financialReportDto.accStandardId}
+            </if>
+            <if test="financialReportDto.accStandardIdList != null and financialReportDto.accStandardIdList.size() != 0">
+                and wfr.acc_standard_id in
+                <foreach collection="financialReportDto.accStandardIdList" item="id" index="index" open="(" close=")" separator=",">
+                    #{id}
+                </foreach>
+            </if>
+            <if test="financialReportDto.reportTypeId != null">
+                and wfr.report_type_id=#{financialReportDto.reportTypeId}
+            </if>
+            <if test="financialReportDto.reportTypeIdList != null and financialReportDto.reportTypeIdList.size() != 0">
+                and wfr.report_type_id in
+                <foreach collection="financialReportDto.reportTypeIdList" item="id" index="index" open="(" close=")" separator=",">
+                    #{id}
+                </foreach>
+            </if>
+            <if test="financialReportDto.isReleased != null">
+                and wfr.is_released=#{financialReportDto.isReleased}
+            </if>
+            <if test="financialReportDto.codeOrName != null and financialReportDto.codeOrName != ''">
+                and (wfr.code like concat('%',#{financialReportDto.codeOrName} ,'%') or wfr.name like concat('%',#{financialReportDto.codeOrName}
+                ,'%'))
+            </if>
+        </where>
+        order by RPAD( wfr.code, 14, 0 )
+    </select>
+    <select id="findFinancialReportListStatus" resultMap="BaseResultMap">
+        select wcf.id,
+        wcf.is_del,
+        wcf.is_approved,
+        wcf.is_released,
+        wcf.version
+        from wd_financial_report wcf
+        <where>
+            <if test="changeList != null and changeList.size() != 0">
+                and wcf.id in
+                <foreach collection="changeList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item.id}
+                </foreach>
+            </if>
+        </where>
+        order by wcf.id asc
+    </select>
+    <select id="findFinancialReportById" resultMap="BaseResultMap">
+        select <include refid="Base_Column_List"/>,
+        was.name as accStandardName,
+        wfrt.name as reportTypeName,
+        was.code accStandardCode,
+        wfrt.code reportTypeCode
+        from wd_financial_report wfr
+        left join wd_accounting_standard was on wfr.acc_standard_id=was.id
+        left join wd_financial_report_type wfrt on wfr.report_type_id=wfrt.id
+        <where>
+            wfr.is_del=0
+            <if test="id != null">
+                and wfr.id=#{id}
+            </if>
+        </where>
+    </select>
+</mapper>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.AccountSubjectCurrencyMapper">
+  <resultMap id="BaseResultMap" type="com.njwd.entity.platform.AccountSubjectCurrency">
+    <!--@mbg.generated generated on Mon Jun 17 14:24:20 CST 2019.-->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="account_id" jdbcType="BIGINT" property="accountId" />
+    <result column="currency_id" jdbcType="BIGINT" property="currencyId" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    id, account_id, currency_id, create_time
+  </sql>
+</mapper>

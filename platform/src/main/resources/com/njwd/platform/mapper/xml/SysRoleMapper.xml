@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.SysRoleMapper">
+    <sql id="Base_Column_List">
+        wsr.`role_id`,
+        wsr.`name`,
+        wsr.`sort`,
+        wsr.`is_del`,
+        wsr.`remark`,
+        wsr.`creator_id`,
+        wsr.`creator_name`,
+        wsr.`create_time`,
+        wsr.`updator_id`,
+        wsr.`updator_name`,
+        wsr.`update_time`
+    </sql>
+    <resultMap id="sysRoleMap" type="com.njwd.entity.platform.vo.SysRoleVo">
+        <collection property="sysMenuVoList" ofType="com.njwd.entity.platform.vo.SysMenuVo">
+        </collection>
+    </resultMap>
+
+    <select id="findRoleMenuList" resultMap="sysRoleMap">
+        select
+        <include refid="Base_Column_List"></include>,
+        wsm.`menu_id`,
+        wsm.`type`,
+        wsm.`type_name`,
+        wsm.`name`,
+        wsm.`sort`,
+        wsm.`code`,
+        wsm.`parent_id`,
+        wsm.`is_child`,
+        wsm.`permission`,
+        wsm.`remark`,
+        wsm.`is_default_select`,
+        wsm.`is_del`
+        from wd_sys_role wsr
+        left join wd_sys_role_menu wsrm on wsr.role_id = wsrm.role_id
+        left join wd_sys_menu wsm on wsm.menu_id = wsrm.menuid
+
+    </select>
+
+
+</mapper>

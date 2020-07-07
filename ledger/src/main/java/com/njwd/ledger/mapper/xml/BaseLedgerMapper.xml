@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.ledger.mapper.BaseLedgerMapper">
+
+
+    <select id="judgeNull" resultType="java.lang.Object">
+        select manage_info from ${entity.tableName}
+        where id = #{entity.id}
+    </select>
+
+    <update id="initJson">
+        update ${entity.tableName}
+        set manage_info =
+        json_object()
+        where id = #{entity.id}
+    </update>
+
+    <update id="updateManageInfo">
+        update ${entity.tableName}
+        set manage_info =
+        case when manage_info is null
+        then json_object()
+        else
+        (JSON_SET(manage_info,
+        <foreach collection="manageList" item="field" separator="," close=")">
+            <if test="field instanceof java.util.Date">
+                UNIX_TIMESTAMP(NOW()) * 1000
+            </if>
+            <if test="not field instanceof java.util.Date">
+                #{field}
+            </if>
+        </foreach>
+        )
+        end
+        where id = #{entity.id}
+    </update>
+</mapper>

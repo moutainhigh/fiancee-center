@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.AuxiliaryItemMapper">
+  <resultMap id="BaseResultMap" type="com.njwd.entity.platform.vo.AuxiliaryItemVo">
+    <!--@mbg.generated generated on Mon Jun 17 17:47:20 CST 2019.-->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="code" jdbcType="VARCHAR" property="code" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="source_model_type" jdbcType="TINYINT" property="sourceModel" />
+    <result column="source_model" jdbcType="VARCHAR" property="sourceModel" />
+    <result column="source_name" jdbcType="VARCHAR" property="sourceName" />
+    <result column="source_table" jdbcType="VARCHAR" property="sourceTable" />
+    <result column="is_enable" jdbcType="TINYINT" property="isEnable" />
+    <result column="is_del" jdbcType="TINYINT" property="isDel" />
+    <result column="creator_id" jdbcType="BIGINT" property="creatorId" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="creator_name" jdbcType="VARCHAR" property="creatorName" />
+    <result column="updator_id" jdbcType="BIGINT" property="updatorId" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="updator_name" jdbcType="VARCHAR" property="updatorName" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated generated on Mon Jun 17 17:47:20 CST 2019.-->
+    id, code, `name`, source_model_type ,source_model,source_name ,source_table, is_enable,is_del,
+    creator_id, create_time, creator_name, updator_id, update_time, updator_name,is_approved,is_released
+  </sql>
+  <sql id="new_column_list">
+      wai.`id`,
+      wai.`code`,
+      wai.`name`,
+      wai.`source_model_type`,
+      wai.`source_model`,
+      wai.`source_name`,
+      wai.`source_table`,
+      wai.`is_enable`,
+      wai.`is_del`,
+      wai.`creator_id`,
+      wai.`create_time`,
+      wai.`creator_name`,
+      wai.`updator_id`,
+      wai.`update_time`,
+      wai.`updator_name`,
+      wai.`is_approved`,
+      wai.`is_released`,
+      wai.`manage_info`,
+      wai.`source_id`
+  </sql>
+  <select id="findAuxiliaryById" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List"/>
+        from wd_auxiliary_item
+          where id=#{id}
+          and is_enable=1
+          and is_del=0
+  </select>
+  <select id="findAuxiliaryItemPage" resultMap="BaseResultMap">
+    select
+      a.*, '0' source
+      from wd_auxiliary_item a
+        <where>
+          <if test="auxiliaryDto.codeOrName != null">
+            and (a.code like concat('%',#{auxiliaryDto.codeOrName},'%') or a.name like concat('%',#{auxiliaryDto.codeOrName},'%'))
+          </if>
+          <if test="auxiliaryDto.isApproved!=null">
+            and a.is_approved = #{auxiliaryDto.isApproved}
+          </if>
+          <if test="auxiliaryDto.isReleased!=null">
+            and a.is_released = #{auxiliaryDto.isReleased}
+          </if>
+          <if test="auxiliaryDto.excludedIds!=null and auxiliaryDto.excludedIds.size()>0">
+            and id not in
+              <foreach collection="auxiliaryDto.excludedIds" item="excludedId" open="(" close=")" separator="," >
+                    #{excludedId}
+              </foreach>
+          </if>
+          and a.is_del=0
+        </where>
+  </select>
+
+  <select id="findAuxiliaryListByNames" resultMap="BaseResultMap">
+    select
+      a.id,
+      a.code,
+      a.`name`,
+      a.source_model,
+      (CASE a.source_model_type WHEN 0 THEN '基础资料' WHEN 1 THEN '辅助资料' END) sourceModelName,
+      a.source_name auxiliarySources,
+      (select GROUP_CONCAT(NAME separator';') from wd_auxiliary_item_depend b where b.item_id in ( a.id )) auxiliaryDependents,
+      a.source_table,
+      (select GROUP_CONCAT(sort_num separator';') from wd_auxiliary_item_depend d where d.item_id in ( a.id)) sortNums,
+      a.is_enable,a.is_del,
+      a.creator_id, a.create_time, a.creator_name, a.updator_id, a.update_time,a.updator_name
+    from wd_auxiliary_item a
+    <where>
+      <if test="names != null and names != ''">
+        and FIND_IN_SET(a.name,#{names})
+      </if>
+      and a.is_enable=1
+      and a.is_del=0
+    </where>
+  </select>
+
+  <!--查询所有未删除的辅助核算类型-->
+  <select id="findAllAuxiliaryItem" resultType="com.njwd.entity.platform.vo.AuxiliaryItemVo">
+      SELECT
+          t1.id id,
+          t1.`code` code,
+          t1.`name` name,
+          t1.source_table sourceTable,
+          t1.is_enable isEnable
+      FROM
+          wd_auxiliary_item t1
+      <where>
+          t1.is_del = 0
+      </where>
+      ORDER BY t1.id
+  </select>
+
+  <select id="findSourceOfValuePage" resultType="com.njwd.entity.platform.SourceOfValue">
+      select * from wd_source_of_value
+    <where>
+      <if test="sourceOfValueDto.codeOrName != null">
+        and (code like concat('%',#{sourceOfValueDto.codeOrName},'%') or name like concat('%',#{sourceOfValueDto.codeOrName},'%'))
+      </if>
+      and is_approved = 1
+    </where>
+
+  </select>
+  <update id="updateBatch">
+    <foreach collection="idList" item="id">
+    update wd_auxiliary_item
+    <set>
+      <if test="isApproved != null">
+        is_approved = #{isApproved} ,
+      </if>
+      <if test="isReleased != null">
+        is_released = #{isReleased},
+      </if>
+    </set>
+    where
+    id = #{id};
+    </foreach>
+  </update>
+  <select id="findSourceOfValuePageById" resultType="com.njwd.entity.platform.SourceOfValue">
+    select * from wd_source_of_value where id = #{id}
+  </select>
+  <select id="findBySubjectId" resultMap="BaseResultMap">
+      select
+      <include refid="new_column_list"/>
+      from wd_auxiliary_item wai
+      inner join wd_subject_auxiliary wsa on wsa.auxiliary_id = wai.id
+      where wsa.subject_id = #{subjectId}
+      order by wai.code
+  </select>
+</mapper>

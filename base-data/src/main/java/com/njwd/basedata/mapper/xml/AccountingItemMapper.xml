@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.basedata.mapper.AccountingItemMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.basedata.AccountingItem">
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        id, `name`,code,code_type,data_type,is_enable, is_del, create_time, creator_id,version,
+        creator_name,remark,manage_info,
+        update_time,
+        updator_id, updator_name
+    </sql>
+    <!-- 根据 item_id 查询自定义核算项目大区值id -->
+    <select id="findAccountingItemValueByItemId" parameterType="com.njwd.entity.basedata.dto.AccountingItemDto"
+            resultType="java.lang.Long">
+        select
+        t.id
+        from wd_accounting_item_value t
+        where
+        t.is_del = 0
+        <if test="ids != null and ids.size()>0 ">
+            and t.item_id in
+            <foreach collection="ids" item="id" index="index" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        </if>
+    </select>
+    <!-- 查询自定义核算项目是否有大区值 -->
+    <select id="findItemRelaValueById" parameterType="com.njwd.entity.basedata.dto.AccountingItemDto"
+            resultType="java.lang.Long">
+        select
+        a.id
+        from wd_accounting_item a,
+        wd_accounting_item_value b
+        where
+        a.is_del = 0
+        and b.is_del = 0
+        and a.id = b.item_id
+        <if test="ids != null and ids.size()>0 ">
+            and b.item_id in
+            <foreach collection="ids" item="id" index="index" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        </if>
+        <if test="batchIds != null and batchIds.size()>0 ">
+            and b.id in
+            <foreach collection="batchIds" item="id" index="index" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        </if>
+        group by a.id
+    </select>
+    <!-- 根据id查询自定义核算项目-->
+    <select id="findById" resultType="com.njwd.entity.basedata.vo.AccountingItemVo">
+        select
+        <include refid="Base_Column_List"/>
+        ,"集团" companyName
+        ,t.is_enable,
+        (select count(1) from wd_accounting_item_value v where v.item_id = t.id and v.is_del = 0) valueCount
+        from wd_accounting_item t
+        where t.id = #{id}
+    </select>
+    <!-- 查询自定义核算项目列表分页-->
+    <select id="findPage" parameterType="com.njwd.entity.basedata.dto.AccountingItemDto"
+            resultType="com.njwd.entity.basedata.vo.AccountingItemVo">
+        select
+        <include refid="Base_Column_List"/>
+        ,"集团" companyName
+        ,t.is_enable,
+        (select count(1) from wd_accounting_item_value v where v.item_id = t.id and v.is_del = 0) valueCount
+        from wd_accounting_item t
+        where
+        t.is_del = 0
+        <if test="accountingItemDto.isEnable != null">
+            and t.is_enable = #{accountingItemDto.isEnable}
+        </if>
+        <if test="accountingItemDto.codeOrName != null and accountingItemDto.codeOrName != '' ">
+            and (t.code like concat('%',#{accountingItemDto.codeOrName},'%')
+            or t.name like concat('%',#{accountingItemDto.codeOrName},'%'))
+        </if>
+        <if test="accountingItemDto.exportIds != null and accountingItemDto.exportIds != ''">
+            and FIND_IN_SET(t.id,#{accountingItemDto.exportIds})
+        </if>
+        <if test="accountingItemDto.rootEnterpriseId != null">
+            and t.root_enterprise_id = #{accountingItemDto.rootEnterpriseId}
+        </if>
+        order by t.code
+    </select>
+    <!-- 修改编码 -->
+    <update id="updateAccountingItemValue" parameterType="com.njwd.entity.basedata.dto.AccountingItemDto">
+        update wd_accounting_item_value t
+        <if test="isDel != null ">
+            SET t.is_del = #{isDel}
+        </if>
+        <if test="isEnable != null ">
+            SET t.is_enable = #{isEnable}
+        </if>
+        where
+        <if test="ids != null and ids.size()>0">
+            t.item_id in
+            <foreach collection="ids" item="id" index="index" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        </if>
+    </update>
+    <!-- 根据 编码名称 查询自定义核算项目数量 -->
+    <select id="findAccountingItemByName" parameterType="com.njwd.entity.basedata.dto.AccountingItemDto"
+            resultType="int">
+        select count(1)
+        from wd_accounting_item t
+        where
+        t.is_del = 0
+        and t.name = #{name}
+        <if test="id != null ">
+            and t.id != #{id}
+        </if>
+        <if test="rootEnterpriseId != null">
+            and t.root_enterprise_id = #{rootEnterpriseId}
+        </if>
+    </select>
+    <!-- 根据 编码名称 查询自定义核算项目 -->
+    <select id="findAccountingItemByItemName" parameterType="String"
+            resultType="com.njwd.entity.basedata.vo.AccountingItemVo">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_accounting_item t
+        where
+        t.is_del = 0
+        <if test="name != null ">
+            and t.name = #{name}
+        </if>
+        <if test="code != null ">
+            and t.code = #{code}
+        </if>
+        <if test="rootEnterpriseId != null">
+            and t.root_enterprise_id = #{rootEnterpriseId}
+        </if>
+    </select>
+    <!-- 根据 编码 查询自定义核算项目数量 -->
+    <select id="findAccountingItemByCode" parameterType="com.njwd.entity.basedata.dto.AccountingItemDto"
+            resultType="int">
+        select count(1)
+        from wd_accounting_item t
+        where
+        t.is_del = 0
+        and t.code = #{code}
+        <if test="id != null ">
+            and t.id != #{id}
+        </if>
+        <if test="rootEnterpriseId != null">
+            and t.root_enterprise_id = #{rootEnterpriseId}
+        </if>
+    </select>
+    <!--  校验自定义核算项目版本号是否一致 -->
+    <select id="findAccountingItemByVersion" parameterType="com.njwd.entity.basedata.dto.AccountingItemDto"
+            resultType="int">
+        select count(1)
+        from wd_accounting_item t
+        where
+        t.is_del = 0
+        <if test="id != null ">
+            and t.id = #{id}
+        </if>
+        <if test="version != null ">
+            and t.version = #{version}
+        </if>
+        <if test="rootEnterpriseId != null">
+            and t.root_enterprise_id = #{rootEnterpriseId}
+        </if>
+    </select>
+    <!-- 查询自定义核算项目是否被删除,被禁用明细 -->
+    <select id="findIsDel" parameterType="com.njwd.entity.basedata.dto.AccountingItemDto"
+            resultType="com.njwd.entity.basedata.vo.AccountingItemVo">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_accounting_item t
+        where
+        <if test="isDel != null ">
+            t.is_del = #{isDel}
+        </if>
+        <if test="isEnable != null ">
+            t.is_enable = #{isEnable}
+        </if>
+        <if test="ids != null and ids.size()>0">
+            and t.id in
+            <foreach collection="ids" item="id" index="index" open="(" separator="," close=")">
+                #{id}
+            </foreach>
+        </if>
+    </select>
+    <!--批量新增-->
+    <insert id="addBatchAccountingItem" parameterType="com.njwd.entity.basedata.AccountingItem">
+        insert into wd_accounting_item
+        (
+        data_type,
+        code_type,
+        code,
+        name,
+        creator_id,
+        creator_name,
+        create_time,
+        root_enterprise_id,
+        remark)
+        values
+        <foreach collection="list" item="accountingItem" separator=",">
+            (
+            #{accountingItem.dataType},
+            #{accountingItem.codeType},
+            #{accountingItem.code},
+            #{accountingItem.name},
+            #{accountingItem.creatorId},
+            #{accountingItem.creatorName},
+            #{accountingItem.createTime},
+            #{accountingItem.rootEnterpriseId},
+            #{accountingItem.remark}
+            )
+        </foreach>
+    </insert>
+
+    <!--查询所有自定义核算项-->
+    <select id="findAllAccountItemInfo" parameterType="com.njwd.entity.platform.Subject"
+            resultType="com.njwd.entity.basedata.vo.AccountingItemVo">
+        SELECT
+        t.id,
+        t.name,
+        t.code,
+        t.code_type,
+        t.data_type,
+        t.is_enable,
+        t.remark,
+        '1' source,
+        'wd_accounting_item_value' sourceTable,
+        COUNT(f.id) ifUsed
+        FROM
+        wd_accounting_item t
+        LEFT JOIN wd_subject_auxiliary f on f.code = t.code
+        <if test="id != null">
+            and f.subject_id = #{id}
+        </if>
+        WHERE t.is_del = 0 AND t.is_enable = 1
+        <if test="rootEnterpriseId != null">
+            and t.root_enterprise_id = #{rootEnterpriseId}
+        </if>
+        GROUP BY t.id
+        ORDER BY t.code
+    </select>
+
+</mapper>

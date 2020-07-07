@@ -1,0 +1,59 @@
+.gradle
+/build/
+!gradle/wrapper/gradle-wrapper.jar
+/gradle/
+gradlew
+gradlew.bat
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+/out/
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+### 各子模块 ###
+common/out/
+common/build/
+easyexcel/out/
+easyexcel/build/
+monitor-client/out/
+monitor-client/build/
+
+### 异步Server ###
+async-server/out/
+async-server/build/
+
+### 基础资料 ###
+base-data/out/
+base-data/build/
+base-data-api/out/
+base-data-api/build/
+
+### 运营平台 ###
+platform/out/
+platform/build/
+platform-api/out/
+platform-api/build/
+
+### 总账 ###
+ledger/out/
+ledger/build/
+ledger-api/out/
+ledger-api/build/

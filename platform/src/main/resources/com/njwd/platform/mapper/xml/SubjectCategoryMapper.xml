@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.SubjectCategoryMapper">
+  <resultMap id="BaseResultMap" type="com.njwd.entity.platform.vo.SubjectCategoryVo">
+    <!--@mbg.generated-->
+<!--    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="element_item_id" jdbcType="BIGINT" property="elementItemId" />
+    <result column="code" jdbcType="VARCHAR" property="code" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="direction" jdbcType="TINYINT" property="direction" />
+    <result column="is_past_adjust" jdbcType="TINYINT" property="isPastAdjust" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="creator_id" jdbcType="BIGINT" property="creatorId" />
+    <result column="creator_name" jdbcType="VARCHAR" property="creatorName" />-->
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    wsc.id, wsc.element_item_id,wsc.code, wsc.`name`, wsc.direction, wsc.is_past_adjust, wsc.create_time, wsc.creator_id,
+    wsc.creator_name,wsc.is_approved
+  </sql>
+  <select id="findListByElemId" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List"/>,waei.name as elementItemName,wae.name as elementName
+    from  wd_subject_category wsc
+    left join wd_account_element_item waei on wsc.element_item_id=waei.id
+    left join wd_account_element wae on waei.element_id = wae.id
+    <where>
+       1 = 1
+      <if test="elementId!=null ">
+       and waei.element_id=#{elementId}
+      </if>
+      <if test="code != null ">
+       and wsc.code = #{code}
+      </if>
+    </where>
+  </select>
+  <select id="findPage" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List"/>,waei.name as elementItemName,wae.name as elementName
+        from  wd_subject_category wsc
+    left join wd_account_element_item waei on wsc.element_item_id=waei.id
+    left join wd_account_element wae on waei.element_id = wae.id
+    <where>
+      1 = 1
+      <if test="subjectCategoryDto.elementIds != null and  subjectCategoryDto.elementIds.size() > 0">
+       and wae.id in
+        <foreach collection="subjectCategoryDto.elementIds" item="elementId" index="index" open="(" close=")" separator=",">
+          #{elementId}
+        </foreach>
+      </if>
+      <if test="subjectCategoryDto.ids != null and subjectCategoryDto.ids.size() > 0">
+        and wsc.element_item_id in
+        <foreach collection="subjectCategoryDto.ids" item="id" index="index" open="(" close=")" separator=",">
+          #{id}
+        </foreach>
+      </if>
+      <if test="subjectCategoryDto.direction == 0 or subjectCategoryDto.direction == 1">
+        and wsc.direction = #{subjectCategoryDto.direction}
+      </if>
+      <if test="subjectCategoryDto.isApproved == 0 or subjectCategoryDto.isApproved == 1">
+        and wsc.is_approved = #{subjectCategoryDto.isApproved}
+      </if>
+      <if test="subjectCategoryDto.codeOrName != null">
+        and (wsc.code like concat('%',#{subjectCategoryDto.codeOrName},'%')
+        or wsc.`name` like  concat('%',#{subjectCategoryDto.codeOrName},'%'))
+      </if>
+    </where>
+    order by wsc.code
+  </select>
+</mapper>

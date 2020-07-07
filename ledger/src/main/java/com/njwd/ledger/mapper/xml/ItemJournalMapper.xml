@@ -1,0 +1,576 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.ledger.mapper.ItemJournalMapper">
+    <select id="getStartOpeningInfo" parameterType="com.njwd.entity.ledger.dto.ItemJournalQueryDto" resultType="com.njwd.entity.ledger.vo.GeneralReturnItemJournalVo">
+        select
+        res.sortNum ,
+        res.periodYearNum ,
+        res.accountBookId ,
+        res.accountBookEntityId ,
+        res.subjectId ,
+        res.periodYear ,
+        res.periodNum ,
+        res.openingBalance,
+        res.abstractContent ,
+        sum(res.openingBalance) balance
+        from(
+        select
+        0 as sortNum,
+        wbs.period_year_num periodYearNum,
+        wbs.account_book_id as accountBookId,
+        wbs.account_book_entity_id as accountBookEntityId,
+        wbs.account_subject_id as subjectId,
+        wbs.period_year as periodYear,
+        wbs.period_num as periodNum,
+        "期初余额" as abstractContent,
+        wbs.opening_balance openingBalance
+        from
+        wd_balance_subject wbs
+        where
+        1=1
+        <if test="itemJournalQueryDto.subjectIdList !=null and itemJournalQueryDto.subjectIdList.size() != 0">
+            and wbs.account_subject_id in
+            <foreach collection="itemJournalQueryDto.subjectIdList" item="subjectId" index="index" open="(" separator="," close=")">
+                #{subjectId}
+            </foreach>
+        </if>
+        <if test="itemJournalQueryDto.accountBookIds !=null and itemJournalQueryDto.accountBookIds.size() != 0">
+            and wbs.account_book_id in
+            <foreach collection="itemJournalQueryDto.accountBookIds" item="accountBookId" index="index" open="(" separator="," close=")">
+                #{accountBookId}
+            </foreach>
+        </if>
+        <if test="itemJournalQueryDto.accountBookEntityIds !=null and itemJournalQueryDto.accountBookEntityIds.size() != 0">
+            and wbs.account_book_entity_id in
+            <foreach collection="itemJournalQueryDto.accountBookEntityIds" item="accountBookEntityId" index="index" open="(" separator="," close=")">
+                #{accountBookEntityId}
+            </foreach>
+        </if>
+        and  wbs.period_year_num  =  (select min(wabp1.period_year_num) from wd_account_book_period wabp1 where wabp1.root_enterprise_id = #{itemJournalQueryDto.rootEnterpriseId}
+        and  wbs.account_book_id = wabp1.account_book_id and wabp1.system_sign = 'ledger')
+        order by wbs.period_year_num
+        ) res group by res.accountBookId,res.accountBookEntityId
+    </select>
+
+    <select id="getZeroOpeningInfo" parameterType="com.njwd.entity.ledger.dto.ItemJournalQueryDto" resultType="com.njwd.entity.ledger.vo.GeneralReturnItemJournalVo">
+        select
+        res.sortNum ,
+        res.periodYearNum ,
+        res.accountBookId ,
+        res.accountBookEntityId ,
+        res.subjectId ,
+        res.periodYear ,
+        res.periodNum ,
+        res.openingBalance,
+        res.abstractContent ,
+        sum(res.openingBalance) balance,
+        res.debit,
+        res.credit
+        from(
+        select
+        0 as sortNum,
+        wbs.period_year_num periodYearNum,
+        wbs.account_book_id as accountBookId,
+        wbs.account_book_entity_id as accountBookEntityId,
+        wbs.account_subject_id as subjectId,
+        wbs.period_year as periodYear,
+        wbs.period_num as periodNum,
+        "期初余额" as abstractContent,
+        wbs.opening_balance openingBalance,
+        wbs.debit_amount debit,
+        wbs.credit_amount credit
+        from
+        wd_balance_subject wbs
+        where
+        1=1
+        <if test="itemJournalQueryDto.subjectIdList !=null and itemJournalQueryDto.subjectIdList.size() != 0">
+            and wbs.account_subject_id in
+            <foreach collection="itemJournalQueryDto.subjectIdList" item="subjectId" index="index" open="(" separator="," close=")">
+                #{subjectId}
+            </foreach>
+        </if>
+        <if test="itemJournalQueryDto.accountBookIds !=null and itemJournalQueryDto.accountBookIds.size() != 0">
+            and wbs.account_book_id in
+            <foreach collection="itemJournalQueryDto.accountBookIds" item="accountBookId" index="index" open="(" separator="," close=")">
+                #{accountBookId}
+            </foreach>
+        </if>
+        <if test="itemJournalQueryDto.accountBookEntityIds !=null and itemJournalQueryDto.accountBookEntityIds.size() != 0">
+            and wbs.account_book_entity_id in
+            <foreach collection="itemJournalQueryDto.accountBookEntityIds" item="accountBookEntityId" index="index" open="(" separator="," close=")">
+                #{accountBookEntityId}
+            </foreach>
+        </if>
+        and  wbs.period_year_num  =  #{itemJournalQueryDto.periodNum}
+        order by wbs.period_year_num
+        ) res group by res.accountBookId,res.accountBookEntityId
+    </select>
+
+    <select id="getJournalOpening" parameterType="com.njwd.entity.ledger.dto.ItemJournalQueryDto" resultType="com.njwd.entity.ledger.vo.GeneralReturnItemJournalVo">
+        select
+            res.sortNum ,
+            res.periodYearNum ,
+            res.accountBookId ,
+            res.accountBookEntityId ,
+            res.subjectId ,
+            res.periodYear ,
+            res.periodNum ,
+            res.abstractContent ,
+            res.openingBalance,
+            sum(res.debit) debit,
+            sum(res.credit) credit
+        from(
+        select
+            0 as sortNum,
+            wabp2.period_year_num periodYearNum,
+            wbs.account_book_id as accountBookId,
+            wbs.account_book_entity_id as accountBookEntityId,
+            wbs.account_subject_id as subjectId,
+            wabp2.period_year as periodYear,
+            wbs.period_num as periodNum,
+            wbs.opening_balance openingBalance,
+            <if test="itemJournalQueryDto.isIncludeUnbooked == 0 and itemJournalQueryDto.isIncludeProfitAndLoss == 1">
+                wbs.post_debit_amount as debit,
+                wbs.post_credit_amount as credit,
+            </if>
+            <if test="itemJournalQueryDto.isIncludeUnbooked == 0 and itemJournalQueryDto.isIncludeProfitAndLoss == 0">
+                wbs.post_debit_amount - wbs.sy_debit_amount as debit,
+                wbs.post_credit_amount - wbs.sy_credit_amount as credit,
+            </if>
+            <if test="itemJournalQueryDto.isIncludeUnbooked == 1 and itemJournalQueryDto.isIncludeProfitAndLoss == 1">
+                wbs.debit_amount  as debit,
+                wbs.credit_amount  as credit,
+            </if>
+            <if test="itemJournalQueryDto.isIncludeUnbooked == 1 and itemJournalQueryDto.isIncludeProfitAndLoss == 0">
+                wbs.debit_amount - wbs.sy_debit_amount as  debit,
+                wbs.credit_amount - wbs.sy_credit_amount as credit,
+            </if>
+        "期初余额" as abstractContent
+        from
+        wd_balance_subject wbs
+            ,  wd_account_book_period wabp2
+        where
+        1=1
+        <if test="itemJournalQueryDto.subjectIdList !=null and itemJournalQueryDto.subjectIdList.size() != 0">
+            and wbs.account_subject_id in
+            <foreach collection="itemJournalQueryDto.subjectIdList" item="subjectId" index="index" open="(" separator="," close=")">
+                #{subjectId}
+            </foreach>
+        </if>
+        <if test="itemJournalQueryDto.accountBookIds !=null and itemJournalQueryDto.accountBookIds.size() != 0">
+            and wbs.account_book_id in
+            <foreach collection="itemJournalQueryDto.accountBookIds" item="accountBookId" index="index" open="(" separator="," close=")">
+                #{accountBookId}
+            </foreach>
+        </if>
+        <if test="itemJournalQueryDto.accountBookEntityIds !=null and itemJournalQueryDto.accountBookEntityIds.size() != 0">
+            and wbs.account_book_entity_id in
+            <foreach collection="itemJournalQueryDto.accountBookEntityIds" item="accountBookEntityId" index="index" open="(" separator="," close=")">
+                #{accountBookEntityId}
+            </foreach>
+        </if>
+        and  wbs.period_year_num  >=  (select min(wabp1.period_year_num) from wd_account_book_period wabp1 where wabp1.root_enterprise_id = #{itemJournalQueryDto.rootEnterpriseId}
+                                           and  wbs.account_book_id = wabp1.account_book_id and wabp1.system_sign = 'ledger')
+        and wbs.account_book_id = wabp2.account_book_id
+        and wabp2.root_enterprise_id = #{itemJournalQueryDto.rootEnterpriseId}
+        and wabp2.system_sign = 'ledger'
+        <if test=" itemJournalQueryDto.periodOperator != null and itemJournalQueryDto.periodOperator == 1">
+            <if test="itemJournalQueryDto.periodYearNum != null and itemJournalQueryDto.periodYearNum.size() != 0">
+                and wabp2.period_year_num = #{itemJournalQueryDto.periodYearNum[1]}
+            </if>
+        </if>
+        <if test="itemJournalQueryDto.periodOperator != null and itemJournalQueryDto.periodOperator == 0">
+            <if test="itemJournalQueryDto.voucherDates != null and itemJournalQueryDto.voucherDates.size() != 0">
+                and  #{itemJournalQueryDto.voucherDates[1]} between wabp2.start_date and wabp2.end_date
+            </if>
+        </if>
+        and  wbs.period_year_num &lt;= wabp2.period_year_num
+        ) res group by res.accountBookId,res.accountBookEntityId,subjectId
+    </select>
+
+    <!-- 查询科目日记账制单日期内id -->
+    <select id="findDetailInDataIds" parameterType="com.njwd.entity.ledger.dto.ItemJournalQueryDto" resultType="com.njwd.entity.ledger.vo.GeneralReturnItemJournalVo">
+        select v.id voucherId,CONCAT(MIN(v.posting_period_year),'00') periodYearNum1,MAX(v.period_year_num) periodYearNum2
+        from wd_voucher_%s v
+        left join wd_voucher_entry_%s ve on v.id = ve.voucher_id
+        where
+        v.voucher_date between #{itemJournalQueryDto.voucherDates[0]} and #{itemJournalQueryDto.voucherDates[1]}
+        and v.is_del = 0
+        <if test="itemJournalQueryDto.accountBookEntityList != null and itemJournalQueryDto.accountBookEntityList.size() > 0">
+            and v.account_book_entity_id in (
+            <foreach collection="itemJournalQueryDto.accountBookEntityList" item="item" index="index"
+                     separator=",">
+                #{item.entityId}
+            </foreach>
+            )
+        </if>
+        <if test="itemJournalQueryDto.subjectIdList != null and itemJournalQueryDto.subjectIdList.size()>0">
+            and ve.account_subject_id in
+            <foreach collection="itemJournalQueryDto.subjectIdList" item="subjectId" index="index" open="(" separator="," close=")">
+                #{subjectId}
+            </foreach>
+        </if>
+        <if test="itemJournalQueryDto.isIncludeUnbooked == 0">
+            and v.posting_status != 0
+        </if>
+        <if test="itemJournalQueryDto.isIncludeProfitAndLoss == 0">
+            and v.source_type != 2
+        </if>
+        <if test="itemJournalQueryDto.rootEnterpriseId != null">
+            and v.root_enterprise_id = #{itemJournalQueryDto.rootEnterpriseId}
+        </if>
+        GROUP BY v.id
+    </select>
+
+    <!--根据条件获取科目日记账数据-->
+    <select id="getGeneralReturnItemList" parameterType="com.njwd.entity.ledger.dto.ItemJournalQueryDto" resultType="com.njwd.entity.ledger.vo.GeneralReturnItemJournalVo">
+        select
+        v.id voucherId,bs.account_book_id,bs.account_book_entity_id,bs.account_subject_id as subjectId,
+        v.voucher_date voucherDate,unix_timestamp(v.voucher_date) voucherDateTime,bs.period_year,bs.period_num,bs.period_year_num,
+        CONCAT(case v.credential_word when 1 then '记' when 2 then '收' when 3 then '付' when 4 then '转' end,'-',v.main_code) credentialWordCode,
+        v.main_code,v.abstract_content abstractContent,
+        case when bs.period_num != 0 then v.debit_amount else
+        <if test="itemJournalQueryDto.isIncludeUnbooked == 1 and itemJournalQueryDto.isIncludeProfitAndLoss == 1">
+            bs.debit_amount
+        </if>
+        <if test="itemJournalQueryDto.isIncludeUnbooked == 1 and itemJournalQueryDto.isIncludeProfitAndLoss == 0">
+            bs.debit_amount - bs.sy_debit_amount
+        </if>
+        <if test="itemJournalQueryDto.isIncludeUnbooked == 0 and itemJournalQueryDto.isIncludeProfitAndLoss == 1 ">
+            bs.post_debit_amount
+        </if>
+        <if test="itemJournalQueryDto.isIncludeUnbooked == 0 and itemJournalQueryDto.isIncludeProfitAndLoss == 0">
+            bs.post_debit_amount - bs.post_sy_debit_amount
+        </if>
+        end selfDebit,
+        case when bs.period_num != 0 then v.credit_amount else
+        <if test="itemJournalQueryDto.isIncludeUnbooked == 1 and itemJournalQueryDto.isIncludeProfitAndLoss == 1">
+            bs.credit_amount
+        </if>
+        <if test="itemJournalQueryDto.isIncludeUnbooked == 1 and itemJournalQueryDto.isIncludeProfitAndLoss == 0">
+            bs.credit_amount - bs.sy_credit_amount
+        </if>
+        <if test="itemJournalQueryDto.isIncludeUnbooked == 0 and itemJournalQueryDto.isIncludeProfitAndLoss == 1 ">
+            bs.post_credit_amount
+        </if>
+        <if test="itemJournalQueryDto.isIncludeUnbooked == 0 and itemJournalQueryDto.isIncludeProfitAndLoss == 0">
+            bs.post_credit_amount - bs.post_sy_credit_amount
+        </if>
+        end selfCredit,
+        bs.opening_balance
+        from wd_balance_subject bs
+        left join (
+        select
+        v.id,v.voucher_date,v.credential_word,ve.abstract_content,v.account_book_entity_id,ve.account_subject_id,v.posting_period_year,v.posting_period_num,
+        v.voucher_date voucherDate,	unix_timestamp(v.voucher_date) voucherDateTime,ve.abstract_content summary,
+        ve.debit_amount,ve.credit_amount,v.main_code
+        from wd_voucher_%s v
+        left join wd_voucher_entry_%s ve on v.id = ve.voucher_id
+        where
+        v.is_del = 0
+        <if test="itemJournalQueryDto.isIncludeUnbooked == 0">
+            and v.posting_status != 0
+        </if>
+        <if test="itemJournalQueryDto.isIncludeProfitAndLoss == 0">
+            and v.source_type != 2
+        </if>
+        )v
+        on v.account_book_entity_id = bs.account_book_entity_id
+        and v.posting_period_year = bs.period_year
+        and v.posting_period_num = bs.period_num
+        and v.account_subject_id = bs.account_subject_id
+        <where>
+            <if test="itemJournalQueryDto.accountBookEntityList != null and itemJournalQueryDto.accountBookEntityList.size() > 0">
+                and bs.account_book_entity_id in
+                <foreach collection="itemJournalQueryDto.accountBookEntityIds" item="accountBookEntityId" index="index" open="(" separator="," close=")">
+                    #{accountBookEntityId}
+                </foreach>
+
+            </if>
+            <if test=" itemJournalQueryDto.periodOperator != null and itemJournalQueryDto.periodOperator == 1">
+                <if test="itemJournalQueryDto.periodYearNum != null and itemJournalQueryDto.periodYearNum.size() != 0">
+                    and  bs.period_year_num between CONCAT(left(#{itemJournalQueryDto.periodYearNum[0]}, 4),'00') and #{itemJournalQueryDto.periodYearNum[1]}
+                </if>
+            </if>
+            <if test="itemJournalQueryDto.periodOperator != null and itemJournalQueryDto.periodOperator == 0">
+                <if test="itemJournalQueryDto.voucherDates != null and itemJournalQueryDto.voucherDates.size() != 0">
+                    and v.voucher_date between (#{itemJournalQueryDto.voucherDates[0]}) and (#{itemJournalQueryDto.voucherDates[1]})
+                </if>
+            </if>
+
+            <if test="itemJournalQueryDto.subjectIdList !=null and itemJournalQueryDto.subjectIdList.size() != 0">
+                and bs.account_subject_id in
+                <foreach collection="itemJournalQueryDto.subjectIdList" item="subjectId" index="index" open="(" separator="," close=")">
+                    #{subjectId}
+                </foreach>
+            </if>
+
+        </where>
+        order by
+        account_book_entity_id,
+        bs.account_subject_id,
+        period_year,
+        period_num,
+        main_code,
+        voucherDate
+    </select>
+
+
+
+
+
+
+    <select id="getJournalInfo" parameterType="com.njwd.entity.ledger.dto.ItemJournalQueryDto" resultType="com.njwd.entity.ledger.vo.GeneralReturnItemJournalVo">
+        select
+        1 as sortNum,
+        wv.id voucherId,
+        wv.period_year_num periodYearNum,
+        wve.account_subject_id as subjectId,
+        wv.account_book_id as accountBookId,
+        wv.account_book_name as accountBookName,
+        wv.account_book_entity_id as accountBookEntityId,
+        wv.account_book_entity_name as accountBookEntityName,
+        wv.voucher_date as voucherDate,
+        wv.posting_period_year as periodYear,
+        wv.posting_period_num as periodNum,
+        wv.credential_word as credentialWord,
+        wv.main_code as mainCode,
+        wv.child_code as childCode,
+        wve.row_num as rowNum,
+        wve.abstract_content as abstractContent,
+        wve.debit_amount as debit,
+        wve.credit_amount as credit
+        from
+        wd_voucher_%s wv,
+        wd_voucher_entry_%s wve
+        where
+        1=1
+        <if test="itemJournalQueryDto.subjectIdList !=null and itemJournalQueryDto.subjectIdList.size() != 0">
+            and wve.account_subject_id in
+            <foreach collection="itemJournalQueryDto.subjectIdList" item="subjectId" index="index" open="(" separator="," close=")">
+                #{subjectId}
+            </foreach>
+        </if>
+        <if test="itemJournalQueryDto.accountBookIds !=null and itemJournalQueryDto.accountBookIds.size() != 0">
+            and wv.account_book_id in
+            <foreach collection="itemJournalQueryDto.accountBookIds" item="accountBookId" index="index" open="(" separator="," close=")">
+                #{accountBookId}
+            </foreach>
+        </if>
+        <if test="itemJournalQueryDto.accountBookEntityIds !=null and itemJournalQueryDto.accountBookEntityIds.size() != 0">
+            and wv.account_book_entity_id in
+            <foreach collection="itemJournalQueryDto.accountBookEntityIds" item="accountBookEntityId" index="index" open="(" separator="," close=")">
+                #{accountBookEntityId}
+            </foreach>
+        </if>
+        <if test="itemJournalQueryDto.periodOperator != null and itemJournalQueryDto.periodOperator == 1">
+            <if test="itemJournalQueryDto.periodYearNum != null and itemJournalQueryDto.periodYearNum.size() != 0">
+                and  wv.period_year_num between  #{itemJournalQueryDto.periodYearNum[0]}
+                and  #{itemJournalQueryDto.periodYearNum[1]}
+            </if>
+        </if>
+        <if test="itemJournalQueryDto.periodOperator != null and itemJournalQueryDto.periodOperator == 0">
+            <if test="itemJournalQueryDto.voucherDates != null and itemJournalQueryDto.voucherDates.size() != 0">
+                and wv.voucher_date between #{itemJournalQueryDto.voucherDates[0]} and #{itemJournalQueryDto.voucherDates[1]}
+            </if>
+        </if>
+        and wve.voucher_id = wv.id
+        <if test="itemJournalQueryDto.isIncludeUnbooked == 0">
+            and wv.status = 2
+        </if>
+        <if test="itemJournalQueryDto.isIncludeProfitAndLoss == 0">
+            and wv.source_type != 2
+        </if>
+        and wv.is_del = 0
+        order by accountBookId,accountBookEntityId,voucherDate,credentialWord,mainCode,rowNum
+    </select>
+    <select id="getJournalPeriodNum" parameterType="com.njwd.entity.ledger.dto.ItemJournalQueryDto" resultType="com.njwd.entity.ledger.vo.GeneralReturnItemJournalVo">
+        select
+            res.sortNum ,
+            res.periodYearNum ,
+            res.accountBookId ,
+            res.accountBookEntityId ,
+            res.subjectId ,
+            res.periodYear ,
+            res.periodNum ,
+            res.abstractContent ,
+            sum(res.debit) debit,
+            sum(res.credit) credit
+        from (
+            select
+            2 as sortNum,
+            wbs.period_year_num periodYearNum,
+            wbs.account_book_id as accountBookId,
+            wbs.account_book_entity_id as accountBookEntityId,
+            wbs.account_subject_id as subjectId,
+            wbs.period_year as periodYear,
+            wbs.period_num as periodNum,
+            <if test="itemJournalQueryDto.isIncludeUnbooked == 0 and itemJournalQueryDto.isIncludeProfitAndLoss == 1">
+               wbs.post_debit_amount as debit,
+                wbs.post_credit_amount as credit,
+            </if>
+            <if test="itemJournalQueryDto.isIncludeUnbooked == 0 and itemJournalQueryDto.isIncludeProfitAndLoss == 0">
+                wbs.post_debit_amount - wbs.sy_debit_amount as debit,
+                wbs.post_credit_amount - wbs.sy_credit_amount as credit,
+            </if>
+            <if test="itemJournalQueryDto.isIncludeUnbooked == 1 and itemJournalQueryDto.isIncludeProfitAndLoss == 1">
+                wbs.debit_amount  as debit,
+                wbs.credit_amount  as credit,
+            </if>
+            <if test="itemJournalQueryDto.isIncludeUnbooked == 1 and itemJournalQueryDto.isIncludeProfitAndLoss == 0">
+                wbs.debit_amount - wbs.sy_debit_amount as  debit,
+                wbs.credit_amount - wbs.sy_credit_amount as credit,
+            </if>
+            "本期合计" as abstractContent
+            from
+            wd_balance_subject wbs
+            <if test="itemJournalQueryDto.periodOperator != null and itemJournalQueryDto.periodOperator == 0">
+                ,  wd_account_book_period wabp1
+                ,  wd_account_book_period wabp2
+            </if>
+            where
+            1=1
+            <if test="itemJournalQueryDto.accountBookIds !=null and itemJournalQueryDto.accountBookIds.size() != 0">
+                and wbs.account_book_id in
+                <foreach collection="itemJournalQueryDto.accountBookIds" item="accountBookId" index="index" open="(" separator="," close=")">
+                    #{accountBookId}
+                </foreach>
+            </if>
+            <if test="itemJournalQueryDto.accountBookEntityIds !=null and itemJournalQueryDto.accountBookEntityIds.size() != 0">
+                and wbs.account_book_entity_id in
+                <foreach collection="itemJournalQueryDto.accountBookEntityIds" item="accountBookEntityId" index="index" open="(" separator="," close=")">
+                    #{accountBookEntityId}
+                </foreach>
+            </if>
+            <if test="itemJournalQueryDto.subjectIdList !=null and itemJournalQueryDto.subjectIdList.size() != 0">
+                and wbs.account_subject_id in
+                <foreach collection="itemJournalQueryDto.subjectIdList" item="subjectId" index="index" open="(" separator="," close=")">
+                    #{subjectId}
+                </foreach>
+            </if>
+            <if test="itemJournalQueryDto.periodOperator != null and itemJournalQueryDto.periodOperator == 1">
+                <if test="itemJournalQueryDto.periodYearNum != null and itemJournalQueryDto.periodYearNum.size() != 0">
+                    and  wbs.period_year_num between  #{itemJournalQueryDto.periodYearNum[0]}
+                    and  #{itemJournalQueryDto.periodYearNum[1]}
+                </if>
+            </if>
+            <if test="itemJournalQueryDto.periodOperator != null and itemJournalQueryDto.periodOperator == 0">
+                <if test="itemJournalQueryDto.voucherDates != null and itemJournalQueryDto.voucherDates.size() != 0">
+                    and  wabp1.root_enterprise_id = #{itemJournalQueryDto.rootEnterpriseId}
+                    and  wabp2.root_enterprise_id = #{itemJournalQueryDto.rootEnterpriseId}
+                    and  wbs.account_book_id = wabp1.account_book_id
+                    and  wbs.account_book_id = wabp2.account_book_id
+                    and  #{itemJournalQueryDto.voucherDates[0]} between wabp1.start_date and wabp1.end_date
+                    and  #{itemJournalQueryDto.voucherDates[1]} between wabp2.start_date and wabp2.end_date
+                    and  wbs.period_year_num between wabp1.period_year_num and wabp2.period_year_num
+                </if>
+            </if>
+        )
+        res group by accountBookId,accountBookEntityId,periodYearNum
+    </select>
+    <select id="getJournalPeriodYear" parameterType="com.njwd.entity.ledger.dto.ItemJournalQueryDto" resultType="com.njwd.entity.ledger.vo.GeneralReturnItemJournalVo">
+        select
+            res.sortNum ,
+            res.periodYearNum ,
+            res.accountBookId ,
+            res.accountBookEntityId ,
+            res.subjectId ,
+            res.periodYear ,
+            res.periodNum ,
+            res.abstractContent
+        from (
+            select
+            3 as sortNum,
+            wbs.period_year_num periodYearNum,
+            wbs.account_book_id as accountBookId,
+            wbs.account_book_entity_id as accountBookEntityId,
+            wbs.account_subject_id as subjectId,
+            wbs.period_year as periodYear,
+            wbs.period_num as periodNum,
+            "本年累计" as abstractContent
+            from
+            wd_balance_subject wbs
+            <if test="itemJournalQueryDto.periodOperator != null and itemJournalQueryDto.periodOperator == 0">
+                ,  wd_account_book_period wabp1
+                ,  wd_account_book_period wabp2
+            </if>
+            where
+            1=1
+            <if test="itemJournalQueryDto.accountBookIds !=null and itemJournalQueryDto.accountBookIds.size() != 0">
+                and wbs.account_book_id in
+                <foreach collection="itemJournalQueryDto.accountBookIds" item="accountBookId" index="index" open="(" separator="," close=")">
+                    #{accountBookId}
+                </foreach>
+            </if>
+            <if test="itemJournalQueryDto.accountBookEntityIds !=null and itemJournalQueryDto.accountBookEntityIds.size() != 0">
+                and wbs.account_book_entity_id in
+                <foreach collection="itemJournalQueryDto.accountBookEntityIds" item="accountBookEntityId" index="index" open="(" separator="," close=")">
+                    #{accountBookEntityId}
+                </foreach>
+            </if>
+            <if test="itemJournalQueryDto.periodOperator != null and itemJournalQueryDto.periodOperator == 1">
+                <if test="itemJournalQueryDto.periodYearNum != null and itemJournalQueryDto.periodYearNum.size() != 0">
+                    and  wbs.period_year_num between  #{itemJournalQueryDto.periodYearNum[0]}
+                    and  #{itemJournalQueryDto.periodYearNum[1]}
+                </if>
+            </if>
+            <if test="itemJournalQueryDto.subjectIdList !=null and itemJournalQueryDto.subjectIdList.size() != 0">
+                and wbs.account_subject_id in
+                <foreach collection="itemJournalQueryDto.subjectIdList" item="subjectId" index="index" open="(" separator="," close=")">
+                    #{subjectId}
+                </foreach>
+            </if>
+            <if test="itemJournalQueryDto.periodOperator != null and itemJournalQueryDto.periodOperator == 0">
+                <if test="itemJournalQueryDto.voucherDates != null and itemJournalQueryDto.voucherDates.size() != 0">
+                    and  wabp1.root_enterprise_id = #{itemJournalQueryDto.rootEnterpriseId}
+                    and  wabp2.root_enterprise_id = #{itemJournalQueryDto.rootEnterpriseId}
+                    and  wbs.account_book_id = wabp1.account_book_id
+                    and  wbs.account_book_id = wabp2.account_book_id
+                    and  #{itemJournalQueryDto.voucherDates[0]} between wabp1.start_date and wabp1.end_date
+                    and  #{itemJournalQueryDto.voucherDates[1]} between wabp2.start_date and wabp2.end_date
+                    and  wbs.period_year_num between wabp1.period_year_num and wabp2.period_year_num
+                </if>
+            </if>
+        ) res
+        group by accountBookId,accountBookEntityId,periodYearNum
+    </select>
+    <select id="getOpeningLossInfo" parameterType="com.njwd.entity.ledger.dto.ItemJournalQueryDto" resultType="com.njwd.entity.ledger.vo.GeneralReturnItemJournalVo">
+        select
+        sum(wve.debit_amount) debit,
+        sum(wve.credit_amount) credit
+        from
+        wd_voucher_%s wv,
+        wd_voucher_entry_%s wve
+        where
+        1=1
+        <if test="itemJournalQueryDto.subjectIdList !=null and itemJournalQueryDto.subjectIdList.size() != 0">
+            and wve.account_subject_id in
+            <foreach collection="itemJournalQueryDto.subjectIdList" item="subjectId" index="index" open="(" separator="," close=")">
+                #{subjectId}
+            </foreach>
+        </if>
+        <if test="itemJournalQueryDto.accountBookIds !=null and itemJournalQueryDto.accountBookIds.size() != 0">
+            and wv.account_book_id in
+            <foreach collection="itemJournalQueryDto.accountBookIds" item="accountBookId" index="index" open="(" separator="," close=")">
+                #{accountBookId}
+            </foreach>
+        </if>
+        <if test="itemJournalQueryDto.accountBookEntityIds !=null and itemJournalQueryDto.accountBookEntityIds.size() != 0">
+            and wv.account_book_entity_id in
+            <foreach collection="itemJournalQueryDto.accountBookEntityIds" item="accountBookEntityId" index="index" open="(" separator="," close=")">
+                #{accountBookEntityId}
+            </foreach>
+        </if>
+        <if test="itemJournalQueryDto.voucherDates != null and itemJournalQueryDto.voucherDates.size() != 0">
+            and wv.voucher_date &gt;= #{itemJournalQueryDto.voucherDates[0]} and wv.voucher_date &lt; #{itemJournalQueryDto.voucherDates[1]}
+        </if>
+        and wve.voucher_id = wv.id
+        <if test="itemJournalQueryDto.isIncludeUnbooked == 0">
+            and wv.status = 2
+        </if>
+        <if test="itemJournalQueryDto.isIncludeProfitAndLoss == 0">
+            and wv.source_type != 2
+        </if>
+        and wv.is_del = 0
+    </select>
+</mapper>

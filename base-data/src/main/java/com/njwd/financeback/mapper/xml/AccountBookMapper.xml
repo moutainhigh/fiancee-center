@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.financeback.mapper.AccountBookMapper">
+  <resultMap id="BaseResultMap" type="com.njwd.entity.basedata.AccountBook">
+    <!--@mbg.generated-->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="root_enterprise_id" jdbcType="BIGINT" property="rootEnterpriseId" />
+    <result column="company_id" jdbcType="BIGINT" property="companyId" />
+    <result column="code" jdbcType="VARCHAR" property="code" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="account_book_type_id" jdbcType="BIGINT" property="accountBookTypeId" />
+      <result column="account_book_type_name" jdbcType="VARCHAR" property="accountBookTypeName" />
+    <result column="is_del" jdbcType="TINYINT" property="isDel" />
+    <result column="creator_id" jdbcType="BIGINT" property="creatorId" />
+    <result column="creator_name" jdbcType="VARCHAR" property="creatorName" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="updator_id" jdbcType="BIGINT" property="updatorId" />
+    <result column="updator_name" jdbcType="VARCHAR" property="updatorName" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    b.id, b.root_enterprise_id, b.company_id, b.code, b.`name`,b.account_book_type_id, b.account_book_type_name,b.accounting_calendar_id,b.accounting_calendar_name,b.subject_id,b.subject_name,
+    b.balance_sheet_id,b.income_statement_id,b.cash_flow_id,b.cash_flow_item_id,b.is_del,b.status, b.creator_id, b.creator_name,b.create_time, b.updator_id, b.updator_name, b.update_time
+  </sql>
+
+  <!-- 根据 id 查询核算账簿 -->
+  <select id="selectEntityById" parameterType="com.njwd.entity.basedata.dto.AccountBookDto"
+          resultType="com.njwd.entity.basedata.vo.AccountBookVo">
+    SELECT
+      <include refid="Base_Column_List"/>
+      ,c.name company_name
+      ,c.accounting_standard_id
+      ,c.accounting_standard_name
+      ,c.accounting_currency_id
+      ,c.accounting_currency_name
+      ,c.has_sub_account
+    FROM wd_account_book b
+    JOIN wd_company c ON b.company_id = c.id
+    <where>
+      b.account_book_type_id = 1
+      <if test="id != null" >
+        AND b.id = #{id}
+      </if>
+      <if test="rootEnterpriseId != null" >
+        AND b.root_enterprise_id = #{rootEnterpriseId}
+      </if>
+    </where>
+  </select>
+
+  <!-- 根据 company_id 查询核算账簿 -->
+  <select id="selectByCompanyId" parameterType="com.njwd.entity.basedata.dto.AccountBookDto"
+          resultType="com.njwd.entity.basedata.vo.AccountBookVo">
+    SELECT
+    <include refid="Base_Column_List"/>
+    ,c.name company_name
+    ,c.accounting_standard_id
+    ,c.accounting_standard_name
+    ,c.accounting_currency_id
+    ,c.accounting_currency_name
+    ,c.has_sub_account
+    FROM wd_account_book b
+    JOIN wd_company c ON b.company_id = c.id
+    <where>
+      b.account_book_type_id = 1
+      AND b.is_del = 0
+      <if test="companyId != null" >
+        AND b.company_id = #{companyId}
+      </if>
+      <if test="rootEnterpriseId != null" >
+        AND b.root_enterprise_id = #{rootEnterpriseId}
+      </if>
+    </where>
+  </select>
+
+  <!-- 根据 公司ID list/账簿ID list 查询核算账簿（默认核算主体，会计准则，科目表） -->
+  <select id="findAccBookDetailInfoByCompanyIdOrAccBookId" parameterType="com.njwd.entity.basedata.dto.AccountBookDto"
+          resultType="com.njwd.entity.basedata.vo.AccountBookVo">
+    select
+      b.id
+      ,b.name
+      ,b.code
+      ,b.subject_id
+      ,b.subject_name
+      ,b.balance_sheet_id
+      ,b.income_statement_id
+      ,b.cash_flow_id
+      ,b.cash_flow_item_id
+      ,e.id entity_id
+      ,ue.is_default
+      ,(
+      CASE WHEN e.form = 3 THEN
+      ( SELECT u.NAME FROM wd_business_unit u WHERE u.id = e.entity_id )
+      ELSE
+      ( SELECT c.NAME FROM wd_company c WHERE c.id = e.entity_id )
+      END
+      ) entity_name
+      ,(
+      CASE WHEN e.form = 3 THEN
+      ( SELECT u.code FROM wd_business_unit u WHERE u.id = e.entity_id )
+      ELSE
+      ( SELECT c.code FROM wd_company c WHERE c.id = e.entity_id )
+      END
+      ) entity_code
+      ,c.id company_id
+      ,c.accounting_standard_id
+      ,c.accounting_standard_name
+      ,c.has_sub_account
+    from wd_account_book b join wd_account_book_entity e on b.id = e.account_book_id
+    join wd_company c on b.company_id = c.id
+    join wd_user_account_book_entity ue on ue.account_book_entity_id = e.id
+    where e.is_del = 0
+      and b.root_enterprise_id = #{rootEnterpriseId}
+      <if test="isDefault != null">
+        and ue.is_default = #{isDefault}
+      </if>
+      <if test="companyId != null">
+        and c.id = #{companyId}
+      </if>
+      <if test="id != null" >
+        and b.id = #{id}
+      </if>
+    and b.company_id in (
+      select  wsur.company_id from wd_sys_user_role wsur
+      where wsur.user_id = #{userId}
+    )
+    order by entity_code asc
+    limit 1
+
+  </select>
+
+    <!-- 查询核算账簿列表 -->
+  <select id="findPage" parameterType="com.njwd.entity.basedata.dto.AccountBookDto"
+          resultType="com.njwd.entity.basedata.vo.AccountBookVo">
+    SELECT
+      <include refid="Base_Column_List"/>
+      ,c.code company_code
+      ,c.name company_name
+      ,c.accounting_standard_id
+      ,c.accounting_standard_name
+      ,c.accounting_currency_id
+      ,c.accounting_currency_name
+      ,c.has_sub_account
+    FROM wd_account_book b
+    JOIN wd_company c ON b.company_id = c.id
+    WHERE b.is_del = 0
+    <if test = "accountBookDto.codeOrName != null">
+      AND (b.code like concat('%',#{accountBookDto.codeOrName},'%')
+      OR b.name like concat('%',#{accountBookDto.codeOrName},'%'))
+    </if>
+    <if test="accountBookDto.status != null and accountBookDto.status != 2 ">
+      AND b.status = #{accountBookDto.status}
+    </if>
+    <if test = "accountBookDto.rootEnterpriseId != null">
+      AND b.root_enterprise_id = #{accountBookDto.rootEnterpriseId}
+    </if>
+    <if test = "accountBookDto.idList != null and accountBookDto.idList.size() != 0">
+      AND c.id IN
+      <foreach collection="accountBookDto.idList" item="id" open="(" close=")" separator=",">
+        #{id}
+      </foreach>
+    </if>
+    <if test = "accountBookDto.accountBookIdList != null and accountBookDto.accountBookIdList.size() != 0">
+      AND b.id IN
+      <foreach collection="accountBookDto.accountBookIdList" item="accountBookId" open="(" close=")" separator=",">
+        #{accountBookId}
+      </foreach>
+    </if>
+    <if test="accountBookDto.userId != null">
+      AND b.company_id in (
+      select distinct wsur.company_id from wd_sys_user_role wsur
+      inner join wd_sys_role_menu wsrm on wsrm.role_id = wsur.role_id
+      inner join wd_sys_menu wsm on wsm.menu_id = wsrm.menu_id
+      where wsur.user_id = #{accountBookDto.userId}
+      and wsm.code = #{accountBookDto.menuCode}
+      )
+    </if>
+    order by b.code
+  </select>
+
+  <select id="findAuthAll" resultType="com.njwd.entity.basedata.vo.AccountBookVo" >
+    SELECT
+      id,code,name
+    from wd_account_book
+    where
+    root_enterprise_id = #{rootEnterpriseId}
+    and is_del = 0
+    and company_id in (
+      select distinct wsur.company_id from wd_sys_user_role wsur
+          inner join wd_sys_role_menu wsrm on wsrm.role_id = wsur.role_id
+          inner join wd_sys_menu wsm on wsm.menu_id = wsrm.menu_id
+          where wsur.user_id = #{userId}
+          and wsm.code = #{menuCode}
+    )
+
+  </select>
+
+  <select id="selectListByIdSet" resultType="com.njwd.entity.basedata.vo.AccountBookVo">
+    select
+        wab.id,
+        wab.code,
+        wab.name,
+        wab.account_book_type_name
+    from wd_account_book wab
+    where
+        wab.id in
+        <foreach collection="collection"  item="id" open="(" separator="," close=")">
+            #{id,jdbcType=BIGINT}
+        </foreach>
+
+  </select>
+
+</mapper>

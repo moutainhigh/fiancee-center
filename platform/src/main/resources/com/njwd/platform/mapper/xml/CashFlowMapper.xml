@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.CashFlowMapper">
+  <resultMap id="BaseResultMap" type="com.njwd.entity.platform.vo.CashFlowVo">
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="code" jdbcType="VARCHAR" property="code" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="acc_standard_id" jdbcType="BIGINT" property="accStandardId" />
+    <result column="is_base" jdbcType="TINYINT" property="isBase" />
+    <result column="account_type_id" jdbcType="BIGINT" property="accountTypeId" />
+    <result column="parent_id_id" jdbcType="BIGINT" property="parentId" />
+    <result column="max_level" jdbcType="VARCHAR" property="maxLevel" />
+    <result column="max_level_num" jdbcType="VARCHAR" property="maxLevelNum" />
+    <result column="is_del" jdbcType="TINYINT" property="isDel" />
+    <result column="is_approved" jdbcType="TINYINT" property="isApproved" />
+    <result column="is_released" jdbcType="TINYINT" property="isReleased" />
+    <result column="is_enable" jdbcType="TINYINT" property="isEnable" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="creator_id" jdbcType="BIGINT" property="creatorId" />
+    <result column="creator_name" jdbcType="VARCHAR" property="creatorName" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="updator_id" jdbcType="BIGINT" property="updatorId" />
+    <result column="updator_name" jdbcType="VARCHAR" property="updatorName" />
+    <result column="version" jdbcType="INTEGER" property="version" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    wcf.id, wcf.code, wcf.`name`, wcf.acc_standard_id, wcf.is_base, wcf.account_type_id, wcf.parent_id, wcf.max_level,wcf.max_level_num, wcf.is_del,
+    wcf.is_approved,wcf.is_released, wcf.is_enable, wcf.create_time, wcf.creator_id, wcf.creator_name, wcf.update_time, wcf.updator_id,
+    wcf.updator_name,wcf.version
+  </sql>
+
+  <select id="findCashFlowListPage" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List"/>,
+    was.name as accStandardName,
+    wabt.name as accountTypeName,
+    wc.name as parentName
+    from wd_cash_flow wcf
+    left join wd_accounting_standard was on wcf.acc_standard_id=was.id
+    left join wd_account_book_type wabt on wcf.account_type_id=wabt.id
+    left join wd_cash_flow wc on wcf.parent_id=wc.id
+    <where>
+       wcf.is_del=0
+      <if test="cashFlowDto.isApproved != null">
+        and wcf.is_approved=#{cashFlowDto.isApproved}
+      </if>
+      <if test="cashFlowDto.accStandardId != null">
+        and wcf.acc_standard_id=#{cashFlowDto.accStandardId}
+      </if>
+      <if test="cashFlowDto.accStandardIdList != null and cashFlowDto.accStandardIdList.size() != 0">
+        and wcf.acc_standard_id in
+        <foreach collection="cashFlowDto.accStandardIdList" item="id" index="index" open="(" close=")" separator=",">
+          #{id}
+        </foreach>
+      </if>
+      <if test="cashFlowDto.codeOrName != null and cashFlowDto.codeOrName != ''">
+        and (wcf.code like concat('%',#{cashFlowDto.codeOrName} ,'%') or wcf.name like concat('%',#{cashFlowDto.codeOrName}
+        ,'%'))
+      </if>
+    </where>
+    order by RPAD( wcf.code, 14, 0 )
+  </select>
+
+  <select id="findCashFlowById" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List"/>
+    from wd_cash_flow wcf
+    <where>
+      wcf.is_del=0
+      <if test="id != null">
+        and wcf.id=#{id}
+      </if>
+    </where>
+  </select>
+
+  <select id="findCashFlowList" resultMap="BaseResultMap">
+    select <include refid="Base_Column_List"/>,
+      was.name as accStandardName,
+      wabt.name as accountTypeName,
+      wc.name as parentName
+      from wd_cash_flow wcf
+      left join wd_accounting_standard was on wcf.acc_standard_id=was.id
+      left join wd_account_book_type wabt on wcf.account_type_id=wabt.id
+      left join wd_cash_flow wc on wcf.parent_id=wc.id
+      <where>
+        wcf.is_del=0
+        and wcf.is_released=1
+        <if test="accountTypeId != null">
+          and wcf.account_type_id=#{accountTypeId}
+        </if>
+        <if test="accStandardId != null">
+          and wcf.acc_standard_id=#{accStandardId}
+        </if>
+        <if test="isBase != null">
+          and wcf.is_base=#{isBase}
+        </if>
+      </where>
+    order by wcf.id asc
+  </select>
+
+  <select id="findCashFlowListStatus" resultMap="BaseResultMap">
+    select wcf.id,
+           wcf.is_del,
+           wcf.is_approved,
+           wcf.is_released,
+           wcf.version
+    from wd_cash_flow wcf
+    <where>
+      <if test="changeList != null and changeList.size() != 0">
+        and wcf.id in
+        <foreach collection="changeList" item="item" index="index" open="(" close=")" separator=",">
+           #{item.id}
+        </foreach>
+      </if>
+    </where>
+    order by wcf.id asc
+  </select>
+
+  <select id="findCashListByStandIdAndTypeId" resultMap="BaseResultMap">
+      select <include refid="Base_Column_List"/>,
+        was.name as accStandardName,
+        wabt.name as accountTypeName,
+        wc.name as parentName
+      from wd_cash_flow wcf
+      left join wd_accounting_standard was on wcf.acc_standard_id=was.id
+      left join wd_account_book_type wabt on wcf.account_type_id=wabt.id
+      left join wd_cash_flow wc on wcf.parent_id=wc.id
+      <where>
+         wcf.is_del=0
+        and wcf.is_released=1
+        <if test="accountTypeId != null">
+            and wcf.account_type_id=#{accountTypeId}
+        </if>
+        <if test="accStandardId != null">
+            and wcf.acc_standard_id=#{accStandardId}
+        </if>
+        <if test="isBase != null">
+            and wcf.is_base=#{isBase}
+        </if>
+      </where>
+    order by wcf.id asc
+  </select>
+  <update id="updateCashFlowBatch">
+    update wd_cash_flow wcf
+    <set>
+      <if test="type != null and type==0">
+         wcf.is_del =1,
+      </if>
+      <if test="type != null and type==1">
+         wcf.is_approved =1,
+      </if>
+      <if test="type != null and type==2">
+         wcf.is_approved =0,
+      </if>
+      <if test="type != null and type==3">
+         wcf.is_released =1,
+      </if>
+    </set>
+    where
+    <if test="ids != null and ids.size() != 0">
+      wcf.id in
+      <foreach collection="ids" item="id" index="index" open="(" close=")" separator=",">
+        #{id}
+      </foreach>
+    </if>
+  </update>
+</mapper>

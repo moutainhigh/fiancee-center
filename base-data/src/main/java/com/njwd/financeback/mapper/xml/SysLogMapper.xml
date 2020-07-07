@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.financeback.mapper.SysLogMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.base.vo.SysLogVo">
+        <!--@mbg.generated-->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="root_enterprise_id" jdbcType="BIGINT" property="rootEnterpriseId"/>
+        <result column="creator_id" jdbcType="BIGINT" property="creatorId"/>
+        <result column="creator_account" jdbcType="VARCHAR" property="creatorAccount"/>
+        <result column="creator_name" jdbcType="VARCHAR" property="creatorName"/>
+        <result column="sys_name" jdbcType="VARCHAR" property="sysName"/>
+        <result column="operate_type" jdbcType="VARCHAR" property="operateType"/>
+        <result column="menu_name" jdbcType="VARCHAR" property="menuName"/>
+        <result column="mobile" jdbcType="VARCHAR" property="mobile"/>
+        <result column="status" jdbcType="TINYINT" property="status"/>
+        <result column="open_url" jdbcType="VARCHAR" property="openUrl"/>
+        <result column="operation" jdbcType="VARCHAR" property="operation"/>
+        <result column="ip_address" jdbcType="VARCHAR" property="ipAddress"/>
+        <result column="record_id" jdbcType="VARCHAR" property="recordId"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        id, create_time,root_enterprise_id, creator_id, creator_account, creator_name, sys_name,operate_type,
+        menu_name,operation,
+        mobile, `status`, open_url, ip_address,record_id
+    </sql>
+
+    <!--判断表是否存在-->
+    <select id="isTableExists" parameterType="String" resultType="int">
+        select count(*) from information_schema.TABLES where table_name = #{tableName}
+    </select>
+
+    <!--日志查询 分页-->
+    <select id="findOperationLogPage" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_sys_log_${logQueryDto.currentYearMonth}
+        <where>
+            <if test="logQueryDto.rootEnterpriseId != null">
+                and root_enterprise_id = #{logQueryDto.rootEnterpriseId,jdbcType=BIGINT}
+            </if>
+            <if test="logQueryDto.sysName != null and logQueryDto.sysName != ''">
+                and sys_name = #{logQueryDto.sysName,jdbcType=VARCHAR}
+            </if>
+            <if test="logQueryDto.beginDay != null and logQueryDto.beginDay != ''">
+                and create_time &gt;= #{logQueryDto.beginDay,jdbcType=VARCHAR}
+            </if>
+            <if test="logQueryDto.endDay != null and logQueryDto.endDay != ''">
+                and create_time &lt;= #{logQueryDto.endDay ,jdbcType=VARCHAR}
+            </if>
+            <if test="commParams.orMatch != null and commParams.orMatch != ''">
+                and
+                <foreach collection="commParams.orColumn" item="columnName" open="(" close=")"
+                         separator="or">
+                    ${columnName} like concat('%',#{commParams.orMatch} ,'%')
+                </foreach>
+            </if>
+        </where>
+        order by create_time desc
+    </select>
+
+
+    <select id="findById" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_sys_log_201907
+        where id = #{sysLog.id}
+    </select>
+
+    <update id="updateById">
+        update wd_sys_log_201907
+        set sys_name =#{sysLog.sysName,jdbcType=VARCHAR}
+        where id = #{sysLog.id}
+    </update>
+
+    <delete id="deleteById">
+        update wd_sys_log_201907
+         set sys_name ='修改后的'
+         where id=#{sysLog.id}
+    </delete>
+
+
+</mapper>

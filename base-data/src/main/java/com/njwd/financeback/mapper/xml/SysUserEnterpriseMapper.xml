@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.financeback.mapper.SysUserEnterpriseMapper">
+    <update id="batchDisableOrEnable">
+        update wd_sys_user_enterprise wsue
+        set wsue.is_enable = #{sysUserEnterprise.isEnable},
+        wsue.manage_info =
+        case when wsue.manage_info is null
+        then #{sysUserEnterprise.manageInfos}
+        else
+        (
+        JSON_SET(manage_info,
+        <foreach collection="managerList" item="field" separator="," close=")">
+            <choose>
+                <when test="field instanceof java.util.Date">UNIX_TIMESTAMP(NOW()) * 1000</when>
+                <otherwise>#{field}</otherwise>
+            </choose>
+        </foreach>
+        )
+        end
+        WHERE wsue.user_id in
+        <foreach collection="sysUserEnterprise.batchIds" item="id" separator="," open="(" close=")">
+            #{id}
+        </foreach>
+        and wsue.root_enterprise_id = #{sysUserEnterprise.rootEnterpriseId}
+    </update>
+</mapper>

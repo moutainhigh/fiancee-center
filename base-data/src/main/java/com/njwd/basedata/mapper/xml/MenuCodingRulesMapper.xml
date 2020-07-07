@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.basedata.mapper.MenuCodingRulesMapper">
+
+    <insert id="addBatch">
+      INSERT INTO `wd_menu_coding_rules` ( `root_enterprise_id`, `menu_code`, `code_type`, `input_code_length`, `auto_prefix_char`, `serial_number_type`, `serial_number_length`, `fixed_serial_number`, `updator_name`, `updator_id` )
+      VALUES
+      <foreach collection="list" item="p" separator=",">
+          (#{p.rootEnterpriseId} ,#{p.menuCode} ,#{p.codeType} ,#{p.inputCodeLength} ,#{p.autoPrefixChar} ,#{p.serialNumberType} ,#{p.serialNumberLength} ,#{p.fixedSerialNumber} ,#{p.updatorName} ,#{p.updatorId} )
+      </foreach>
+    </insert>
+
+</mapper>

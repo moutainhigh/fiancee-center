@@ -1,0 +1,12 @@
+rootProject.name = 'finance-center'
+include 'common'
+include 'base-data'
+include 'base-data-api'
+include 'platform'
+include 'platform-api'
+include 'async-server'
+include 'easyexcel'
+include 'ledger'
+include 'ledger-api'
+include 'monitor-client'
+

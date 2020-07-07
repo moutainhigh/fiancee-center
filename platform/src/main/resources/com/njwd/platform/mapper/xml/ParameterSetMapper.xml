@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.ParameterSetMapper">
+
+    <select id="findParameterSet" resultType="com.njwd.entity.ledger.vo.ParameterSetVo">
+      select ps.*,pss.account_book_id,account_book_name,`value` from wd_parameter_set ps
+      left join wd_parameter_set_sub pss on ps.id = pss.set_id
+    </select>
+
+</mapper>

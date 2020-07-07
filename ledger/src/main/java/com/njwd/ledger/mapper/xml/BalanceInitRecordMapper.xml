@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.ledger.mapper.BalanceInitRecordMapper">
+  <resultMap id="BaseResultMap" type="com.njwd.entity.ledger.vo.BalanceInitRecordVo">
+    <!--@mbg.generated-->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="entity_id" jdbcType="BIGINT" property="entityId" />
+    <result column="entity_code" jdbcType="VARCHAR" property="entityCode" />
+    <result column="entity_name" jdbcType="VARCHAR" property="entityName" />
+    <result column="account_book_id" jdbcType="BIGINT" property="accountBookId" />
+    <result column="account_book_code" jdbcType="VARCHAR" property="accountBookCode" />
+    <result column="account_book_name" jdbcType="VARCHAR" property="accountBookName" />
+    <result column="period_year" jdbcType="INTEGER" property="periodYear" />
+    <result column="period_num" jdbcType="TINYINT" property="periodNum" />
+    <result column="subject_status" jdbcType="TINYINT" property="subjectStatus" />
+    <result column="cash_status" jdbcType="TINYINT" property="cashStatus" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, entity_id, entity_code, entity_name, account_book_id, account_book_code, account_book_name, 
+    period_year, period_num, subject_status, cash_status
+  </sql>
+  <select id="findListByParam" resultMap="BaseResultMap">
+  select <include refid="Base_Column_List"></include>
+   from wd_balance_init_record t
+   <where>
+     t.root_enterprise_id =#{balanceInitRecordDto.rootEnterpriseId}
+     <if test="balanceInitRecordDto.accountBookIdList != null and balanceInitRecordDto.accountBookIdList.size() > 0 ">
+       and t.account_book_id in
+       <foreach collection="balanceInitRecordDto.accountBookIdList" item="accBookId" separator="," open="(" close=")">
+         #{accBookId}
+       </foreach>
+     </if>
+     <if test="balanceInitRecordDto.entityIdList != null and balanceInitRecordDto.entityIdList.size() > 0 ">
+       and t.entity_id in
+       <foreach collection="balanceInitRecordDto.entityIdList" item="entityId" separator="," open="(" close=")">
+         #{entityId}
+       </foreach>
+     </if>
+     <if test="balanceInitRecordDto.subjectStatus!=null ">
+       and t.subject_status=#{balanceInitRecordDto.subjectStatus}
+     </if>
+     <if test="balanceInitRecordDto.cashStatus!=null ">
+       and t.cash_status=#{balanceInitRecordDto.cashStatus}
+     </if>
+     <if test="balanceInitRecordDto.accountBookCodeOrName != null and balanceInitRecordDto.accountBookCodeOrName != ''">
+       and (t.account_book_code like concat('%',#{balanceInitRecordDto.accountBookCodeOrName},'%')
+       or t.account_book_name like concat('%',#{balanceInitRecordDto.accountBookCodeOrName},'%'))
+     </if>
+     <if test="balanceInitRecordDto.entityCodeOrName != null and balanceInitRecordDto.entityCodeOrName != ''">
+       and (t.entity_code like concat('%',#{balanceInitRecordDto.entityCodeOrName},'%')
+       or t.entity_name like concat('%',#{balanceInitRecordDto.entityCodeOrName},'%'))
+     </if>
+   </where>
+       order by t.account_book_code asc
+  </select>
+
+  <select id="findAccoutBookIdListByParam" resultType="java.lang.Long">
+    select distinct t.account_book_id
+    from wd_balance_init_record t
+    <where>
+      <if test="balanceInitRecordDto.accountBookIdList != null and balanceInitRecordDto.accountBookIdList.size() > 0 ">
+        and t.account_book_id in
+        <foreach collection="balanceInitRecordDto.accountBookIdList" item="accBookId" separator="," open="(" close=")">
+          #{accBookId}
+        </foreach>
+      </if>
+      <if test="balanceInitRecordDto.entityIdList != null and balanceInitRecordDto.entityIdList.size() > 0 ">
+        and t.entity_id in
+        <foreach collection="balanceInitRecordDto.entityIdList" item="entityId" separator="," open="(" close=")">
+          #{entityId}
+        </foreach>
+      </if>
+      <if test="balanceInitRecordDto.subjectStatus!=null ">
+        and t.subject_status=#{balanceInitRecordDto.subjectStatus}
+      </if>
+      <if test="balanceInitRecordDto.cashStatus!=null ">
+        and t.cash_status=#{balanceInitRecordDto.cashStatus}
+      </if>
+      <if test="balanceInitRecordDto.accountBookCodeOrName != null and balanceInitRecordDto.accountBookCodeOrName != ''">
+        and (t.account_book_code like concat('%',#{balanceInitRecordDto.accountBookCodeOrName},'%')
+        or t.account_book_name like concat('%',#{balanceInitRecordDto.accountBookCodeOrName},'%'))
+      </if>
+      <if test="balanceInitRecordDto.entityCodeOrName != null and balanceInitRecordDto.entityCodeOrName != ''">
+        and (t.entity_code like concat('%',#{balanceInitRecordDto.entityCodeOrName},'%')
+        or t.entity_name like concat('%',#{balanceInitRecordDto.entityCodeOrName},'%'))
+      </if>
+    </where>
+  </select>
+
+  <select id="findEntityIdListByParam" resultType="java.lang.Long">
+    select distinct t.entity_id
+    from wd_balance_init_record t
+    <where>
+      <if test="balanceInitRecordDto.accountBookIdList != null and balanceInitRecordDto.accountBookIdList.size() > 0 ">
+        and t.account_book_id in
+        <foreach collection="balanceInitRecordDto.accountBookIdList" item="accBookId" separator="," open="(" close=")">
+          #{accBookId}
+        </foreach>
+      </if>
+      <if test="balanceInitRecordDto.entityIdList != null and balanceInitRecordDto.entityIdList.size() > 0 ">
+        and t.entity_id in
+        <foreach collection="balanceInitRecordDto.entityIdList" item="entityId" separator="," open="(" close=")">
+          #{entityId}
+        </foreach>
+      </if>
+      <if test="balanceInitRecordDto.subjectStatus!=null ">
+        and t.subject_status=#{balanceInitRecordDto.subjectStatus}
+      </if>
+      <if test="balanceInitRecordDto.cashStatus!=null ">
+        and t.cash_status=#{balanceInitRecordDto.cashStatus}
+      </if>
+      <if test="balanceInitRecordDto.accountBookCodeOrName != null and balanceInitRecordDto.accountBookCodeOrName != ''">
+        and (t.account_book_code like concat('%',#{balanceInitRecordDto.accountBookCodeOrName},'%')
+        or t.account_book_name like concat('%',#{balanceInitRecordDto.accountBookCodeOrName},'%'))
+      </if>
+      <if test="balanceInitRecordDto.entityCodeOrName != null and balanceInitRecordDto.entityCodeOrName != ''">
+        and (t.entity_code like concat('%',#{balanceInitRecordDto.entityCodeOrName},'%')
+        or t.entity_name like concat('%',#{balanceInitRecordDto.entityCodeOrName},'%'))
+      </if>
+    </where>
+  </select>
+
+  <insert id="addBalanceInitRecordBatch">
+    insert into wd_balance_init_record(root_enterprise_id,entity_id,entity_code,entity_name,account_book_id,account_book_code,account_book_name,period_year,period_num,cash_status)
+    values
+    <foreach collection="balanceInitRecordDtos" item="item" index="index" separator=",">
+      (#{item.rootEnterpriseId},#{item.entityId},#{item.entityCode},#{item.entityName},#{item.accountBookId},#{item.accountBookCode},#{item.accountBookName} ,#{item.periodYear},#{item.periodNum},#{item.cashStatus})
+    </foreach>
+  </insert>
+</mapper>

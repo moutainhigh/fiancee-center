@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.basedata.mapper.SupplierCompanyMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.basedata.SupplierCompany">
+        <!--@mbg.generated-->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="supplier_id" jdbcType="BIGINT" property="supplierId"/>
+        <result column="company_id" jdbcType="BIGINT" property="companyId"/>
+        <result column="business_address" jdbcType="VARCHAR" property="businessAddress"/>
+        <result column="linkman" jdbcType="VARCHAR" property="linkman"/>
+        <result column="contact_number" jdbcType="VARCHAR" property="contactNumber"/>
+        <result column="is_del" jdbcType="BOOLEAN" property="isDel"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="creator_id" jdbcType="BIGINT" property="creatorId"/>
+        <result column="creator_name" jdbcType="VARCHAR" property="creatorName"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+        <result column="updator_id" jdbcType="BIGINT" property="updatorId"/>
+        <result column="updator_name" jdbcType="VARCHAR" property="updatorName"/>
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        id, supplier_id, company_id, business_address,
+        linkman, contact_number, is_del, create_time, creator_id, creator_name, update_time,
+        updator_id, updator_name, version
+    </sql>
+    <select id="selectSupplierIdForCheckUseCompany" resultType="java.lang.Long">
+        select
+            id
+        from
+            wd_supplier_company
+        where
+          is_del = 0
+          and company_id = #{companyId,jdbcType=BIGINT}
+          and supplier_id = #{supplierId}
+    </select>
+
+    <update id="updateSupplierFromMain">
+        update wd_supplier_company
+        set
+        version = version +1,
+        <if test="flag == 0">
+            is_del = 1
+        </if>
+        <if test="flag == 1">
+            is_enable = 1
+        </if>
+        <if test="flag == 2">
+            is_enable = 0
+        </if>
+        where
+        is_del = 0
+        and supplier_id in
+        <foreach item="id" open="(" separator="," close=")" collection="idList">
+            #{id,jdbcType=BIGINT}
+        </foreach>
+
+    </update>
+
+    <select id="checkSupplierUseCompanys" resultType="com.njwd.entity.basedata.SupplierCompany">
+        SELECT
+        t1.id,
+        t1.supplier_id supplierId,
+        t1.company_id companyId
+        FROM
+        wd_supplier_company t1
+        <where>
+            AND t1.is_del = 0
+            AND t1.is_enable = 1
+            <if test="dto.companyList != null and dto.companyList.size() > 0">
+                AND t1.company_id IN
+                <foreach collection="dto.companyList" item="companyId" open="(" separator="," close=")">
+                    #{companyId}
+                </foreach>
+            </if>
+            <if test="dto.idS != null and dto.idS.size() > 0">
+                AND t1.supplier_id IN
+                <foreach collection="dto.idS" item="supplierId" open="(" separator="," close=")">
+                    #{supplierId}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <update id="deleteBySupplierIdAndCompanyId">
+        UPDATE wd_supplier_company t1
+        SET t1.is_del = #{dto.isDel}
+        <where>
+            <if test="dto.supplierId != null">
+                AND t1.supplier_id = #{dto.supplierId}
+            </if>
+            <if test="dto.companyId != null">
+                AND t1.company_id = #{dto.companyId}
+            </if>
+            <if test="dto.supplierIds != null and dto.supplierIds.size() > 0">
+                AND t1.supplier_id IN
+                <foreach collection="dto.supplierIds" item="supplierId" open="(" separator="," close=")">
+                    #{supplierId}
+                </foreach>
+            </if>
+        </where>
+    </update>
+
+    <select id="selectAllCompaniesBySupplierIds" resultType="com.njwd.entity.basedata.SupplierCompany">
+        SELECT
+        t1.id,
+        t1.supplier_id supplierId,
+        t1.company_id companyId
+        FROM
+        wd_supplier_company t1
+        <where>
+            AND t1.is_del = 0
+            AND t1.is_enable = 1
+            <if test="dto.supplierIds != null and dto.supplierIds.size() > 0">
+                AND t1.supplier_id IN
+                <foreach collection="dto.supplierIds" item="supplierId" open="(" separator="," close=")">
+                    #{supplierId}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <!-- 根据供应商ids查询分配的使用公司列表 -->
+    <select id="findSupplierUseCompanysBySupplierIds" resultType="com.njwd.entity.basedata.vo.SupplierCompanyVo"
+            parameterType="com.njwd.entity.basedata.dto.CustomerSupplierCompanyDto">
+        SELECT
+        t1.id,
+        t1.supplier_id,
+        GROUP_CONCAT(t1.company_id) AS useCompanyIdString,
+        GROUP_CONCAT(t2.`name`) AS useCompanyName
+        FROM
+        wd_supplier_company t1
+        LEFT JOIN wd_company t2 ON t1.company_id = t2.id
+        <where>
+            t1.is_del = 0
+            <if test="dto.supplierIds != null and dto.supplierIds.size()>0">
+                AND t1.supplier_id IN
+                <foreach collection="dto.supplierIds" item="item" separator="," open="(" close=")">
+                    #{item}
+                </foreach>
+            </if>
+            GROUP BY t1.supplier_id
+        </where>
+    </select>
+
+    <!-- 根据使用公司id查询包含指定使用公司的供应商id -->
+    <select id="findSupplierCompanyInfos" resultType="Long">
+        select distinct (supplier_id) supplier_id
+        from
+        wd_supplier_company
+        <where>
+            is_del = 0
+            and company_id in
+            <foreach collection="dto.companyList" item="item" separator="," open="(" close=")">
+                #{item}
+            </foreach>
+        </where>
+    </select>
+
+    <!-- 根据供应商、创建公司查询除本身外的使用公司信息 -->
+    <select id="findSupplierCompanyInfosWithOutSelf" resultType="java.lang.Integer">
+        select COUNT(1)
+        from
+        wd_supplier_company
+        WHERE
+        is_del = 0
+        <if test="dto.supplierId != null">
+            and supplier_id = #{dto.supplierId}
+        </if>
+        <if test="dto.companyId != null">
+            and company_id != #{dto.companyId}
+        </if>
+    </select>
+
+    <!-- 根据id查询使用公司信息 -->
+    <select id="selectSupplierCompanyByParams" resultType="com.njwd.entity.basedata.vo.SupplierCompanyVo">
+        SELECT
+        <include refid="Base_Column_List"/>
+        FROM
+        wd_supplier_company
+        WHERE
+        is_del = 0
+        <if test="dto.ids != null and dto.ids.size() > 0">
+            and id IN
+            <foreach collection="dto.ids" item="item" open="(" close=")" separator=",">
+                #{item}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="selectForFilterFp" resultType="java.lang.Long">
+        select wc.id from wd_supplier wc
+        left join (
+        select
+        wcc.supplier_id,
+        wcc.company_id,
+        count(1) total
+        from
+        wd_supplier_company wcc
+        inner join wd_supplier wc1 on wcc.supplier_id = wc1.id and wcc.company_id != wc1.company_id
+        where
+        wcc.is_del = 0
+        <if test="list != null and list.size() != 0">
+            and wcc.supplier_id in
+            (<foreach collection="list" separator="," item="id">
+            #{id,jdbcType=BIGINT}
+        </foreach>)
+        </if>
+        group by wcc.supplier_id) wccc on wc.id = wccc.supplier_id
+        where wc.is_del = 0 and wccc.total > 0
+    </select>
+
+    <select id="findSupplierCompanyList" resultType="com.njwd.entity.basedata.vo.SupplierCompanyVo">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_supplier_company
+        where is_del = 0 and is_enable = 1
+        <if test="dto.id != null">
+            and supplier_id = #{dto.id}
+        </if>
+    </select>
+
+</mapper>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.financeback.mapper.UserAccountBookEntityMapper">
+    <insert id="insertBatch">
+        insert into wd_user_account_book_entity (user_id, root_enterprise_id, company_id, account_book_entity_id,
+        creator_id, creator_name)
+        values
+        <foreach collection="accountBookEntityIds" item="accountBookEntityId" separator=",">
+            (#{sysUserDto.userId} ,#{operator.rootEnterpriseId} ,#{companyId} ,#{accountBookEntityId}
+            ,#{operator.userId} ,#{operator.name} )
+        </foreach>
+    </insert>
+    <select id="findAccountBookEntityList" resultType="com.njwd.entity.basedata.vo.UserAccountBookEntityVo">
+        select
+            <!-- 改为返回核算主体表id -->
+            wabe.id,
+            wuabe.user_id,
+            wuabe.company_id,
+            wuabe.account_book_entity_id,
+            wuabe.is_default,
+            <!--形态为2时查公司名,为3时查业务单元名-->
+            case
+                when wabe.form = 2
+                then
+                (select wc.name from wd_company wc where wc.id = wabe.entity_id)
+            else
+                (select wbu.name from wd_business_unit wbu where wbu.id = wabe.entity_id)
+            end 'name'
+        from wd_user_account_book_entity wuabe
+        inner join wd_account_book_entity wabe on wabe.id = wuabe.account_book_entity_id and wabe.root_enterprise_id = wuabe.root_enterprise_id
+        <where>
+            <if test="sysUser.userIds != null and sysUser.userIds.size() != 0">
+                and wuabe.user_id in
+                <foreach collection="sysUser.userIds" item="id" open="(" close=")" separator=",">
+                    #{id}
+                </foreach>
+            </if>
+            <if test="sysUser.userId != null">
+                and wuabe.user_id = #{sysUser.userId}
+            </if>
+            <if test="sysUser.companyId != null">
+                and wuabe.company_id = #{sysUser.companyId}
+            </if>
+            and wuabe.root_enterprise_id = #{rootEnterpriseId}
+            and wabe.is_del = 0
+        </where>
+        order by wuabe.is_default desc
+    </select>
+</mapper>

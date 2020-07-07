@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.TaxSystemMapper">
+
+    <resultMap id="BaseResultMap" type="com.njwd.entity.platform.vo.TaxSystemVo">
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="code" jdbcType="VARCHAR" property="code"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="area" jdbcType="VARCHAR" property="area"/>
+        <result column="currency_id" jdbcType="BIGINT" property="currencyId"/>
+        <result column="precision" jdbcType="TINYINT" property="precision"/>
+        <result column="rounding_type" jdbcType="TINYINT" property="roundingType"/>
+        <result column="is_enable" jdbcType="TINYINT" property="isEnable"/>
+        <result column="is_del" jdbcType="TINYINT" property="isDel"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="creator_id" jdbcType="BIGINT" property="creatorId"/>
+        <result column="creator_name" jdbcType="VARCHAR" property="creatorName"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+        <result column="updator_id" jdbcType="BIGINT" property="updatorId"/>
+        <result column="updator_name" jdbcType="VARCHAR" property="updatorName"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, code, `name`, area, currency_id, `precision`, rounding_type, is_del, is_enable,
+    create_time, creator_id, creator_name, update_time, updator_id, updator_name
+    </sql>
+
+    <!-- 查询税制 -->
+    <select id="findTaxSystem" resultType="com.njwd.entity.platform.vo.TaxSystemVo">
+        select ts.id,
+        ts.code,
+        ts.name,
+        ts.area_id,
+        a.area_name area_name,
+        ts.currency_id,
+        c.name currency_name,
+        c.`precision`,
+        c.unit_precision,
+        c.rounding_type,
+        ts.is_enable,
+        ts.is_del,
+        ts.is_approved,
+        ts.is_released,
+        ts.version
+        from wd_tax_system ts
+        left join wd_area a on ts.area_id = a.id
+        left join wd_currency c on ts.currency_id = c.id
+        <where>
+            <if test="taxSystemDto.isDel != null">
+                and ts.is_del = #{taxSystemDto.isDel }
+            </if>
+            <if test="taxSystemDto.name != null and taxSystemDto.name != ''">
+                and ts.name = #{taxSystemDto.name}
+            </if>
+            <if test="taxSystemDto.id != null">
+                and ts.id = #{taxSystemDto.id}
+            </if>
+        </where>
+        limit 1
+    </select>
+
+    <!-- 查询税制分页 -->
+    <select id="findTaxSystemPage" resultType="com.njwd.entity.platform.vo.TaxSystemVo">
+        select ts.id,
+        ts.code,
+        ts.name,
+        ts.area_id,
+        a.area_name area_name,
+        ts.currency_id,
+        c.name currency_name,
+        c.`precision`,
+        c.unit_precision,
+        c.rounding_type,
+        ts.is_approved,
+        ts.is_released,
+        ts.is_del,
+        ts.create_time,
+        ts.creator_id,
+        ts.creator_name,
+        ts.update_time,
+        ts.updator_id,
+        ts.updator_name,
+        ts.manage_info,
+        ts.version
+        from wd_tax_system ts
+        left join wd_area a on ts.area_id = a.id
+        left join wd_currency c on ts.currency_id = c.id
+        <where>
+            and ts.is_del = 0
+            <if test="taxSystemDto.codeOrName != null and taxSystemDto.codeOrName != ''">
+                and (ts.code like concat('%', #{taxSystemDto.codeOrName}, '%')
+                or ts.name like concat('%', #{taxSystemDto.codeOrName}, '%'))
+            </if>
+            <if test="taxSystemDto.areaIdList != null and taxSystemDto.areaIdList.size() > 0">
+                and ts.area_id in
+                <foreach collection="taxSystemDto.areaIdList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="taxSystemDto.isReleased != null">
+                and ts.is_released = #{taxSystemDto.isReleased}
+            </if>
+            <if test="taxSystemDto.isApproved != null">
+                and ts.is_approved = #{taxSystemDto.isApproved}
+            </if>
+        </where>
+        order by substring(ts.code,3) * 1
+    </select>
+
+    <!-- 查询税制列表 -->
+    <select id="findTaxSystemList" resultType="com.njwd.entity.platform.vo.TaxSystemVo">
+        select ts.id,
+        ts.code,
+        ts.name,
+        ts.area_id,
+        a.area_name area_name,
+        ts.currency_id,
+        c.name currency_name,
+        c.`precision`,
+        c.unit_precision,
+        c.rounding_type,
+        ts.is_approved,
+        ts.is_released,
+        ts.is_del,
+        ts.create_time,
+        ts.creator_id,
+        ts.creator_name,
+        ts.update_time,
+        ts.updator_id,
+        ts.updator_name,
+        ts.manage_info,
+        ts.version
+        from wd_tax_system ts
+        left join wd_area a on ts.area_id = a.id
+        left join wd_currency c on ts.currency_id = c.id
+        <where>
+            and ts.is_del = 0
+            <if test="taxSystemDto.codeOrName != null and taxSystemDto.codeOrName != ''">
+                and (ts.code like concat('%', #{taxSystemDto.codeOrName}, '%')
+                or ts.name like concat('%', #{taxSystemDto.codeOrName}, '%'))
+            </if>
+            <if test="taxSystemDto.areaIdList != null and taxSystemDto.areaIdList.size() > 0">
+                and ts.area_id in
+                <foreach collection="taxSystemDto.areaIdList" item="item" index="index" open="(" close=")" separator=",">
+                    #{item}
+                </foreach>
+            </if>
+            <if test="taxSystemDto.isReleased != null">
+                and ts.is_released = #{taxSystemDto.isReleased}
+            </if>
+            <if test="taxSystemDto.isApproved != null">
+                and ts.is_approved = #{taxSystemDto.isApproved}
+            </if>
+        </where>
+        order by substring(ts.code,3) * 1
+    </select>
+
+    <!-- 查询税制列表状态 -->
+    <select id="findTaxSystemListStatus" resultType="com.njwd.entity.platform.vo.TaxSystemVo">
+        select ts.id,
+        ts.is_enable,
+        ts.is_del,
+        ts.is_approved,
+        ts.is_released,
+        ts.version
+        from wd_tax_system ts
+        <where>
+            <if test="taxSystemDto.changeList != null and taxSystemDto.changeList.size() > 0">
+                and ts.id in
+                <foreach collection="taxSystemDto.changeList" item="taxSystem" index="index" open="(" close=")" separator=",">
+                    #{taxSystem.id}
+                </foreach>
+            </if>
+        </where>
+    </select>
+
+    <!--  批量修改　-->
+    <update id="updateStatusBatch">
+        update wd_tax_system
+        <set>
+            <if test="taxSystemDto.isDel == 1">
+                is_del = #{taxSystemDto.isDel},
+            </if>
+            <if test="taxSystemDto.isApproved == 1">
+                is_approved = #{taxSystemDto.isApproved},
+            </if>
+            <if test="taxSystemDto.isApproved == 0">
+                is_approved = #{taxSystemDto.isApproved},
+            </if>
+            <if test="taxSystemDto.isReleased == 1">
+                is_released = #{taxSystemDto.isReleased},
+            </if>
+            version = version + 1
+        </set>
+        <where>
+            and id in
+            <foreach collection="taxSystemDto.batchIds" item="id" index="index" open="(" close=")" separator=",">
+                #{id}
+            </foreach>
+        </where>
+    </update>
+
+    <!--    <select id="findTaxSystemList" resultMap="BaseResultMap">-->
+<!--        select-->
+<!--        wts.id,-->
+<!--        wts.code,-->
+<!--        wts.`name`,-->
+<!--        wts.area,-->
+<!--        wts.currency_id,-->
+<!--        wts.`precision`,-->
+<!--        wts.rounding_type,-->
+<!--        wts.is_del,-->
+<!--        wts.is_enable,-->
+<!--        wts.create_time,-->
+<!--        wts.creator_id,-->
+<!--        wts.creator_name,-->
+<!--        wts.update_time,-->
+<!--        wts.updator_id,-->
+<!--        wts.updator_name,-->
+<!--        wc.name as currencyName-->
+<!--        from wd_tax_system wts-->
+<!--        left join wd_currency wc on wts.currency_id=wc.id-->
+<!--        where wts.is_enable=1-->
+<!--        and wts.is_del=0-->
+<!--        and exists (select 1 from wd_accounting_standard was where was.currency_id=wc.id and was.is_enable=1 and was.is_del=0)-->
+<!--    </select>-->
+</mapper>

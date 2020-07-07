@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.AreaMapper">
+
+    <!-- 查询国家地区 -->
+    <select id="findArea"  resultType="com.njwd.entity.platform.vo.AreaVo">
+        select a.id,
+        a.code,
+        a.area_name `name`,
+        a.area_name,
+        a.is_approved
+        from wd_area a
+        <where>
+            <if test="areaDto.areaName != null and areaDto.areaName != ''">
+                and a.area_name = #{areaDto.areaName}
+            </if>
+            <if test="areaDto.id != null">
+                and a.id = #{areaDto.id}
+            </if>
+        </where>
+        order by a.`code`;
+    </select>
+
+    <!-- 查询国家地区分页 -->
+    <select id="findAreaPage" resultType="com.njwd.entity.platform.vo.AreaVo">
+        select a.id,
+        a.code,
+        a.area_name `name`,
+        a.area_name,
+        a.create_time,
+        a.creator_id,
+        a.creator_name,
+        a.update_time,
+        a.updator_id,
+        a.updator_name,
+        a.is_approved,
+        a.manage_info
+        from wd_area a
+        <where>
+            <if test="areaDto.codeOrName != null and areaDto.codeOrName != ''">
+                and (a.code like concat('%', #{areaDto.codeOrName}, '%')
+                or a.area_name like concat('%', #{areaDto.codeOrName}, '%'))
+            </if>
+            <if test="areaDto.isApproved != null">
+                and a.is_approved = #{areaDto.isApproved}
+            </if>
+        </where>
+        order by a.`code`
+    </select>
+
+    <!-- 查询国家地区列表 -->
+    <select id="findAreaList"  resultType="com.njwd.entity.platform.vo.AreaVo">
+        select a.id,
+        a.code,
+        a.area_name `name`,
+        a.area_name,
+        a.create_time,
+        a.creator_id,
+        a.creator_name,
+        a.update_time,
+        a.updator_id,
+        a.updator_name,
+        a.is_approved,
+        a.manage_info
+        from wd_area a
+        <where>
+            <if test="areaDto.codeOrName != null and areaDto.codeOrName != ''">
+                and (a.code like concat('%', #{areaDto.codeOrName}, '%')
+                or a.area_name like concat('%', #{areaDto.codeOrName}, '%'))
+            </if>
+            <if test="areaDto.isApproved != null">
+                and a.is_approved = #{areaDto.isApproved}
+            </if>
+        </where>
+        order by a.`code`
+    </select>
+</mapper>

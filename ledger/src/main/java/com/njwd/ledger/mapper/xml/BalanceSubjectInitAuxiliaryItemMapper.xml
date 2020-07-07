@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.ledger.mapper.BalanceSubjectInitAuxiliaryItemMapper">
+  <resultMap id="BaseResultMap" type="com.njwd.entity.ledger.BalanceSubjectInitAuxiliaryItem">
+    <!--@mbg.generated-->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="account_book_id" jdbcType="BIGINT" property="accountBookId" />
+    <result column="account_book_entity_id" jdbcType="BIGINT" property="accountBookEntityId" />
+    <result column="account_subject_id" jdbcType="BIGINT" property="accountSubjectId" />
+    <result column="period_year" jdbcType="BIGINT" property="periodYear" />
+    <result column="period_num" jdbcType="BIGINT" property="periodNum" />
+    <result column="source_table" jdbcType="VARCHAR" property="sourceTable" />
+    <result column="item_value_id" jdbcType="BIGINT" property="itemValueId" />
+    <result column="item_value_name" jdbcType="VARCHAR" property="itemValueName" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, account_book_id, account_book_entity_id, account_subject_id, source_table,period_year,period_num,
+    item_value_id,item_value_name,balance_auxiliary_id
+  </sql>
+    <insert id="addBalanceSubInitAuxItemBatch">
+      insert into wd_balance_subject_init_auxiliary_item(account_book_id,account_book_entity_id,account_subject_id,period_year,period_num,source_table,item_value_id,item_value_name,balance_auxiliary_id)
+      values
+      <foreach collection="balSubInitAuxItemList" item="item" index="index" separator=",">
+        (#{item.accountBookId},#{item.accountBookEntityId} ,#{item.accountSubjectId},#{item.periodYear},#{item.periodNum},#{item.sourceTable},#{item.itemValueId},#{item.itemValueName},#{item.balanceAuxiliaryId} )
+      </foreach>
+    </insert>
+    <select id="selectBalSubInitAuxItemList" resultMap="BaseResultMap">
+     select <include refid="Base_Column_List"/>
+     from wd_balance_subject_init_auxiliary_item t
+      <where>
+        <if test="accountBookId != null">
+          t.account_book_id=#{accountBookId}
+        </if>
+        <if test="periodYear != null">
+          and t.period_year=#{periodYear}
+        </if>
+        <if test="periodNum != null">
+          and t.period_num=#{periodNum}
+        </if>
+      </where>
+    </select>
+</mapper>

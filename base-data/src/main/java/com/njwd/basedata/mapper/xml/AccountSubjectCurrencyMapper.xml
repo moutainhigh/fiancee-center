@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.basedata.mapper.AccountSubjectCurrencyMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.platform.AccountSubjectCurrency">
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        id, account_subject_id, currency_id, currency_name, create_time
+    </sql>
+
+    <delete id="deleteByParam">
+        DELETE FROM wd_account_subject_currency
+        WHERE account_subject_id = #{accountSubjectCurrency.accountSubjectId}
+    </delete>
+
+    <delete id="delete">
+        DELETE FROM wd_account_subject_currency WHERE account_subject_id IN
+        (SELECT id FROM wd_account_subject WHERE subject_id = #{accountSubjectDto.subjectId})
+    </delete>
+
+    <select id="findCountByParam" resultType="int">
+        SELECT COUNT(1) FROM wd_account_subject_currency
+        WHERE account_subject_id = #{accountSubjectCurrency.accountSubjectId}
+    </select>
+</mapper>

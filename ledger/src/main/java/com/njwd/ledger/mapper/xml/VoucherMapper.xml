@@ -1,0 +1,538 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.ledger.mapper.VoucherMapper">
+    <sql id="Base_Column_List">
+            wv.`id`,
+            wv.`root_enterprise_id`,
+            wv.`account_book_id`,
+            wv.`account_book_name`,
+            wv.`account_book_entity_id`,
+            wv.`account_book_entity_name`,
+            wv.`voucher_date`,
+            wv.`bill_num`,
+            wv.`posting_period_year`,
+            wv.`posting_period_num`,
+            wv.`period_year_num`,
+            wv.`credential_word`,
+            wv.`main_code`,
+            wv.`child_code`,
+            wv.`source_type`,
+            wv.`source_system`,
+            wv.`source_code`,
+            wv.`first_abstract`,
+            wv.`debit_amount`,
+            wv.`credit_amount`,
+            wv.`cash_check_type`,
+            wv.`cash_flow_amount`,
+            wv.`status`,
+            wv.`interior_type`,
+            wv.`is_offset`,
+            wv.`is_del`,
+            wv.`version`,
+            wv.`create_time`,
+            wv.`creator_id`,
+            wv.`creator_name`,
+            wv.`update_time`,
+            wv.`updator_id`,
+            wv.`updator_name`,
+            wv.`approve_status`,
+            wv.`approve_time`,
+            wv.`approver_id`,
+            wv.`approver_name`,
+            wv.`review_status`,
+            wv.`review_time`,
+            wv.`reviewer_id`,
+            wv.`reviewer_name`,
+            wv.`posting_status`,
+            wv.`posting_time`,
+            wv.`posting_user_id`,
+            wv.`posting_user_name`
+    </sql>
+    <resultMap id="BaseResultMap" type="com.njwd.entity.ledger.vo.VoucherVo">
+    </resultMap>
+
+    <select id="findVoucherByAccBookIdAndYear" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_voucher_%s wv
+        where wv.account_book_id=#{accountBookId}
+        and wv.posting_period_year=#{postingPeriodYear}
+    </select>
+
+    <select id="findVoucherList" resultMap="BaseResultMap">
+        select vou.id,vou.root_enterprise_id,vou.account_book_name,vou.account_book_entity_name,vou.posting_period_year,
+        vou.posting_period_num,vou.credential_word,vou.status,vou.main_code,vou.child_code,vou.account_book_id,
+        vou.version,vou.approve_status,vou.source_type,vou.source_code,vou.creator_id,vou.creator_name,vou.approver_name,vou.approver_id,vou.approve_time,
+        vou.reviewer_name,vou.reviewer_id,vou.review_status,vou.review_time,vou.posting_status,vou.interior_type,vou.cash_check_type from
+        wd_voucher_%s vou
+        <where>
+            vou.id in
+            <foreach collection="voucherDto.editVoucherList" item="voucher" index="index" open="(" close=")"
+                     separator=",">
+                #{voucher.id}
+            </foreach>
+        </where>
+    </select>
+
+    <select id="findVoucherListBySourceCode" resultMap="BaseResultMap">
+        select vou.id,vou.root_enterprise_id,vou.account_book_name,vou.account_book_entity_name,vou.posting_period_year,
+        vou.posting_period_num,vou.credential_word,vou.status,vou.main_code,vou.child_code,vou.account_book_id,
+        vou.version,vou.approve_status,vou.source_type,vou.source_code,vou.creator_name,vou.approver_name,vou.approver_id,vou.approve_time,
+        vou.reviewer_name,vou.reviewer_id,vou.review_status,vou.review_time,vou.posting_status,vou.interior_type,vou.cash_check_type from
+        wd_voucher_%s vou
+        <where>
+            1=1 and vou.source_type = 1 and
+            vou.source_code in
+            <foreach collection="sourceCodeList" item="sourceCode" index="index" open="(" close=")"
+                     separator=",">
+                #{sourceCode}
+            </foreach>
+        </where>
+    </select>
+
+    <update id="updateVoucher">
+        <foreach collection="vouchers" item="voucher" index="index">
+            update wd_voucher_%s vou
+            <set>
+                <if test="voucherDto.approverName != null ">
+                    vou.approver_name = #{voucherDto.approverName},
+                </if>
+                <if test="voucherDto.status != null ">
+                    vou.status = #{voucherDto.status},
+                </if>
+                <if test="voucherDto.approveStatus != null ">
+                    vou.approve_status = #{voucherDto.approveStatus},vou.approve_time = #{voucherDto.approveTime},
+                    vou.approver_id = #{voucherDto.approverId},
+                </if>
+                <if test="voucherDto.reviewerName != null ">
+                    vou.reviewer_name = #{voucherDto.reviewerName},
+                </if>
+                <if test="voucherDto.reviewStatus != null ">
+                    vou.review_status = #{voucherDto.reviewStatus},vou.review_time =
+                    #{voucherDto.reviewTime},vou.reviewer_id = #{voucherDto.reviewerId},
+                </if>
+                vou.version =vou.version +1,
+            </set>
+            where vou.id = #{voucher.id} and vou.version = #{voucher.version};
+        </foreach>
+    </update>
+
+    <update id="updateVoucherStatusForPeriod">
+        update wd_voucher_%s set status = #{voucher.status,jdbcType=TINYINT},
+        posting_user_id = #{voucher.postingUserId,jdbcType=BIGINT} ,
+        posting_user_name = #{voucher.postingUserName,jdbcType=VARCHAR} ,
+        posting_time = #{voucher.postingTime,jdbcType=TIMESTAMP} ,
+        posting_status = 1
+        where account_book_id = #{accountBookPeriod.accountBookId,jdbcType=BIGINT}
+        and period_year_num = #{accountBookPeriod.periodYearNum,jdbcType=INTEGER}
+        and status = 1
+    </update>
+
+    <select id="findVouchersByPeriod" resultType="com.njwd.entity.ledger.Voucher">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_voucher_%s wv
+        where wv.account_book_id=#{accountBookPeriod.accountBookId}
+        and wv.period_year_num=#{accountBookPeriod.periodYearNum}
+        <if test="voucherStatus!=null and voucherStatus.size()>0">
+            and wv.status in
+            <foreach collection="voucherStatus" item="status" open="(" close=")" separator=",">
+                #{status}
+            </foreach>
+        </if>
+        order by wv.credential_word asc,-wv.main_code desc,-wv.child_code desc
+    </select>
+
+    <update id="updateVoucherCode">
+        <foreach collection="list" item="p">
+            update wd_voucher set main_code =
+            #{p.mainCode},child_code=#{p.childCode},updator_id=#{p.updatorId},updator_name=#{p.updatorName}
+            where id = #{p.id};
+            update wd_voucher_%s set main_code =
+            #{p.mainCode},child_code=#{p.childCode},updator_id=#{p.updatorId},updator_name=#{p.updatorName}
+            where id = #{p.id};
+        </foreach>
+    </update>
+
+    <select id="findPage" parameterType="com.njwd.entity.ledger.dto.VoucherDto" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>,
+        wv.first_abstract abstractContent
+        from wd_voucher_%s wv
+        where
+        1=1
+        <if test="voucherDto.accountBookIds !=null and voucherDto.accountBookIds.size() != 0">
+            and wv.account_book_id in
+            <foreach collection="voucherDto.accountBookIds" item="accountBookId" index="index" open="(" separator=","
+                     close=")">
+                #{accountBookId}
+            </foreach>
+        </if>
+        <if test="voucherDto.accountBookEntityIds !=null and voucherDto.accountBookEntityIds.size() != 0">
+            and wv.account_book_entity_id in
+            <foreach collection="voucherDto.accountBookEntityIds" item="accountBookEntityId" index="index" open="("
+                     separator="," close=")">
+                #{accountBookEntityId}
+            </foreach>
+        </if>
+        <if test="voucherDto.voucherDates != null and voucherDto.voucherDates.size() != 0">
+            and wv.voucher_date between #{voucherDto.voucherDates[0]} and #{voucherDto.voucherDates[1]}
+        </if>
+        <if test="voucherDto.credentialWord !=null ">
+            and wv.credential_word = #{voucherDto.credentialWord}
+        </if>
+        <if test="voucherDto.mainCode !=null ">
+            and wv.main_code = #{voucherDto.mainCode}
+        </if>
+        <if test="voucherDto.mainCodes !=null and voucherDto.mainCodes.size() != 0">
+            and wv.main_code between #{voucherDto.mainCodes[0]} and #{voucherDto.mainCodes[1]}
+        </if>
+        <if test="voucherDto.periodYearNumList != null and voucherDto.periodYearNumList.size() != 0">
+            and wv.period_year_num between #{voucherDto.periodYearNumList[0]}
+            and #{voucherDto.periodYearNumList[1]}
+        </if>
+        <if test="voucherDto.creatorIds !=null and voucherDto.creatorIds.size() != 0">
+            and wv.creator_id in
+            <foreach collection="voucherDto.creatorIds" item="creatorId" index="index" open="(" separator="," close=")">
+                #{creatorId}
+            </foreach>
+        </if>
+        <if test="voucherDto.amount !=null and voucherDto.amount.size() != 0">
+          <!--  and ( (wv.debit_amount between #{voucherDto.amount[0]} and #{voucherDto.amount[1]})
+            or (wv.credita_amount between #{voucherDto.amount[0]} and #{voucherDto.amount[1]} ))-->
+            and wv.debit_amount between #{voucherDto.amount[0]} and #{voucherDto.amount[1]}
+        </if>
+        <if test="voucherDto.status !=null ">
+            and wv.status = #{voucherDto.status}
+        </if>
+        <if test="voucherDto.reviewStatus !=null ">
+            and wv.review_status = #{voucherDto.reviewStatus}
+        </if>
+        <if test="voucherDto.tempReviewStatus == 0">
+            and wv.cash_check_type in (0,1)
+        </if>
+        <if test="voucherDto.cashCheckType !=null ">
+            and wv.cash_check_type = #{voucherDto.cashCheckType}
+        </if>
+        <if test="voucherDto.voucherIds != null  and  voucherDto.voucherIds.size() != 0">
+            and wv.id in
+            <foreach collection="voucherDto.voucherIds" item="voucherId" index="index" open="(" close=")" separator=",">
+                #{voucherId}
+            </foreach>
+        </if>
+        and wv.is_del = 0
+        order by  wv.account_book_id, wv.account_book_entity_id,wv.period_year_num,wv.credential_word,wv.main_code
+    </select>
+
+    <select id="findVoucherById"  resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>,
+        wv.first_abstract abstractContent,
+        wabp.is_settle isSettle
+        from wd_voucher_%s wv,
+        wd_voucher_entry_%s wve,
+        wd_account_book_period wabp
+        where
+        wv.id = #{id}
+        and wv.id = wve.voucher_id
+        and wv.account_book_id = wabp.account_book_id
+        and wv.period_year_num = wabp.period_year_num
+        group by  wv.id
+    </select>
+
+    <select id="selectPostingVoucher" resultType="com.njwd.entity.ledger.Voucher">
+        select
+        wv.credential_word,
+        wv.main_code,
+        wv.child_code,
+        wv.cash_check_type,
+        wv.debit_amount,
+        wv.credit_amount
+        from wd_voucher_%s wv
+        where
+        wv.is_del = 0
+        and wv.period_year_num = #{abp.periodYearNum,jdbcType=INTEGER}
+        and wv.account_book_id = #{abp.accountBookId,jdbcType=BIGINT}
+        <if test="checkCashType != null">
+            and wv.posting_status = #{checkCashType}
+        </if>
+    </select>
+    <insert id="insertGenerateBatch" useGeneratedKeys="true" keyProperty="voucherList.id">
+        insert into wd_voucher_%s
+        (
+        `root_enterprise_id`,
+        `account_book_id`,
+        `account_book_name`,
+        `account_book_entity_id`,
+        `account_book_entity_name`,
+        `voucher_date`,
+        `posting_period_year`,
+        `posting_period_num`,
+        `period_year_num`,
+        `credential_word`,
+        `source_type`,
+        `source_system`,
+        `source_code`,
+        `first_abstract`,
+        `debit_amount`,
+        `credit_amount`,
+        `cash_check_type`,
+        `cash_flow_amount`,
+        `status`,
+        `interior_type`,
+        `creator_id`,
+        `creator_name`
+        )values
+        <foreach collection="voucherList" item="voucher" separator=",">
+            (
+            #{voucher.rootEnterpriseId},
+            #{voucher.accountBookId},
+            #{voucher.accountBookName} ,
+            #{voucher.accountBookEntityId},
+            #{voucher.accountBookEntityName},
+            #{voucher.voucherDate},
+            #{voucher.postingPeriodYear},
+            #{voucher.postingPeriodNum},
+            #{voucher.periodYearNum},
+            #{voucher.credentialWord},
+            #{voucher.sourceType},
+            #{voucher.sourceSystem},
+            ifnull(#{voucher.sourceCode},concat(#{voucher.sourceVoucher.id},'')),
+            #{voucher.firstAbstract},
+            #{voucher.debitAmount},
+            #{voucher.creditAmount},
+            #{voucher.cashCheckType},
+            #{voucher.cashFlowAmount},
+            #{voucher.status},
+            #{voucher.interiorType},
+            #{voucher.creatorId} ,
+            #{voucher.creatorName}
+            )
+        </foreach>
+    </insert>
+
+    <select id="findByCondition" resultType="com.njwd.entity.ledger.vo.VoucherVo">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_voucher_%s wv
+        where wv.account_book_id = #{voucher.accountBookId}
+        and wv.period_year_num  = #{voucher.periodYearNum,jdbcType=INTEGER}
+        <if test="voucherStatus!=null and voucherStatus.size()>0">
+            and wv.status in
+            <foreach collection="voucherStatus" item="status" open="(" close=")" separator=",">
+                #{status}
+            </foreach>
+        </if>
+        <if test="voucher.approveStatus!=null">
+            and wv.approve_status = #{voucher.approveStatus,jdbcType=TINYINT}
+        </if>
+        <if test="voucher.reviewStatus!=null">
+            and wv.review_status = #{voucher.reviewStatus}
+        </if>
+        <if test = "voucher.isDel !=null">
+            and wv.is_del = #{voucher.isDel,jdbcType=TINYINT}
+        </if>
+
+    </select>
+
+    <select id="findByEntriesAndPeriod" parameterType="com.njwd.entity.ledger.dto.VoucherDto"
+            resultType="com.njwd.entity.ledger.vo.VoucherVo">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_voucher_%s wv
+        where
+        <if test="voucherDto.accountBookIds !=null and voucherDto.accountBookIds.size() != 0">
+            wv.account_book_id in
+            <foreach collection="voucherDto.accountBookIds" item="accountBookId" index="index" open="(" separator=","
+                     close=")">
+                #{accountBookId}
+            </foreach>
+        </if>
+        <if test="voucherDto.accountBookEntityIds !=null and voucherDto.accountBookEntityIds.size() != 0">
+            and wv.account_book_entity_id in
+            <foreach collection="voucherDto.accountBookEntityIds" item="accountBookEntityId" index="index" open="("
+                     separator="," close=")">
+                #{accountBookEntityId}
+            </foreach>
+        </if>
+        <if test="voucherDto.periodYearNum != null ">
+            and wv.period_year_num = #{voucherDto.periodYearNum}
+        </if>
+        <if test="voucherDto.voucherDate != null ">
+            and wv.voucher_date = #{voucherDto.voucherDate}
+        </if>
+        <if test="voucherDto.credentialWord != null ">
+            and wv.credential_word = #{voucherDto.credentialWord}
+        </if>
+        <if test="voucherDto.mainCode != null ">
+            and wv.main_code = #{voucherDto.mainCode}
+        </if>
+        <if test="voucherDto.childCode != null ">
+            and wv.child_code = #{voucherDto.childCode}
+        </if>
+        and wv.is_del = 0
+    </select>
+    <update id="deleteBatch">
+            update wd_voucher_%s wv
+            set wv.is_del = 1, wv.version=wv.version+1
+            where wv.id in
+        <foreach collection="removeVouchers" item="voucher" separator="," open="(" close=")">
+            #{voucher.id}
+        </foreach>
+    </update>
+
+    <select id="findVoucherByAccountBookId" parameterType="com.njwd.entity.ledger.dto.VoucherDto" resultType="integer">
+        select
+            IFNULL(sum(wv.id),0)
+        from wd_voucher_%s wv
+        <where>
+            wv.is_del = 0
+            <if test="accountBookId != null">
+            and wv.account_book_id = #{accountBookId}
+            </if>
+            <if test="accountBookIds != null and accountBookIds.size() > 0 ">
+            and wv.account_book_id in
+                <foreach collection="accountBookIds" item="accountBookId" index="index" open="(" separator=","
+                         close=")">
+                    #{accountBookId}
+                </foreach>
+            </if>
+            <if test="sourceTable != null">
+            and exists (
+                select
+                    id
+                from
+                    wd_voucher_entry_auxiliary_%s x
+                where  x.voucher_id = wv.id
+                and x.source_table = #{sourceTable}
+                and x.item_value_id = #{itemValueId}
+            )
+            </if>
+            <if test="isDel != null">
+                and wv.is_del = #{isDel}
+            </if>
+        </where>
+    </select>
+
+    <!-- 查询存在凭证的账簿id -->
+    <select id="findHasVoucherByAccountBookId" parameterType="com.njwd.entity.ledger.dto.VoucherDto" resultType="long">
+        select
+            wv.account_book_id
+        from
+            wd_voucher_%s wv
+        <where>
+            and wv.is_del = 0
+        </where>
+        group by wv.account_book_id
+        having count(wv.account_book_id) > 0
+    </select>
+
+    <select id="findExistListByIds" resultType="com.njwd.entity.ledger.dto.VoucherDto">
+        select
+        wv.`id`,
+        wv.`status`,
+        wv.`source_type`,
+        wv.`approve_status`,
+        wv.`review_status`,
+        wv.`account_book_entity_id`,
+        wv.`posting_period_year`,
+        wv.`posting_period_num`,
+        wv.`account_book_id`,
+        wv.`credential_word`,
+        wv.`version`
+        from wd_voucher_%s wv
+        where wv.is_del = 0
+        and wv.id in
+        <foreach collection="voucherIds" item="voucherId" separator="," open="(" close=")">
+            #{voucherId}
+        </foreach>
+    </select>
+    <update id="refreshInteriorVouchers">
+        update wd_voucher_%s wv
+        set
+        wv.updator_id = #{operator.userId},
+        wv.updator_name = #{operator.name},
+        wv.update_time = #{now},
+        wv.voucher_date=#{voucherDto.voucherDate},
+        wv.period_year_num = #{voucherDto.periodYearNum},
+        wv.version = wv.version+1
+        <where>
+            wv.id in (
+             select wvei.interior_voucher_id from wd_voucher_entry_interior_%s wvei
+             where wvei.entry_id in
+            <foreach collection="unchangedEntryIds" item="unchangedEntryId" separator="," open="(" close=")">
+                #{unchangedEntryId}
+            </foreach>
+            and wvei.voucher_id = #{voucherDto.id}
+            )
+            and wv.is_del = 0
+        </where>
+    </update>
+    <select id="findLossProfitIdsByAccountBookPeriod" resultType="com.njwd.entity.ledger.dto.VoucherDto">
+        select
+        wv.id,
+        wv.status,
+        wv.source_type,
+        wv.approve_status,
+        wv.review_status,
+        wv.account_book_entity_id,
+        wv.posting_period_year,
+        wv.posting_period_num,
+        wv.account_book_id,
+        wv.credential_word,
+        wv.version
+        from wd_voucher_%s wv
+        where wv.is_del = 0
+            and wv.source_type = 2
+            <if test="accountBookId != null">
+                and wv.account_book_id = #{accountBookId}
+            </if>
+            <if test="periodYearNum != null">
+                and wv.period_year_num = #{periodYearNum,jdbcType=INTEGER}
+            </if>
+            <if test="accountBookId != null">
+                and wv.account_book_id = #{accountBookId,jdbcType=BIGINT}
+            </if>
+    </select>
+
+    <select id="selectListByAbEntity" resultType="com.njwd.entity.ledger.Voucher">
+        select distinct wv.account_book_entity_id, wv.account_book_entity_name
+        from wd_voucher_%s wv
+        where
+            account_book_entity_id in
+            <foreach collection="abEntitySet" separator="," item="abEntity" open="(" close=")">
+                #{abEntity,jdbcType=BIGINT}
+            </foreach>
+    </select>
+    <select id="selectLossProfitList" resultType="com.njwd.entity.ledger.Voucher">
+        select
+            <include refid="Base_Column_List" />
+        from wd_voucher_%s wv
+        where
+            wv.is_del=0
+        and wv.source_type = 2
+        and wv.period_year_num = #{periodYearNum,jdbcType=INTEGER}
+
+    </select>
+
+    <select id="findVoucherByRootIdAndSubjectid" resultMap="BaseResultMap">
+        select
+            <include refid="Base_Column_List" />
+        from wd_voucher_%s wv left join  wd_voucher_entry_%s wve on wv.id = wve.voucher_id
+        <where>
+            1 = 1
+            <if test="voucherDto.rootEnterpriseId != null and voucherDto.rootEnterpriseId != ''">
+              and  wv.root_enterprise_id = #{voucherDto.rootEnterpriseId}
+            </if>
+            <if test="voucherDto.subjectIdList != null  and voucherDto.subjectIdList.size() > 0">
+              and and wve.account_subject_id in
+               <foreach collection="voucherDto.subjectIdList" item="idList" index="index" open="(" close=")" separator=",">
+                   #{idList}
+               </foreach>
+            </if>
+            <if test="voucherDto.periodYearNum != null and voucherDto.periodYearNum != ''">
+                and wv.period_year_num = #{voucherDto.periodYearNum}
+            </if>
+        </where>
+    </select>
+</mapper>

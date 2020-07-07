@@ -1,0 +1,490 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.basedata.mapper.CashFlowItemMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.platform.CashFlowItem">
+        <!--@mbg.generated-->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="code" jdbcType="VARCHAR" property="code"/>
+        <result column="name" jdbcType="VARCHAR" property="name"/>
+        <result column="cash_flow_direction" jdbcType="TINYINT" property="cashFlowDirection"/>
+        <result column="cash_flow_id" jdbcType="BIGINT" property="cashFlowId"/>
+        <result column="level" jdbcType="TINYINT" property="level"/>
+        <result column="remark" jdbcType="VARCHAR" property="remark"/>
+        <result column="is_enable" jdbcType="TINYINT" property="isEnable"/>
+        <result column="is_del" jdbcType="TINYINT" property="isDel"/>
+        <result column="create_time" jdbcType="TIMESTAMP" property="createTime"/>
+        <result column="creator_id" jdbcType="BIGINT" property="creatorId"/>
+        <result column="creator_name" jdbcType="VARCHAR" property="creatorName"/>
+        <result column="update_time" jdbcType="TIMESTAMP" property="updateTime"/>
+        <result column="updator_id" jdbcType="BIGINT" property="updatorId"/>
+        <result column="updator_name" jdbcType="VARCHAR" property="updatorName"/>
+        <result column="up_code" jdbcType="BIGINT" property="upCode"/>
+        <result column="company_id" jdbcType="BIGINT" property="companyId"/>
+        <result column="use_company_id" jdbcType="BIGINT" property="useCompanyId"/>
+        <result column="root_enterprise_id" jdbcType="BIGINT" property="rootEnterpriseId"/>
+        <result column="is_interior_contact" jdbcType="TINYINT" property="isInteriorContact"/>
+        <result column="is_init" jdbcType="TINYINT" property="isInit"/>
+        <result column="full_name" jdbcType="VARCHAR" property="fullName"/>
+        <result column="is_final" jdbcType="TINYINT" property="isFinal"/>
+        <result column="is_exist_next_init" jdbcType="TINYINT" property="isExistNextInit"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        t.id, t.code, t.name, t.cash_flow_direction,t.is_exist_next_init,
+        t.cash_flow_id,t.level,t.remark,t.is_enable,t.up_code,t.company_id,t.use_company_id,
+        t.root_enterprise_id,t.is_interior_contact,t.is_del, t.create_time,
+        t.creator_id, t.creator_name, t.update_time, t.updator_id,t.updator_name,t.is_init,t.full_name,t.is_final,
+        t.version,
+        c.name createCompanyName,
+        c.name companyName,
+        d.name useCompanyName,
+        e.account_book_type_id,
+        e.account_book_type_name,
+        e.acc_standard_id,
+        e.acc_standard_name,
+        e.cash_flow_name cashFlowName,
+        e.max_level maxLevel,
+        f.name upName,
+        t.manage_info
+    </sql>
+
+    <sql id="FIND_PAGE_where">
+        t.is_del = 0
+        <if test="cashFlowItemDto.rootEnterpriseId != null">
+            and t.root_enterprise_id = #{cashFlowItemDto.rootEnterpriseId}
+        </if>
+        <!--        <if test="cashFlowItemDto.companyId != null">
+                    and t.company_id = #{cashFlowItemDto.companyId}
+                </if>-->
+        <if test="cashFlowItemDto.isEnable != null">
+            and t.is_enable = #{cashFlowItemDto.isEnable}
+        </if>
+        <if test="cashFlowItemDto.cashFlowDirection != null">
+            and t.cash_flow_direction = #{cashFlowItemDto.cashFlowDirection}
+        </if>
+        <if test="cashFlowItemDto.cashFlowGroup != null">
+            and t.code like concat(#{cashFlowItemDto.cashFlowGroup},'%')
+        </if>
+        <if test="cashFlowItemDto.isInteriorContact != null">
+            and t.is_interior_contact = #{cashFlowItemDto.isInteriorContact}
+        </if>
+        <if test="cashFlowItemDto.isExistNextInit != null">
+            and t.is_exist_next_init = #{cashFlowItemDto.isExistNextInit}
+        </if>
+        <if test="cashFlowItemDto.isFinal != null">
+            and t.is_final = #{cashFlowItemDto.isFinal}
+        </if>
+        <if test="cashFlowItemDto.codeOrName != null and cashFlowItemDto.codeOrName != ''">
+            and (t.code like concat('%',#{cashFlowItemDto.codeOrName},'%')
+            OR t.name like concat('%',#{cashFlowItemDto.codeOrName},'%'))
+        </if>
+        <if test="cashFlowItemDto.isContainUsed != null and cashFlowItemDto.isContainUsed == 0 and cashFlowItemDto.ids != null and cashFlowItemDto.ids.size() > 0">
+            and t.id not in (
+            <foreach collection="cashFlowItemDto.ids" item="item" index="index" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+    </sql>
+
+    <select id="findCount" resultType="int">
+        select count(1)
+        from wd_cash_flow t
+        where
+         t.root_enterprise_id = #{rootEnterpriseId}
+    </select>
+
+
+    <!--根据CashFlowId删除现金流量项目相关数据-->
+    <delete id="delCashFlowByCashFlowId">
+        delete from wd_cash_flow_item
+          where root_enterprise_id = #{cashFlowItemDto.rootEnterpriseId}
+            and cash_flow_id = #{cashFlowItemDto.cashFlowId}
+    </delete>
+    <!--根据Id删除现金流量项目-->
+    <update id="delCashFlowItemById" parameterType="com.njwd.entity.platform.CashFlowItem">
+        update wd_cash_flow_item
+           SET is_del = #{cashFlowItem.isDel},
+               version = #{cashFlowItem.version}
+         where id = #{cashFlowItem.id}
+  </update>
+
+    <!--根据code禁用或反禁用项目-->
+    <update id="updateDisableOrEnable">
+        update wd_cash_flow_item
+        SET is_enable = #{cashFlowItemDto.isEnable},
+        updator_id = #{cashFlowItemDto.updatorId},
+        updator_name = #{cashFlowItemDto.updatorName},
+        update_time = CURRENT_TIMESTAMP
+        where id in(
+        <foreach collection="cashFlowItemDto.ids" item="item" index="index"
+                 separator=",">
+            #{item}
+        </foreach>
+        )
+
+    </update>
+
+
+    <!-- 分页查询现金流量项目列表 -->
+    <select id="findPage" parameterType="com.njwd.entity.platform.dto.CashFlowItemDto"
+            resultType="com.njwd.entity.platform.vo.CashFlowItemVo">
+        select
+        <include refid="Base_Column_List"/>
+        ,(select name from wd_cash_flow_item where LOCATE(code,t.code) = 1 and level = 1 and is_del = 0 and cash_flow_id
+        = #{cashFlowItemDto.cashFlowId}) cashFlowGroupName
+        from wd_cash_flow_item t
+        left join wd_company c on t.company_id = c.id
+        left join wd_company d on t.use_company_id = d.id
+        left join wd_cash_flow e on t.cash_flow_id = e.id
+        left join wd_cash_flow_item f on t.up_code = f.code
+        and f.cash_flow_id = t.cash_flow_id and f.is_del = 0
+        <where>
+            <include refid="FIND_PAGE_where"/>
+            <if test="cashFlowItemDto.cashFlowId != null">
+                and e.id = #{cashFlowItemDto.cashFlowId}
+            </if>
+
+        </where>
+        order by code
+    </select>
+    <!-- 根据Id查询现金流量项目-->
+    <select id="findCashFlowItemById" resultType="com.njwd.entity.platform.vo.CashFlowItemVo">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_cash_flow_item t
+        left join wd_company c on t.company_id = c.id
+        left join wd_company d on t.use_company_id = d.id
+        left join wd_cash_flow e on t.cash_flow_id = e.id
+        left join wd_cash_flow_item f on t.up_code = f.code
+        and f.cash_flow_id = t.cash_flow_id and f.is_del = 0
+        <where>
+            1 = 1
+            <if test="cashFlowItemDto.id != null ">
+                and t.id = #{cashFlowItemDto.id}
+                and e.id = (select cfi.cash_flow_id from wd_cash_flow_item cfi where cfi.id = #{cashFlowItemDto.id})
+            </if>
+        </where>
+    </select>
+
+    <!-- 根据uPId查询现金流量项目-->
+    <select id="findCashFlowItemByUpCode" resultType="com.njwd.entity.platform.vo.CashFlowItemVo">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_cash_flow_item t
+        left join wd_company c on t.company_id = c.id
+        left join wd_company d on t.use_company_id = d.id
+        left join wd_cash_flow e on t.cash_flow_id = e.id
+        left join wd_cash_flow_item f on t.up_code = f.code
+        and f.cash_flow_id = t.cash_flow_id and f.is_del = 0
+        <where>
+            t.is_del = 0
+            and t.up_code = #{cashFlowItemDto.upCode}
+            and e.id = #{cashFlowItemDto.cashFlowId}
+        </where>
+    </select>
+
+    <!-- 查询分组集合-->
+    <select id="findGroup" resultType="com.njwd.entity.platform.vo.CashFlowItemVo">
+        select
+        t.code cash_flow_group,
+        t.name cash_flow_group_name
+        from wd_cash_flow_item t
+        where t.is_del = 0
+        and t.level = 1
+        <if test="cashFlowItemDto.rootEnterpriseId != null">
+            and t.root_enterprise_id = #{cashFlowItemDto.rootEnterpriseId}
+        </if>
+        <if test="cashFlowItemDto.cashFlowId != null">
+            and t.cash_flow_id = #{cashFlowItemDto.cashFlowId}
+        </if>
+    </select>
+
+    <select id="findListByParam" resultType="com.njwd.entity.platform.vo.CashFlowItemVo">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_cash_flow_item t
+        left join wd_company c on t.company_id = c.id
+        left join wd_company d on t.use_company_id = d.id
+        left join wd_cash_flow e on t.cash_flow_id = e.id
+        left join wd_cash_flow_item f on t.up_code = f.code
+        and f.cash_flow_id = t.cash_flow_id and f.is_del = 0
+        where t.is_del = 0
+        and e.id = #{cashFlowItemDto.cashFlowId}
+        <if test="cashFlowItemDto.code != null and cashFlowItemDto.code != ''">
+            and t.code = #{cashFlowItemDto.code}
+        </if>
+    </select>
+
+    <!-- 查询现金流量项目-->
+    <select id="findCashFlowItemList" resultType="com.njwd.entity.platform.vo.CashFlowItemVo">
+    select distinct
+       t.code,
+       c.cash_flow_name cashFlowName,
+       t.cash_flow_direction,
+       t.level
+    from wd_cash_flow_item t
+    left join wd_cash_flow c on c.id = t.cash_flow_id
+     where t.is_del = 0
+     and t.root_enterprise_id = #{cashFlowItemDto.rootEnterpriseId}
+     and t.cash_flow_id = #{cashFlowItemDto.cashFlowId}
+     and c.root_enterprise_id = #{cashFlowItemDto.rootEnterpriseId}
+     and c.id = #{cashFlowItemDto.cashFlowId}
+       group by t.code
+  </select>
+    <!--根据cashflowid查询现金流量项目ID-->
+    <select id="findIdsByCashFlowId" resultType="java.lang.Long">
+        select
+        t.id
+        from wd_cash_flow_item t
+        inner join wd_cash_flow f on t.cash_flow_id = f.id
+        where t.is_del = 0
+        <if test="cashFlowItemDto.rootEnterpriseId != null">
+            and t.root_enterprise_id = #{cashFlowItemDto.rootEnterpriseId}
+        </if>
+        <if test="cashFlowItemDto.cashFlowId != null">
+            and t.cash_flow_id = #{cashFlowItemDto.cashFlowId}
+            and f.id = #{cashFlowItemDto.cashFlowId}
+        </if>
+    </select>
+
+    <!--根据Code查询上级现金流量项目-->
+    <select id="findUpCashFlowItemByCode" resultType="com.njwd.entity.platform.vo.CashFlowItemVo">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_cash_flow_item t
+        left join wd_company c on t.company_id = c.id
+        left join wd_company d on t.use_company_id = d.id
+        left join wd_cash_flow e on t.cash_flow_id = e.id
+        left join wd_cash_flow_item f on t.up_code = f.code
+        and f.cash_flow_id = t.cash_flow_id and f.is_del = 0
+        <where>
+            t.is_del = 0
+            and t.code = #{cashFlowItemDto.upCode}
+            and e.id = #{cashFlowItemDto.cashFlowId}
+        </where>
+    </select>
+
+    <!--根据code查询现金流量项目-->
+    <select id="findCashFlowItemByCode" resultType="com.njwd.entity.platform.vo.CashFlowItemVo">
+        select
+        t.id, t.code, t.name, t.cash_flow_direction,
+        t.cash_flow_id,t.level,t.remark,t.is_enable,t.up_code,t.company_id,t.use_company_id,
+        t.root_enterprise_id,t.is_interior_contact,t.is_del, t.create_time,t.version,
+        t.creator_id, t.creator_name, t.update_time, t.updator_id,t.updator_name,t.is_init,t.full_name,t.is_final
+        from wd_cash_flow_item t
+        <where>
+            t.is_del = 0
+            and t.cash_flow_id = #{cashFlowItemDto.cashFlowId}
+            <if test="cashFlowItemDto.isEnable == 0">
+                and t.is_enable = 1
+                and t.code like concat(#{cashFlowItemDto.code},'%')
+            </if>
+            <if test="cashFlowItemDto.isEnable == 1">
+                and t.is_enable = 0
+                and LOCATE(t.code,#{cashFlowItemDto.code}) = 1
+            </if>
+        </where>
+    </select>
+
+    <!--根据code查询现金流量Id，用于总账报表-->
+    <select id="findCashFlowItemIdsByCode" resultType="com.njwd.entity.platform.vo.CashFlowItemVo">
+        select
+        t.id, t.code, t.name, t.cash_flow_direction,t.version,
+        t.cash_flow_id,t.level,t.remark,t.is_enable,t.up_code,t.company_id,t.use_company_id,
+        t.root_enterprise_id,t.is_interior_contact,t.is_del, t.create_time,
+        t.creator_id, t.creator_name, t.update_time, t.updator_id,t.updator_name,t.is_init,t.full_name,t.is_final
+        from wd_cash_flow_item t
+        <where>
+            t.is_del = 0
+            and t.cash_flow_id = #{cashFlowItemDto.cashFlowId}
+            and t.code like concat(#{cashFlowItemDto.code},'%')
+        </where>
+    </select>
+
+    <!--查询预置数据是否存在下级预置数据-->
+    <select id="findCashFlowItemCountByUpCode" resultType="java.lang.Integer">
+        select
+        count(1)
+        from wd_cash_flow_item t
+        <where>
+            t.is_del = 0
+            and t.up_code = #{cashFlowItemDto.upCode}
+            and t.cash_flow_id = #{cashFlowItemDto.cashFlowId}
+            and t.is_init = 1
+        </where>
+    </select>
+
+    <!--查询是否存在下级数据-->
+    <select id="findIsExistNextCashFlowItem" resultType="java.lang.Integer">
+        select
+        count(1)
+        from wd_cash_flow_item t
+        <where>
+            t.is_del = 0
+            and t.up_code = #{cashFlowItemDto.upCode}
+            and t.cash_flow_id = #{cashFlowItemDto.cashFlowId}
+        </where>
+    </select>
+
+    <!-- 查询现金流量项目信息，用于总账关联-->
+    <select id="findCashFlowItemForReport" resultType="com.njwd.entity.platform.vo.CashFlowItemVo">
+        select t.id,
+        t.code,
+        t.name,
+        t.cash_flow_direction,
+        t.is_final,
+        t.cash_flow_id,
+        t.level,
+        t.is_interior_contact
+        from wd_cash_flow_item t
+        where t.is_del = 0
+        <if test="cashFlowItemDto.isInteriorContact != null">
+            and t.is_interior_contact = #{cashFlowItemDto.isInteriorContact}
+        </if>
+        <if test="cashFlowItemDto.isFinal != null">
+            and t.is_final = #{cashFlowItemDto.isFinal}
+        </if>
+        <if test="cashFlowItemDto.cashFlowId != null">
+            and t.cash_flow_id = #{cashFlowItemDto.cashFlowId}
+        </if>
+        <if test="cashFlowItemDto.rootEnterpriseId != null">
+            and t.root_enterprise_id = #{cashFlowItemDto.rootEnterpriseId}
+        </if>
+        <!--现金流量Id过滤-->
+        <if test="cashFlowItemDto.ids != null">
+            and t.id in (
+            <foreach collection="cashFlowItemDto.ids" item="item" index="index"
+                     separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+         <if test="cashFlowItemDto.codes != null ">
+             and t.code in (
+             <foreach collection="cashFlowItemDto.codes" item="item" index="index" separator=",">
+                 #{item}
+             </foreach>
+             )
+         </if>
+       order by t.code
+    </select>
+    <!--根据Id查询下级最大编码-->
+
+    <select id="findCashFlowItemCodeForAdd" resultType="com.njwd.entity.platform.vo.CashFlowItemVo">
+        select t.code from wd_cash_flow_item t
+        where t.is_del = 0
+        and t.up_code = (select t1.code from wd_cash_flow_item t1 where t1.id = #{cashFlowItemDto.id})
+        <if test="cashFlowItemDto.cashFlowId != null ">
+            and t.cash_flow_id = #{cashFlowItemDto.cashFlowId}
+        </if>
+        order by t.code
+    </select>
+
+    <select id="findOperateIdsByParam" resultType="java.lang.Long">
+        select id from wd_cash_flow_item
+        where is_del = 0
+        <if test="cashFlowItemDto.cashFlowId != null ">
+            and cash_flow_id = #{cashFlowItemDto.cashFlowId}
+        </if>
+        <if test="cashFlowItemDto.codes != null and cashFlowItemDto.codes.size() > 0">
+            <if test="cashFlowItemDto.isEnable == 0">
+                and (code like
+                <foreach collection="cashFlowItemDto.codes" item="item" index="index"
+                         separator=" or code like ">
+                    concat(#{item},'%')
+                </foreach>
+                )
+            </if>
+            <if test="cashFlowItemDto.isEnable == 1">
+                and (
+                <foreach collection="cashFlowItemDto.codes" item="item" index="index"
+                         separator=" or  ">
+                    LOCATE(code,#{item}) = 1
+                </foreach>
+                )
+            </if>
+        </if>
+
+    </select>
+
+    <select id="findInteriorContactCode" resultType="java.lang.String">
+        select code from wd_cash_flow_item
+        where is_del = 0
+        and is_interior_contact = 1
+        <if test="cashFlowItemDto.cashFlowId != null">
+            and cash_flow_id = #{cashFlowItemDto.cashFlowId}
+        </if>
+
+    </select>
+
+    <select id="findInteriorContactAndUp" resultType="java.lang.String">
+        select code from wd_cash_flow_item
+        where is_del = 0
+        <if test="cashFlowItemDto.cashFlowId != null">
+            and cash_flow_id = #{cashFlowItemDto.cashFlowId}
+        </if>
+        <if test="cashFlowItemDto.codes != null and cashFlowItemDto.codes.size() > 0">
+            and (
+            <foreach collection="cashFlowItemDto.codes" item="item" index="index"
+                     separator=" or  ">
+                LOCATE(code,#{item})
+            </foreach>= 1
+            )
+        </if>
+    </select>
+
+    <select id="findCodesByIds" resultType="java.lang.String">
+        select code from wd_cash_flow_item
+        where id in (
+        <foreach collection="cashFlowItemDto.ids" item="item" index="index" separator=",">
+            #{item}
+        </foreach>
+        )
+    </select>
+
+    <select id="checkVersion" resultType="java.lang.Long">
+        SELECT id
+        FROM wd_cash_flow_item
+        WHERE root_enterprise_id = #{cashFlowItemDto.rootEnterpriseId}
+         AND id = #{cashFlowItemDto.id}
+         AND version != #{cashFlowItemDto.version}
+    </select>
+
+    <select id="findCashFlowItemInfoList" resultType="com.njwd.entity.platform.vo.CashFlowItemVo">
+        select t.id,t.root_enterprise_id,t.code,t.name,t.cash_flow_id
+        from wd_cash_flow_item t
+        where t.is_del = 0
+        and t.root_enterprise_id = #{cashFlowItemDto.rootEnterpriseId}
+        and t.code in (
+        <foreach collection="cashFlowItemDto.codes" item="item" index="index" separator=",">
+            #{item}
+        </foreach>
+        )
+    </select>
+
+    <select id="findCashFlowInfo" resultType="com.njwd.entity.platform.vo.CashFlowVo">
+        select id,root_enterprise_id,cash_flow_id,cash_flow_name,template_cash_flow_id,template_cash_flow_name,
+        code,name,account_book_type_id,account_book_type_name,acc_standard_id,acc_standard_name,max_level,is_base,account_type_id
+        from wd_cash_flow
+        where is_del = 0
+        <if test="cashFlowDto.rootEnterpriseId != null">
+            and root_enterprise_id = #{cashFlowDto.rootEnterpriseId}
+        </if>
+        <if test="cashFlowDto.accStandardId != null">
+            and acc_standard_id = #{cashFlowDto.accStandardId}
+        </if>
+    </select>
+
+    <!-- 查询存在的平台现金流量项目 -->
+    <select id="findCashFlowItemPlatformIds" resultType="long">
+        select DISTINCT
+        IFNULL(platform_id,'')
+        from wd_cash_flow_item c
+        <where>
+            and c.is_del = 0
+            and c.root_enterprise_id = #{cashFlowItemDto.rootEnterpriseId}
+        </where>
+    </select>
+</mapper>

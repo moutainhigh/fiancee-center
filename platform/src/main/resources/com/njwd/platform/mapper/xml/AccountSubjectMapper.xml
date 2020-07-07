@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.platform.mapper.AccountSubjectMapper">
+    <sql id="Base_Column_List">
+			was.`id`,
+			was.`root_enterprise_id`,
+			was.`up_id`,
+			was.`up_code`,
+			was.`code`,
+			was.`name`,
+			was.`full_name`,
+			was.`level`,
+			was.`create_company_id`,
+			was.`company_id`,
+			was.`use_company_id`,
+			was.`account_element_item`,
+			was.`account_element_item_name`,
+			was.`is_profit_and_loss`,
+			was.`is_off_balance`,
+			was.`subject_category`,
+			was.`subject_category_name`,
+			was.`balance_direction`,
+			was.`balance_control`,
+			was.`account_category`,
+			was.`is_interior`,
+			was.`cash_flow_id`,
+			was.`cash_inflow_code`,
+			was.`cash_inflow_name`,
+			was.`cash_outflow_code`,
+			was.`cash_outflow_name`,
+			was.`is_init`,
+			was.`cash_inflow_id`,
+			was.`cash_outflow_id`,
+			was.`subject_id`,
+			was.`base_acc_subject_id`,
+			was.`is_enable`,
+			was.`is_final`,
+			was.`is_del`,
+			was.`is_approved`,
+			was.`is_released`,
+			was.`creator_id`,
+			was.`create_time`,
+			was.`creator_name`,
+			was.`updator_id`,
+			was.`update_time`,
+			was.`updator_name`,
+			was.`manage_info`,
+			was.`version`
+	</sql>
+    <resultMap id="BaseResultMap" type="com.njwd.entity.platform.vo.AccountSubjectVo">
+    </resultMap>
+    <!-- 更多科目模板分页查询 -->
+    <select id="findAccountSubjectPage" resultType="com.njwd.entity.platform.vo.FindAccountSubjectListVo">
+        select
+        `as`.id,
+        `as`.up_code upCode,
+        `as`.CODE,
+        `as`.NAME,
+        `as`.full_name fullName,
+        `as`.level,
+        s.data_type dataType,
+        s.element_id elementId,
+        aei.is_profit_and_loss isProfitAndLoss,
+        aei.is_off_balance isOffBalance,
+        `as`.account_element_item accountElementItem,
+        aei.`name` accountElementItemName,
+        `as`.subject_category subjectCategory,
+        sca.`name` subjectCategoryName,
+        `as`.balance_direction,
+        `as`.account_category accountCategory,
+        `as`.is_interior,
+        (CASE `as`.is_interior
+        WHEN 0 THEN '否'
+        WHEN 1 THEN '是'
+        END) isInteriorName,
+        (CASE `as`.account_category
+        WHEN 'A01' THEN '现金科目'
+        WHEN 'A02' THEN '银行科目'
+        WHEN 'A03' THEN '现金等价物'
+        WHEN 'B01' THEN '一般科目'
+        END) accountCategoryName,
+        `as`.subject_id templateSubjectId,
+        s.NAME templateSubjectName,
+        (CASE
+        WHEN s.parent_id = 0 THEN `as`.subject_id
+        ELSE s.parent_id
+        END) subjectId,
+        (CASE
+        WHEN s.parent_id = 0 THEN s.`name`
+        ELSE s2.`name`
+        END) subjectName,
+        GROUP_CONCAT(ai.code) auxiliaryCodes,
+        GROUP_CONCAT(ai.name) auxiliaryNames,
+        GROUP_CONCAT(ai.source_name) auxiliarySources,
+        GROUP_CONCAT(ai.source_table) auxiliarySourceTables,
+        get_auxiliary_dependents(GROUP_CONCAT(ai.id)) auxiliaryDependents,
+        `as`.cash_inflow_id ashInflowId,
+        `as`.cash_outflow_id cashOutflowId,
+        cfi.code cashInflowCode,
+        cfi.name cashInflowName,
+        cfo.code cashOutflowCode,
+        cfo.name cashOutflowName,
+        CONCAT_WS(',',cfi.name,cfo.name) cashFlowNames,
+        GROUP_CONCAT(c.id) currencyIds,
+        GROUP_CONCAT(c.name) currencyNames,
+        s.max_level maxLevel,
+        s.account_type_id accountBookTypeId,
+        abt.name accountBookTypeName,
+        s.acc_standard_id accStandardId,
+        asd.name accStandardName,
+        `as`.is_final isFinal,
+        '已审核' checkStatus
+        from wd_account_subject `as`
+        left join wd_account_subject_auxiliary asa on `as`.id = asa.account_id
+        left join wd_auxiliary_item ai on asa.auxiliary_id = ai.id
+        left join wd_account_element_item aei on `as`.account_element_item = aei.id
+        left join wd_subject_category sca on `as`.subject_category = sca.id
+        <!-- 金额流向 -->
+        left join wd_cash_flow_item cfi on `as`.cash_inflow_id = cfi.id
+        left join wd_cash_flow_item cfo on `as`.cash_outflow_id = cfo.id
+        <!-- 币种 -->
+        left join wd_account_subject_currency sc on `as`.id = sc.account_id
+        left join wd_currency c on sc.currency_id = c.id
+        <!-- 科目 -->
+        left join wd_subject s on `as`.subject_id = s.id
+        left join wd_account_book_type abt on s.account_type_id = abt.id
+        left join wd_accounting_standard asd on s.acc_standard_id = asd.id
+        left join wd_subject s2 on s.parent_id = s2.id
+        <where>
+            and `as`.is_enable = 1
+            and `as`.is_del=0
+            and `as`.is_approved = 1
+            and `as`.is_released = 1
+            <if test="accountSubjectDto.subjectId != null">
+                and `as`.subject_id=#{accountSubjectDto.subjectId}
+            </if>
+            <if test="accountSubjectDto.level !=null">
+                and `as`.level=#{accountSubjectDto.level}
+            </if>
+            <if test="accountSubjectDto.rootEnterpriseId != null">
+                and `as`.subject_id in (
+                select abc.subject_id
+                from wd_account_book_category abc
+                where
+                abc.is_del=0
+                and abc.is_enable=1
+                and abc.ssued_status=1
+                and (abc.share_status=0
+                or(abc.share_status=1
+                and
+                exists (
+                select 1 from wd_account_book_enterprise abe
+                where abe.account_book_category_id=abc.id
+                and abe.root_enterprise_id=#{accountSubjectDto.rootEnterpriseId})
+                )
+                )
+                )
+            </if>
+        </where>
+        group by `as`.id
+    </select>
+    <!-- 更多科目模板列表查询 -->
+    <select id="findAccountSubjectList" resultType="com.njwd.entity.platform.vo.FindAccountSubjectListVo">
+        select
+        `as`.id,
+        `as`.id platformId,
+        `as`.up_code upCode,
+        `as`.CODE,
+        `as`.NAME,
+        `as`.NAME platformName,
+        `as`.full_name fullName,
+        `as`.level,
+        s.data_type dataType,
+        s.element_id elementId,
+        aei.is_profit_and_loss isProfitAndLoss,
+        aei.is_off_balance isOffBalance,
+        `as`.account_element_item accountElementItem,
+        aei.`name` accountElementItemName,
+        `as`.subject_category subjectCategory,
+        sca.`name` subjectCategoryName,
+        `as`.balance_direction,
+        `as`.account_category accountCategory,
+        `as`.is_interior,
+        (CASE `as`.is_interior
+        WHEN 0 THEN '否'
+        WHEN 1 THEN '是'
+        END) isInteriorName,
+        (CASE `as`.account_category
+        WHEN 'A01' THEN '现金科目'
+        WHEN 'A02' THEN '银行科目'
+        WHEN 'A03' THEN '现金等价物'
+        WHEN 'B01' THEN '一般科目'
+        END) accountCategoryName,
+        `as`.subject_id templateSubjectId,
+        s.NAME templateSubjectName,
+        (CASE
+        WHEN s.parent_id = 0 THEN `as`.subject_id
+        ELSE s.parent_id
+        END) subjectId,
+        (CASE
+        WHEN s.parent_id = 0 THEN s.`name`
+        ELSE s2.`name`
+        END) subjectName,
+        GROUP_CONCAT(ai.code) auxiliaryCodes,
+        GROUP_CONCAT(ai.name) auxiliaryNames,
+        GROUP_CONCAT(ai.source_name) auxiliarySources,
+        GROUP_CONCAT(ai.source_table) auxiliarySourceTables,
+        get_auxiliary_dependents(GROUP_CONCAT(ai.id)) auxiliaryDependents,
+        `as`.cash_inflow_id ashInflowId,
+        `as`.cash_outflow_id cashOutflowId,
+        cfi.code cashInflowCode,
+        cfi.name cashInflowName,
+        cfo.code cashOutflowCode,
+        cfo.name cashOutflowName,
+        CONCAT_WS(',',cfi.name,cfo.name) cashFlowNames,
+        GROUP_CONCAT(c.id) currencyIds,
+        GROUP_CONCAT(c.name) currencyNames,
+        s.max_level maxLevel,
+        s.account_type_id accountBookTypeId,
+        abt.name accountBookTypeName,
+        s.acc_standard_id accStandardId,
+        asd.name accStandardName,
+        `as`.is_final isFinal,
+        '已审核' checkStatus
+        from wd_account_subject `as`
+        left join wd_account_subject_auxiliary asa on `as`.id = asa.account_id
+        left join wd_auxiliary_item ai on asa.auxiliary_id = ai.id
+        left join wd_account_element_item aei on `as`.account_element_item = aei.id
+        left join wd_subject_category sca on `as`.subject_category = sca.id
+        <!-- 金额流向 -->
+        left join wd_cash_flow_item cfi on `as`.cash_inflow_id = cfi.id
+        left join wd_cash_flow_item cfo on `as`.cash_outflow_id = cfo.id
+        <!-- 币种 -->
+        left join wd_account_subject_currency sc on `as`.id = sc.account_id
+        left join wd_currency c on sc.currency_id = c.id
+        <!-- 科目 -->
+        left join wd_subject s on `as`.subject_id = s.id
+        left join wd_account_book_type abt on s.account_type_id = abt.id
+        left join wd_accounting_standard asd on s.acc_standard_id = asd.id
+        left join wd_subject s2 on s.parent_id = s2.id
+        <where>
+            and `as`.is_enable = 1
+            and `as`.is_del = 0
+            and `as`.is_approved = 1
+            and `as`.is_released = 1
+            <if test="subjectId != null">
+                and `as`.subject_id=#{subjectId}
+            </if>
+            <if test="rootEnterpriseId != null">
+                and `as`.subject_id in (
+                select abc.subject_id
+                from wd_account_book_category abc
+                where
+                abc.is_del=0
+                and abc.is_enable=1
+                and abc.ssued_status=1
+                and (abc.share_status=0 or
+                (abc.share_status=1 and
+                exists (select 1
+                from wd_account_book_enterprise abe
+                where abe.account_book_category_id=abc.id
+                and abe.root_enterprise_id=#{rootEnterpriseId} )
+                )
+                )
+                )
+            </if>
+            <if test="platformIds!= null and platformIds.size() > 0">
+                and `as`.id not in
+                <foreach collection="platformIds" item="item" index="index" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </if>
+        </where>
+        group by `as`.id
+    </select>
+    <select id="findPage" resultMap="BaseResultMap">
+        select
+        group_concat(wasa.auxiliary_name) auxiliaryNames,
+        ws.name subjectName,
+        <include refid="Base_Column_List"/>
+        from wd_account_subject was
+        left join wd_subject ws on ws.id = was.subject_id
+        left join wd_account_subject_auxiliary wasa on wasa.account_subject_id = was.id
+        <if test="accountSubjectDto.needIntroductionId != null">
+            left join (
+            select was_child.base_acc_subject_id from wd_account_subject was_child
+            where was_child.subject_id = #{accountSubjectDto.needIntroductionId}
+            ) was_child on was_child.base_acc_subject_id = was.id
+        </if>
+        <where>
+            <if test="accountSubjectDto.subjectIds != null and accountSubjectDto.subjectIds.size() != 0">
+                was.subject_id in
+                <foreach collection="accountSubjectDto.subjectIds" item="subjectId" open="(" close=")" separator=",">
+                    #{subjectId}
+                </foreach>
+            </if>
+            <if test="accountSubjectDto.subjectCategories != null and accountSubjectDto.subjectCategories.length != 0">
+                and was.subject_category in
+                <foreach collection="accountSubjectDto.subjectCategories" item="subjectCategory" open="(" close=")"
+                         separator=",">
+                    #{subjectCategory}
+                </foreach>
+            </if>
+            <if test="accountSubjectDto.balanceDirection != null">
+                and was.balance_direction = #{accountSubjectDto.balanceDirection}
+            </if>
+            <if test="accountSubjectDto.accountCategory != null and accountSubjectDto.accountCategory != ''">
+                and was.account_category = #{accountSubjectDto.accountCategory}
+            </if>
+            <if test="accountSubjectDto.isApproved != null">
+                and was.is_approved = #{accountSubjectDto.isApproved}
+            </if>
+            <if test="accountSubjectDto.isReleased != null">
+                and was.is_released = #{accountSubjectDto.isReleased}
+            </if>
+            <if test="accountSubjectDto.codeOrName != null and accountSubjectDto.codeOrName != ''">
+                and (
+                was.code like concat('%',#{accountSubjectDto.codeOrName},'%')
+                or was.name like concat('%',#{accountSubjectDto.codeOrName},'%')
+                )
+            </if>
+            <if test="accountSubjectDto.needIntroductionId != null">
+                and was_child.base_acc_subject_id is null
+            </if>
+            <if test="accountSubjectDto.excludedIds != null and accountSubjectDto.excludedIds.size() != 0">
+                and was.id not in
+                <foreach collection="accountSubjectDto.excludedIds" item="excludedId" open="(" close=")" separator=",">
+                    #{excludedId}
+                </foreach>
+            </if>
+            <if test="accountSubjectDto.level != null">
+                and was.level = #{accountSubjectDto.level}
+            </if>
+            and was.is_del = 0
+        </where>
+        group by ws.name,
+        <include refid="Base_Column_List"/>
+        order by was.code
+    </select>
+    <select id="findByIdIn" resultMap="BaseResultMap">
+        select
+        exists(select swas.id from wd_account_subject swas where swas.up_id = was.id and swas.is_del = 0) hasChild,
+        <include refid="Base_Column_List"/>
+        from wd_account_subject was
+        where was.id in
+        <foreach item="item" index="index" collection="ids" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+    <select id="findDetail" resultMap="BaseResultMap">
+        select
+        ws.name subjectName,
+        uwas.code upCode,
+        uwas.name upName,
+        uwas.full_name upFullName,
+        uwas.version upVersion,
+        <include refid="Base_Column_List"/>
+        from wd_account_subject was
+        left join wd_subject ws on ws.id = was.subject_id
+        left join wd_account_subject uwas on uwas.id = was.up_id
+        where was.id = #{id}
+    </select>
+    <select id="findList" resultMap="BaseResultMap">
+        select
+        ws.name subjectName,
+        <include refid="Base_Column_List"/>
+        from wd_account_subject was
+        left join wd_subject ws on ws.id = was.subject_id
+        <where>
+            <if test="accountSubjectDto.isReleased != null">
+                and was.is_released = #{accountSubjectDto.isReleased}
+            </if>
+            <if test="accountSubjectDto.codeOrName != null and accountSubjectDto.codeOrName != ''">
+                and (
+                was.code like concat('%',#{accountSubjectDto.codeOrName},'%')
+                or was.name like concat('%',#{accountSubjectDto.codeOrName},'%')
+                )
+            </if>
+            and was.is_del = 0
+        </where>
+        order by was.code
+    </select>
+    <update id="updateIsFinalByIdIn">
+        update wd_account_subject
+        set is_final=#{isFinal},version=version+1
+        where id in
+        <foreach item="id" collection="ids" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+</mapper>

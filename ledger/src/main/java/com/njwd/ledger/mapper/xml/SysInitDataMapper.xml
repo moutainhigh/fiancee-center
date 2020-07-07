@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.ledger.mapper.SysInitDataMapper">
+
+    <select id="existTable" resultType="int">
+      select count(*) from information_schema.TABLES where LCASE(table_name) = #{tableName}
+    </select>
+
+    <update id="createVoucher" parameterType="String">
+        CREATE TABLE ${tableName}  (
+          `id` bigint(18) NOT NULL AUTO_INCREMENT COMMENT '主键 默认自动递增',
+          `root_enterprise_id` bigint(18) NOT NULL COMMENT '租户ID',
+          `account_book_id` bigint(18) NOT NULL COMMENT '账簿ID',
+          `account_book_name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '账簿名称',
+          `account_book_entity_id` bigint(18) NOT NULL COMMENT '核算主体ID',
+          `account_book_entity_name` varchar(64) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '核算主体',
+          `voucher_date` date NOT NULL COMMENT '制单日期',
+          `bill_num` tinyint(2) NOT NULL DEFAULT -1 COMMENT '单据张数',
+          `posting_period_year` int(4) NOT NULL COMMENT '记账期间年',
+          `posting_period_num` tinyint(2) NOT NULL COMMENT '记账期间号',
+          `period_year_num` int(6) NOT NULL DEFAULT 0 COMMENT '记账期间年号',
+          `credential_word` tinyint(1) NOT NULL DEFAULT 0 COMMENT '凭证字类型 1：记 、2：收、3：付、4：转',
+          `main_code` int(5) NULL DEFAULT NULL COMMENT '凭证主号',
+          `child_code` int(5) NULL DEFAULT NULL COMMENT '凭证子号',
+          `source_type` tinyint(1) NOT NULL DEFAULT 0 COMMENT '来源方式 0：手工、1：协同、2：损益结转、3：冲销、4：业务系统',
+          `source_system` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL DEFAULT '' COMMENT '来源系统 总账',
+          `source_code` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT '' COMMENT '来源单号',
+          `first_abstract` varchar(60) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '第一行摘要',
+          `debit_amount` decimal(12, 2) NOT NULL DEFAULT 0.00 COMMENT '借方金额',
+          `credit_amount` decimal(12, 2) NOT NULL DEFAULT 0.00 COMMENT '贷方金额',
+          `cash_check_type` tinyint(1) NOT NULL DEFAULT 0 COMMENT '现金流量检查类型: -1 非现金类凭证 0 未检查 1 已检查',
+          `cash_flow_amount` decimal(12, 2) NOT NULL DEFAULT 0.00 COMMENT '现金流量净发生额',
+          `status` tinyint(1) NOT NULL DEFAULT -1 COMMENT '凭证状态 -1：草稿、0：待审核、1：待过账、2：已过账',
+          `interior_type` tinyint(1) NOT NULL DEFAULT -1 COMMENT '内部往来类型 0不需要生成协同凭证 1未生成 2已生成',
+          `is_offset` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否已冲销 1是 0否',
+          `is_del` tinyint(1) NOT NULL DEFAULT 0 COMMENT '是否删除 0：否、1：是',
+          `version` int(4) NULL DEFAULT 0 COMMENT '版本号 并发版本号',
+          `create_time` datetime(0) NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+          `creator_id` bigint(18) NOT NULL COMMENT '制单人ID',
+          `creator_name` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '制单人',
+          `update_time` datetime(0) NULL DEFAULT NULL COMMENT '修改时间',
+          `updator_id` bigint(18) NULL DEFAULT NULL COMMENT '修改人ID',
+          `updator_name` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '修改人',
+          `approve_status` tinyint(1) NOT NULL DEFAULT 0 COMMENT '审核状态 0：未审核、1：已审核',
+          `approve_time` datetime(0) NULL DEFAULT NULL COMMENT '审核时间',
+          `approver_id` bigint(18) NULL DEFAULT NULL COMMENT '审核人ID',
+          `approver_name` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '审核人',
+          `review_status` tinyint(1) NOT NULL DEFAULT 0 COMMENT '复核状态 0：未复核、1：已复核',
+          `review_time` datetime(0) NULL DEFAULT NULL COMMENT '复核时间',
+          `reviewer_id` bigint(18) NULL DEFAULT NULL COMMENT '复核出纳ID',
+          `reviewer_name` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '复核出纳',
+          `posting_status` tinyint(1) NOT NULL DEFAULT 0 COMMENT '过账状态 0：未过账、1：已过账',
+          `posting_time` datetime(0) NULL DEFAULT NULL COMMENT '过账时间',
+          `posting_user_id` bigint(18) NULL DEFAULT NULL COMMENT '过账人ID',
+          `posting_user_name` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL COMMENT '过账人',
+          PRIMARY KEY (`id`),
+          INDEX `root_enterprise_id`(`root_enterprise_id`),
+          INDEX `account_book_id`(`account_book_id`),
+          INDEX `account_book_entity_id`(`account_book_entity_id`),
+          INDEX `source_code`(`source_code`),
+          INDEX `period_year_num`(`period_year_num`),
+          INDEX `voucher_date`(`voucher_date`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='凭证';
+    </update>
+
+    <update id="createVoucherEntry" parameterType="String">
+        CREATE TABLE ${tableName}  (
+          `id` bigint(18) NOT NULL AUTO_INCREMENT COMMENT '主键 默认自动递增',
+          `voucher_id` bigint(18) NOT NULL COMMENT '凭证ID 【wd_voucher】表ID',
+          `row_num` int(4) NOT NULL DEFAULT 0 COMMENT '序号',
+          `abstract_content` varchar(60) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '摘要',
+          `account_subject_id` bigint(18) NOT NULL COMMENT '科目ID',
+          `debit_amount` decimal(12, 2) NOT NULL DEFAULT 0.00 COMMENT '借方金额',
+          `credit_amount` decimal(12, 2) NOT NULL DEFAULT 0.00 COMMENT '贷方金额',
+          `original_coin` bigint(18) NOT NULL COMMENT '原币币种 默认账簿本位币',
+          `exchange_rate` decimal(12, 2) NOT NULL DEFAULT 1.00 COMMENT '汇率',
+          `original_debit_amount` decimal(12, 2) NOT NULL DEFAULT 0.00 COMMENT '原币借方金额 本币借方金额*汇率',
+          `original_credit_amount` decimal(12, 2) NOT NULL DEFAULT 0.00 COMMENT '原币贷方金额 本币贷方金额*汇率',
+          `cash_flow_type` tinyint(1) NOT NULL DEFAULT 0 COMMENT '现金流量类型 0不需要指定现金流量 1未指定 2已指定',
+          `interior_type` tinyint(1) NOT NULL DEFAULT 0 COMMENT '内部往来类型 0不需要生成协同凭证 1未生成 2已生成',
+          PRIMARY KEY (`id`),
+          INDEX `voucher_id`(`voucher_id`),
+          INDEX `account_subject_id`(`account_subject_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT = '凭证分录表';
+    </update>
+
+    <update id="createVoucherEntryAuxiliary" parameterType="String">
+        CREATE TABLE ${tableName}  (
+          `id` bigint(18) NOT NULL AUTO_INCREMENT COMMENT '主键 默认自动递增',
+          `voucher_id` bigint(18) NOT NULL COMMENT '凭证ID 【wd_voucher】表ID',
+          `entry_id` bigint(18) NOT NULL COMMENT '凭证分录ID 【wd_voucher_entry】表ID',
+          `source_table` varchar(50) CHARACTER SET utf8 COLLATE utf8_general_ci NOT NULL COMMENT '核算来源表',
+          `item_value_id` bigint(18) NOT NULL COMMENT '核算项目值ID',
+          PRIMARY KEY (`id`),
+          INDEX `voucher_id`(`voucher_id`),
+          INDEX `entry_id`(`entry_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT = '凭证分录辅助核算明细';
+    </update>
+
+    <update id="createVoucherEntryCashFlow" parameterType="String">
+        CREATE TABLE ${tableName}  (
+          `id` bigint(18) NOT NULL AUTO_INCREMENT COMMENT '主键 默认自动递增',
+          `voucher_id` bigint(18) NOT NULL COMMENT '凭证ID',
+          `entry_id` bigint(18) NOT NULL COMMENT '凭证分录id 【wd_voucher_entry】表ID',
+          `row_num` int(3) NOT NULL COMMENT '序号',
+          `opposite_entry_id` bigint(18) NOT NULL COMMENT '对方分录id',
+          `cash_flow_item_id` bigint(18) NOT NULL COMMENT '主表项目id',
+          `currency_amount` decimal(12, 2) NOT NULL COMMENT '本位币金额',
+          PRIMARY KEY (`id`),
+          INDEX `voucher_id`(`voucher_id`),
+          INDEX `entry_id`(`entry_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT = '凭证分录现金流量分析明细';
+    </update>
+
+    <update id="createVoucherEntryInterior" parameterType="String">
+        CREATE TABLE ${tableName}  (
+          `id` bigint(18) NOT NULL AUTO_INCREMENT COMMENT '主键 默认自动递增',
+          `voucher_id` bigint(18) NOT NULL COMMENT '凭证ID 【wd_voucher】表ID',
+          `entry_id` bigint(18) NOT NULL COMMENT '凭证分录ID 【wd_voucher_entry】表ID',
+          `interior_voucher_id` bigint(18) NOT NULL COMMENT '对方协同凭证ID 【wd_voucher】表',
+          `interior_entry_id` bigint(18) NOT NULL COMMENT '对方协同凭证分录ID 【wd_voucher_entry】表ID',
+          PRIMARY KEY (`id`),
+          INDEX `voucher_id`(`voucher_id`),
+          INDEX `entry_id`(`entry_id`),
+          INDEX `interior_entry_id`(`interior_entry_id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT = '凭证分录-协同信息表';
+    </update>
+
+</mapper>

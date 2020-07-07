@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.financeback.mapper.SysUserMapper">
+    <sql id="Base_Column_List">
+            wsu.`user_id`,
+            wsu.`name`,
+            wsu.`mobile`,
+            wsu.`create_time`,
+            wsu.`creator_id`,
+            wsu.`creator_name`
+    </sql>
+    <resultMap id="BaseResultMap" type="com.njwd.entity.basedata.vo.SysUserVo">
+    </resultMap>
+    <sql id="FIND_MATCH_WHERE">
+        <if test="commParams.orMatch != null and commParams.orMatch != ''">
+            and
+            <foreach collection="commParams.orColumn" item="columnName" open="(" close=")"
+                     separator="or">
+                wsu.${columnName} like concat('%',#{commParams.orMatch} ,'%')
+            </foreach>
+        </if>
+    </sql>
+    <sql id="FIND_PAGE_WHERE">
+        <if test="sysUserDto.name != null and sysUserDto.name != ''">
+            and wsu.name like concat('%',#{sysUserDto.name} ,'%')
+        </if>
+        <if test="sysUserDto.mobile != null and sysUserDto.mobile != ''">
+            and wsu.mobile like concat('%',#{sysUserDto.mobile} ,'%')
+        </if>
+        <if test="sysUserDto.isEnable != null">
+            and wsue.is_enable = #{sysUserDto.isEnable}
+        </if>
+        <if test="sysUserDto.rootEnterpriseId != null">
+            and wsue.root_enterprise_id = #{sysUserDto.rootEnterpriseId}
+        </if>
+    </sql>
+    <select id="findUserVo" resultMap="BaseResultMap">
+        select
+        wsue.root_enterprise_id,
+        wsue.is_enable,
+        wsue.default_company_id,
+        wsue.is_last_abstract,
+        wsue.voucher_date_type,
+        wsue.voucher_list_config,
+        wsue.is_admin,
+        wsue.updator_id,
+        wsue.updator_name,
+        wsue.update_time,
+        wsue.manage_info,
+        <include refid="Base_Column_List"/>
+        from wd_sys_user wsu
+        left join wd_sys_user_enterprise wsue on wsue.user_id = wsu.user_id and wsue.root_enterprise_id = #{sysUserDto.rootEnterpriseId}
+        <where>
+            <choose>
+                <when test="sysUserDto.name != null and sysUserDto.name != ''">
+                    and wsu.name = #{sysUserDto.name}
+                </when>
+                <when test="sysUserDto.mobile != null and sysUserDto.mobile != ''">
+                    and wsu.mobile = #{sysUserDto.mobile}
+                </when>
+                <otherwise>
+                    and wsu.user_id = #{sysUserDto.userId}
+                </otherwise>
+            </choose>
+        </where>
+        limit 1
+    </select>
+    <select id="findPage" resultMap="BaseResultMap">
+        select
+        group_concat(distinct wc.name) companyNames,
+        group_concat(distinct wc.code) companyCodes,
+        wsue.is_enable,case wsue.is_enable when 0 then '已失效' when 1 then '已生效' end is_enable_name,
+        <include refid="Base_Column_List"/>
+        from wd_sys_user wsu
+        inner join wd_sys_user_enterprise wsue on wsue.user_id = wsu.user_id
+        left join wd_sys_user_role wsur on wsur.user_id = wsu.user_id
+        <if test="sysUserDto.rootEnterpriseId != null">
+            and wsur.root_enterprise_id = #{sysUserDto.rootEnterpriseId}
+        </if>
+        left join wd_company wc on wc.id = wsur.company_id
+        <if test="sysUserDto.rootEnterpriseId != null">
+            and wc.root_enterprise_id = #{sysUserDto.rootEnterpriseId}
+        </if>
+        left join wd_user_account_book_entity wuabe on wuabe.user_id = wsu.user_id
+        <if test="sysUserDto.rootEnterpriseId != null">
+            and wuabe.root_enterprise_id = #{sysUserDto.rootEnterpriseId}
+        </if>
+        <where>
+            <include refid="FIND_MATCH_WHERE"/>
+            <if test="sysUserDto.userIds != null and sysUserDto.userIds.size() != 0">
+                and wsu.user_id not in
+                <foreach collection="sysUserDto.userIds" item="userId" open="(" close=")" separator=",">
+                    #{userId}
+                </foreach>
+            </if>
+            <include refid="FIND_PAGE_WHERE"/>
+        </where>
+        group by wsue.is_enable,
+        <include refid="Base_Column_List"/>
+        order by wsu.mobile, wsu.create_time desc
+    </select>
+
+    <!-- 查询当企业可选用户 -->
+    <select id="selectEnableList" resultType="com.njwd.entity.basedata.vo.SysUserVo">
+        SELECT
+        u.user_id,
+        u.`name`,
+        u.mobile,
+        ur.root_enterprise_id,
+        ur.company_id
+        FROM
+        wd_sys_user AS u
+        JOIN wd_sys_user_role AS ur ON u.user_id = ur.user_id
+        JOIN wd_sys_role r ON ur.role_id = r.role_id
+        WHERE
+        r.is_enable = 1
+        AND r.is_del = 0
+        AND ur.root_enterprise_id = #{sysUserDto.rootEnterpriseId}
+        <if test="sysUserDto.nameOrMobile != null">
+            AND (mobile like concat('%',#{sysUserDto.nameOrMobile},'%')
+            OR name like concat('%',#{sysUserDto.nameOrMobile},'%'))
+        </if>
+    </select>
+    <sql id="USER_COLUMN_LIST">
+            wsu.`user_id`,
+            wsu.`mobile`,
+            wsu.`name`
+    </sql>
+    <select id="findPermPage" resultMap="BaseResultMap">
+        select
+        group_concat(distinct wsur.role_id) roleIds,
+        <include refid="USER_COLUMN_LIST"/>
+        from wd_sys_user wsu
+        inner join wd_sys_user_enterprise wsue on wsue.user_id = wsu.user_id
+        inner join wd_sys_user_role wsur on wsur.user_id = wsu.user_id
+        <where>
+            <include refid="FIND_PAGE_WHERE"/>
+            <if test="sysUserDto.companyId != null">
+                and wsur.company_id = #{sysUserDto.companyId}
+            </if>
+        </where>
+        group by
+        <include refid="USER_COLUMN_LIST"/>
+        order by wsu.mobile, wsu.create_time desc
+    </select>
+    <select id="findRoleUserPage" resultMap="BaseResultMap">
+        select
+        distinct
+        <include refid="USER_COLUMN_LIST"/>
+        from wd_sys_user wsu
+        inner join wd_sys_user_role wsur on wsur.user_id = wsu.user_id
+        <where>
+            <if test="sysUserDto.roleId != null">
+                and wsur.role_id = #{sysUserDto.roleId}
+            </if>
+            <if test="sysUserDto.rootEnterpriseId != null">
+                and wsur.root_enterprise_id = #{sysUserDto.rootEnterpriseId}
+            </if>
+        </where>
+        order by wsu.mobile, wsu.create_time desc
+    </select>
+</mapper>

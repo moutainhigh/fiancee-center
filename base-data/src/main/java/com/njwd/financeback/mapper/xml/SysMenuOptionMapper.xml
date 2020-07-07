@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.financeback.mapper.SysMenuOptionMapper">
+
+    <resultMap id="BaseResultMap" type="com.njwd.entity.platform.vo.SysMenuOptionVo"></resultMap>
+
+    <resultMap id="optionTableMap" type="com.njwd.entity.basedata.SysMenuOptionTable"></resultMap>
+
+    <select id="findList" resultMap="BaseResultMap">
+        select * from wd_sys_menu_option
+        where
+            root_enterprise_id = #{rootEnterpriseId}
+            and menu_code = #{menuCode}
+    </select>
+
+
+    <select id="findTableDataCount" resultType="int">
+        select count(1) from ${businessTable}
+        <where>
+            <if test="isLogicDel==1">
+                and is_del = 0
+            </if>
+            <if test="rootEnterpriseId != null">
+                and root_enterprise_id = #{rootEnterpriseId}
+            </if>
+        </where>
+
+    </select>
+
+    <insert id="addBatch">
+        INSERT INTO `wd_sys_menu_option` (
+            `root_enterprise_id`,
+            `menu_name`,
+            `menu_code`,
+            `data_name`,
+            `data_type`,
+            `select_type`,
+            `option_name`,
+            `option_value`,
+            `is_default`,
+            `is_can_update`,
+            `creator_id`,
+            `creator_name`
+            )
+            VALUES
+            <foreach collection="list" item="p" separator=",">
+                (
+                  #{p.rootEnterpriseId},
+                  #{p.menuName},
+                  #{p.menuCode},
+                  #{p.dataName},
+                  #{p.dataType},
+                  #{p.selectType},
+                  #{p.optionName},
+                  #{p.optionValue},
+                  #{p.isDefault},
+                  #{p.isCanUpdate},
+                  #{p.creatorId},
+                  #{p.creatorName}
+                )
+            </foreach>
+    </insert>
+
+
+</mapper>

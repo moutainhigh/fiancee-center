@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.ledger.mapper.BalanceCashFlowMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.ledger.BalanceCashFlow">
+        <!--@mbg.generated-->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="account_book_id" jdbcType="BIGINT" property="accountBookId"/>
+        <result column="account_book_entity_id" jdbcType="BIGINT" property="accountBookEntityId"/>
+        <result column="item_id" jdbcType="BIGINT" property="itemId"/>
+        <result column="period_year" jdbcType="INTEGER" property="periodYear"/>
+        <result column="period_num" jdbcType="TINYINT" property="periodNum"/>
+        <result column="occur_amount" jdbcType="DECIMAL" property="occurAmount"/>
+        <result column="total_amount" jdbcType="DECIMAL" property="totalAmount"/>
+        <result column="post_occur_amount" jdbcType="DECIMAL" property="postOccurAmount"/>
+        <result column="post_total_amount" jdbcType="DECIMAL" property="postTotalAmount"/>
+    </resultMap>
+
+    <resultMap id="BaseResultMapVo" type="com.njwd.entity.ledger.vo.BalanceCashFlowVo">
+        <!--@mbg.generated-->
+        <id column="id" jdbcType="BIGINT" property="id"/>
+        <result column="account_book_id" jdbcType="BIGINT" property="accountBookId"/>
+        <result column="account_book_entity_id" jdbcType="BIGINT" property="accountBookEntityId"/>
+        <result column="item_id" jdbcType="BIGINT" property="itemId"/>
+        <result column="period_year" jdbcType="INTEGER" property="periodYear"/>
+        <result column="period_num" jdbcType="TINYINT" property="periodNum"/>
+        <result column="occur_amount" jdbcType="DECIMAL" property="occurAmount"/>
+        <result column="total_amount" jdbcType="DECIMAL" property="totalAmount"/>
+        <result column="post_occur_amount" jdbcType="DECIMAL" property="postOccurAmount"/>
+        <result column="post_total_amount" jdbcType="DECIMAL" property="postTotalAmount"/>
+    </resultMap>
+
+
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        id, account_book_id, account_book_entity_id, item_id, period_year, period_num, occur_amount,
+        total_amount, post_occur_amount, post_total_amount
+    </sql>
+
+
+    <insert id="addCashFlow">
+        insert into wd_balance_cash_flow(account_book_id,account_book_entity_id,period_year,period_num,period_year_num,item_id,total_amount,post_total_amount)
+        values
+        (#{cash.accountBookId},#{cash.accountBookEntityId} ,#{cash.periodYear},#{cash.periodNum},concat(#{cash.periodYear},LPAD(#{cash.periodNum},2,0)),#{cash.itemId},#{cash.openingBalance},#{cash.openingBalance})
+    </insert>
+
+    <update id="updateCashFlowAdd">
+        update wd_balance_cash_flow wbcf
+        <set>
+            wbcf.total_amount = wbcf.total_amount + #{cash.openingBalance} ,
+            wbcf.post_total_amount = wbcf.post_total_amount + #{cash.openingBalance}
+        </set>
+        where
+        wbcf.account_book_id = #{cash.accountBookId}
+        and wbcf.account_book_entity_id = #{cash.accountBookEntityId}
+        and wbcf.period_year = #{cash.periodYear}
+        and wbcf.period_num = #{cash.periodNum}
+        and wbcf.item_id = #{cash.itemId}
+    </update>
+
+    <update id="updateCashFlowDel">
+        update wd_balance_cash_flow wbcf
+        <set>
+            wbcf.total_amount = wbcf.total_amount - #{cash.openingBalance} ,
+            wbcf.post_total_amount = wbcf.post_total_amount - #{cash.openingBalance}
+        </set>
+        where
+        wbcf.account_book_id = #{cash.accountBookId}
+        and wbcf.account_book_entity_id = #{cash.accountBookEntityId}
+        and wbcf.period_year = #{cash.periodYear}
+        and wbcf.period_num = #{cash.periodNum}
+        and wbcf.item_id = #{cash.itemId}
+    </update>
+
+
+    <update id="updateBatch">
+        <foreach collection="balanceCashFlows" item="balanceCashFlow" separator=";">
+            update wd_balance_cash_flow wbcf
+            <set>
+                <if test="balanceCashFlow.occurAmount != null">
+                    wbcf.occur_amount = wbcf.occur_amount
+                    <choose>
+                        <when test="updateType == 1">+</when>
+                        <otherwise>-</otherwise>
+                    </choose>
+                    #{balanceCashFlow.occurAmount},
+                    wbcf.total_amount = wbcf.total_amount
+                    <choose>
+                        <when test="updateType == 1">+</when>
+                        <otherwise>-</otherwise>
+                    </choose>
+                    #{balanceCashFlow.occurAmount},
+                </if>
+                <if test="balanceCashFlow.postOccurAmount != null">
+                    wbcf.post_occur_amount = wbcf.post_occur_amount
+                    <choose>
+                        <when test="updateType == 1">+</when>
+                        <otherwise>-</otherwise>
+                    </choose>
+                    #{balanceCashFlow.postOccurAmount},
+                    wbcf.post_total_amount = wbcf.post_total_amount
+                    <choose>
+                        <when test="updateType == 1">+</when>
+                        <otherwise>-</otherwise>
+                    </choose>
+                    #{balanceCashFlow.postOccurAmount},
+                </if>
+            </set>
+            where
+            wbcf.account_book_id = #{voucherDto.accountBookId}
+            and wbcf.account_book_entity_id = #{voucherDto.accountBookEntityId}
+            and wbcf.period_year = #{voucherDto.postingPeriodYear}
+            and wbcf.period_num = #{voucherDto.postingPeriodNum}
+            and wbcf.item_id = #{balanceCashFlow.itemId}
+        </foreach>
+    </update>
+
+
+
+
+    <update id="updateCashFlowBalanceForPostPeriod">
+        <foreach collection="cashFlowBalanceList" item="item" close="" open="" separator=";">
+            UPDATE wd_balance_cash_flow b
+            SET b.post_occur_amount = b.post_occur_amount + #{item.currencyAmount,jdbcType=DECIMAL} ,
+            b.post_total_amount = b.post_total_amount + #{item.currencyAmount,jdbcType=DECIMAL}
+            WHERE b.account_book_id = #{item.accountBookId,jdbcType=BIGINT}
+            and b.account_book_entity_id = #{item.accountBookEntityId,jdbcType=BIGINT}
+            and b.period_year_num = #{item.periodYearNum,jdbcType=INTEGER}
+            and b.item_id = #{item.cashFlowItemId,jdbcType=BIGINT}
+        </foreach>
+
+  </update>
+
+
+    <!--现金流量汇总(时间为会计期间)-->
+    <select id="findBalanceCashFlowList" resultType="com.njwd.entity.ledger.vo.BalanceCashFlowVo">
+        select
+        bcf.account_book_id,
+        bcf.account_book_entity_id,
+        bcf.item_id,
+        <!--不包含未记账-->
+        <if test="balanceCashFlowQueryDto.isIncludeUnbooked == 0">
+            IFNULL(sum(bcf.post_occur_amount),0) occurAmount
+        </if>
+        <!--包含未记账-->
+        <if test="balanceCashFlowQueryDto.isIncludeUnbooked == 1">
+            IFNULL(sum(bcf.occur_amount),0) occurAmount
+        </if>
+        from wd_balance_cash_flow bcf
+        where 1=1
+        <!--汇总-->
+        <if test="balanceCashFlowQueryDto.periodYears != null and balanceCashFlowQueryDto.periodNumbers != null">
+            <if test="balanceCashFlowQueryDto.periodOperator  !=null and balanceCashFlowQueryDto.periodOperator == 1">
+                and bcf.period_year_num between concat( #{balanceCashFlowQueryDto.periodYears[0]},
+                LPAD(#{balanceCashFlowQueryDto.periodNumbers[0]},2,0))
+                and concat( #{balanceCashFlowQueryDto.periodYears[1]},
+                LPAD(#{balanceCashFlowQueryDto.periodNumbers[1]},2,0))
+            </if>
+        </if>
+        <if test="balanceCashFlowQueryDto.accountBookIdOperator != null and balanceCashFlowQueryDto.accountBookIds != null">
+            <if test="balanceCashFlowQueryDto.accountBookIdOperator == 0">
+                and bcf.account_book_id in (
+                <foreach collection="balanceCashFlowQueryDto.accountBookIds" item="item" index="index" separator=",">
+                    #{item}
+                </foreach>
+                )
+            </if>
+        </if>
+        <if test="balanceCashFlowQueryDto.accountBookEntityIdOperator != null and balanceCashFlowQueryDto.accountBookEntityIds != null">
+            <if test="balanceCashFlowQueryDto.accountBookEntityIdOperator == 0">
+                and bcf.account_book_entity_id in (
+                <foreach collection="balanceCashFlowQueryDto.accountBookEntityIds" item="item" index="index"
+                         separator=",">
+                    #{item}
+                </foreach>
+                )
+            </if>
+        </if>
+    group by bcf.account_book_id,
+             bcf.account_book_entity_id,
+             bcf.item_id
+  </select>
+
+
+    <!--现金流量汇总(时间为会计期间)-->
+    <select id="findBalanceCashFlowTotalAmount" resultType="com.njwd.entity.ledger.vo.BalanceCashFlowVo">
+        select
+        bcf.account_book_id,
+        bcf.account_book_entity_id,
+        bcf.item_id,
+        <!--不包含未记账-->
+        <if test="balanceCashFlowQueryDto.isIncludeUnbooked == 0">
+            IFNULL(sum(bcf.post_occur_amount),0)  totalAmount
+        </if>
+        <!--包含未记账-->
+        <if test="balanceCashFlowQueryDto.isIncludeUnbooked == 1">
+            IFNULL(sum(bcf.occur_amount),0) totalAmount
+        </if>
+        from wd_balance_cash_flow bcf
+        where 1=1
+        <!--汇总-->
+        <if test="balanceCashFlowQueryDto.periodYears != null and balanceCashFlowQueryDto.periodNumbers != null">
+            <if test="balanceCashFlowQueryDto.periodOperator  !=null and balanceCashFlowQueryDto.periodOperator == 1">
+                and bcf.period_year_num between concat( #{balanceCashFlowQueryDto.periodYears[1]},'01')
+                and concat( #{balanceCashFlowQueryDto.periodYears[1]},
+                LPAD(#{balanceCashFlowQueryDto.periodNumbers[1]},2,0))
+            </if>
+        </if>
+        <if test="balanceCashFlowQueryDto.accountBookIdOperator != null and balanceCashFlowQueryDto.accountBookIds != null">
+            <if test="balanceCashFlowQueryDto.accountBookIdOperator == 0">
+                and bcf.account_book_id in (
+                <foreach collection="balanceCashFlowQueryDto.accountBookIds" item="item" index="index" separator=",">
+                    #{item}
+                </foreach>
+                )
+            </if>
+        </if>
+        <if test="balanceCashFlowQueryDto.accountBookEntityIdOperator != null and balanceCashFlowQueryDto.accountBookEntityIds != null">
+            <if test="balanceCashFlowQueryDto.accountBookEntityIdOperator == 0">
+                and bcf.account_book_entity_id in (
+                <foreach collection="balanceCashFlowQueryDto.accountBookEntityIds" item="item" index="index"
+                         separator=",">
+                    #{item}
+                </foreach>
+                )
+            </if>
+        </if>
+          group by bcf.account_book_id,
+         bcf.account_book_entity_id,
+         bcf.item_id
+    </select>
+  <!--根据条件查询核算主体指定期间的现金流量项目余额-->
+  <select id="findBalanceCashFlowByCondition" resultMap="BaseResultMapVo" parameterType="com.njwd.entity.ledger.dto.BalanceCashFlowDto">
+      SELECT
+        item_id,
+        sum(occur_amount) occur_amount,
+        sum(post_occur_amount) post_occur_amount,
+        sum(occur_amount) AS total_amount,
+        sum(post_occur_amount) AS post_total_amount
+      FROM
+      wd_balance_cash_flow
+    <where>
+        account_book_id = #{accountBookId}
+        <if test="accountBookEntityId != null">
+            and account_book_entity_id = #{accountBookEntityId}
+        </if>
+        and period_year_num between concat(#{periodYear}, LPAD(#{lastPeriod},2,0)) and
+        concat(#{periodYear}, LPAD(#{periodNum},2,0))
+        group by
+        item_id
+    </where>
+  </select>
+
+    <select id="findCashFlowBalanceBeforeUpdateForPostPeriod" resultType="com.njwd.entity.ledger.vo.PostPeriodBalanceVo">
+        SELECT v.account_book_id, v.account_book_entity_id, v.period_year_num, cf.cash_flow_item_id ,sum(cf.currency_amount) AS currency_amount
+        FROM wd_voucher_%s v
+        INNER JOIN
+        wd_voucher_entry_cash_flow_%s cf
+        ON cf.voucher_id = v.id
+        WHERE   v.account_book_id = #{accountBookPeriod.accountBookId,jdbcType=BIGINT}
+            and v.period_year_num = #{accountBookPeriod.periodYearNum,jdbcType=INTEGER}
+            and v.is_del = 0
+            and v.status = 1
+        GROUP BY v.account_book_id, v.account_book_entity_id, v.period_year_num, cf.cash_flow_item_id
+    </select>
+
+
+    <select id="findCashFlowItemId" resultType="com.njwd.entity.ledger.vo.BalanceCashFlowVo">
+    select distinct item_id from wd_balance_cash_flow
+  </select>
+
+
+
+
+
+</mapper>

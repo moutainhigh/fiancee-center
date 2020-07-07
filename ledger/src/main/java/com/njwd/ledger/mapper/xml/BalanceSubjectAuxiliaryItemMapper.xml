@@ -1,0 +1,425 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.ledger.mapper.BalanceSubjectAuxiliaryItemMapper">
+    <resultMap id="BaseResultMap" type="com.njwd.entity.ledger.vo.BalanceSubjectAuxiliaryItemVo">
+    </resultMap>
+    <sql id="Base_Column_List">
+        <!--@mbg.generated-->
+        id, account_book_id, account_book_entity_id, account_subject_id, period_year, period_num, period_year_num,
+        source_table, item_value_id, balance_auxiliary_id
+    </sql>
+    <insert id="addBalanceSubAuxItem">
+        insert into
+        wd_balance_subject_auxiliary_item(account_book_id,account_book_entity_id,account_subject_id,period_year,period_num,period_year_num,source_table,item_value_id,balance_auxiliary_id)
+        values
+                (#{item.accountBookId},#{item.accountBookEntityId} ,#{item.accountSubjectId},#{item.periodYear}
+                ,#{item.periodNum} ,concat(#{item.periodYear},LPAD(#{item.periodNum},2,0)),#{item.sourceTable} ,#{item.itemValueId} ,#{item.balanceAuxiliaryId} )
+    </insert>
+
+    <insert id="addBalanceSubAuxItemOne">
+        insert into
+        wd_balance_subject_auxiliary_item(account_book_id,account_book_entity_id,account_subject_id,period_year,period_num,period_year_num,source_table,item_value_id,balance_auxiliary_id)
+        values
+        <if test="item.periodNum !=1">
+            (#{item.accountBookId},#{item.accountBookEntityId} ,#{item.accountSubjectId},#{item.periodYear}
+            ,1 ,concat(#{item.periodYear},LPAD(1,2,0)),#{item.sourceTable} ,#{item.itemValueId}
+            ,#{item.balanceAuxiliaryId} )
+        </if>
+        <if test="item.periodNum ==1">
+            (#{item.accountBookId},#{item.accountBookEntityId} ,#{item.accountSubjectId},#{item.periodYear}
+            ,#{item.periodNum} ,concat(#{item.periodYear},LPAD(#{item.periodNum},2,0)),#{item.sourceTable}
+            ,#{item.itemValueId} ,#{item.balanceAuxiliaryId} )
+        </if>
+    </insert>
+    <insert id="addBalanceSubAuxItemZero">
+        insert into
+        wd_balance_subject_auxiliary_item(account_book_id,account_book_entity_id,account_subject_id,period_year,period_num,period_year_num,source_table,item_value_id,balance_auxiliary_id)
+        values
+        <if test="item.periodNum !=1">
+            (#{item.accountBookId},#{item.accountBookEntityId} ,#{item.accountSubjectId},#{item.periodYear}
+            ,0 ,concat(#{item.periodYear},LPAD(0,2,0)),#{item.sourceTable} ,#{item.itemValueId}
+            ,#{item.balanceAuxiliaryId} )
+        </if>
+        <if test="item.periodNum ==1">
+            (#{item.accountBookId},#{item.accountBookEntityId} ,#{item.accountSubjectId},#{item.periodYear}
+            ,0 ,concat(#{item.periodYear},LPAD(0,2,0)),#{item.sourceTable}
+            ,#{item.itemValueId} ,#{item.balanceAuxiliaryId} )
+        </if>
+    </insert>
+    <insert id="insertBatch">
+        insert into wd_balance_subject_auxiliary_item
+        (
+        account_book_id,
+        account_book_entity_id,
+        account_subject_id,
+        period_year,
+        period_num,
+        period_year_num,
+        source_table,
+        item_value_id,
+        balance_auxiliary_id)
+        values
+        <foreach collection="balanceSubjectAuxiliaryItems" item="auxiliaryItem" separator=",">
+            (
+            #{voucherDto.accountBookId} ,
+            #{voucherDto.accountBookEntityId} ,
+            #{auxiliaryItem.accountSubjectId} ,
+            #{voucherDto.postingPeriodYear} ,
+            #{voucherDto.postingPeriodNum} ,
+            #{voucherDto.periodYearNum} ,
+            #{auxiliaryItem.sourceTable} ,
+            #{auxiliaryItem.itemValueId} ,
+            #{balanceAuxiliaryId}
+            )
+        </foreach>
+    </insert>
+
+    <select id="findListByParam" resultMap="BaseResultMap">
+        select
+        t.account_book_id,
+        t.account_book_entity_id,
+        t.account_subject_id,
+        t.period_year,
+        t.source_table sourceTables,
+        t.item_value_id itemValueIds,
+        group_concat( t.balance_auxiliary_id ) balanceAuxiliaryIds
+        from
+        (
+        select
+        period_year,
+        account_book_id,
+        account_book_entity_id,
+        account_subject_id,
+        balance_auxiliary_id,
+        group_concat( source_table order by field(source_table,
+        <if test="auxiliaryItemQueryDto.sourceTableAndIdList != null and auxiliaryItemQueryDto.sourceTableAndIdList.size() > 0">
+            <foreach collection="auxiliaryItemQueryDto.sourceTableAndIdList" item="item" index="index"
+                     separator=",">
+                #{item.sourceTable}
+            </foreach>
+        </if>
+        <if test="auxiliaryItemQueryDto.sourceTableAndIdList == null or auxiliaryItemQueryDto.sourceTableAndIdList.size() == 0">
+            ''
+        </if>
+        ) ) source_table,
+        group_concat( item_value_id order by field(source_table,
+        <if test="auxiliaryItemQueryDto.sourceTableAndIdList != null and auxiliaryItemQueryDto.sourceTableAndIdList.size() > 0">
+            <foreach collection="auxiliaryItemQueryDto.sourceTableAndIdList" item="item" index="index"
+                     separator=",">
+                #{item.sourceTable}
+            </foreach>
+        </if>
+        <if test="auxiliaryItemQueryDto.sourceTableAndIdList == null or auxiliaryItemQueryDto.sourceTableAndIdList.size() == 0">
+            ''
+        </if>
+        ) ) item_value_id
+        from
+        wd_balance_subject_auxiliary_item
+        where 1=1
+        <if test="auxiliaryItemQueryDto.accountBookEntityId != null">
+            and account_book_entity_id = #{auxiliaryItemQueryDto.accountBookEntityId}
+        </if>
+        <if test="auxiliaryItemQueryDto.accountSubjectId != null">
+            and account_subject_id = #{auxiliaryItemQueryDto.accountSubjectId}
+        </if>
+        <if test="auxiliaryItemQueryDto.accountBookEntityIdOperator != null and auxiliaryItemQueryDto.accountBookEntityList != null
+        and auxiliaryItemQueryDto.accountBookEntityList.size() > 0">
+            <if test="auxiliaryItemQueryDto.accountBookEntityIdOperator == 0">
+                and account_book_entity_id in (
+                <foreach collection="auxiliaryItemQueryDto.accountBookEntityList" item="item" index="index"
+                         separator=",">
+                    #{item.id}
+                </foreach>
+                )
+            </if>
+        </if>
+        <if test="auxiliaryItemQueryDto.periodYears != null and auxiliaryItemQueryDto.periodYears.size() > 0
+        and auxiliaryItemQueryDto.periodNumbers != null and auxiliaryItemQueryDto.periodNumbers.size() > 0">
+            <if test="auxiliaryItemQueryDto.periodOperator != null and auxiliaryItemQueryDto.periodOperator == 1">
+                and (period_year_num
+                between
+                concat(#{auxiliaryItemQueryDto.periodYears[0]}, LPAD(#{auxiliaryItemQueryDto.periodNumbers[0]},2,0))
+                and
+                concat(#{auxiliaryItemQueryDto.periodYears[1]}, LPAD(#{auxiliaryItemQueryDto.periodNumbers[1]},2,0))
+                or period_year_num = concat(#{auxiliaryItemQueryDto.periodYears[0]}, LPAD(00, 2, 0))
+                )
+            </if>
+        </if>
+        <if test="auxiliaryItemQueryDto.sourceTableAndIdList != null and auxiliaryItemQueryDto.sourceTableAndIdList.size() > 0">
+            and (
+            <foreach collection="auxiliaryItemQueryDto.sourceTableAndIdList" item="item" index="index"
+                     separator="or">
+                (source_table = #{item.sourceTable}
+                <if test="item.itemValueIdList != null and item.itemValueIdList.size() > 0">
+                    and item_value_id in (
+                    <foreach collection="item.itemValueIdList" item="idItem" index="idIndex"
+                             separator=",">
+                        #{idItem}
+                    </foreach>
+                    )
+                </if>
+                )
+            </foreach>
+            )
+        </if>
+        group by
+        balance_auxiliary_id
+        ) t
+        group by
+        t.account_book_id,
+        t.account_book_entity_id,
+        t.account_subject_id,
+        t.period_year,
+        t.source_table,
+        t.item_value_id
+    </select>
+
+    <select id="findStartIdListByParam" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_balance_subject_auxiliary_item
+        where 1=1
+        <if test="list != null and list.size() != 0">
+            and account_book_id in
+            <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+                #{item.accountBookId}
+            </foreach>
+            and account_book_entity_id in
+            <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+                #{item.accountBookEntityId}
+            </foreach>
+            and account_subject_id in
+            <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+                #{item.accountSubjectId}
+            </foreach>
+            and source_table in (
+            <foreach collection="list" item="item" index="index" separator=",">
+                <foreach collection="item.sourceTableList" item="it" index="index" separator=",">
+                    #{it}
+                </foreach>
+            </foreach>
+            )
+            and item_value_id in (
+            <foreach collection="list" item="item" index="index" separator=",">
+                <foreach collection="item.itemValueIdList" item="it" index="index" separator=",">
+                    ${it}
+                </foreach>
+            </foreach>
+            )
+            and period_year_num in
+            <foreach collection="list" item="item" index="index" open="(" close=")" separator=",">
+                #{item.startPeriod}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="findListByAuxiliaries" resultMap="BaseResultMap">
+        select
+        t.account_book_id,
+        t.account_book_entity_id,
+        t.account_subject_id,
+        t.period_year_num,
+        t.source_table sourceTables,
+        t.item_value_id itemValueIds,
+        group_concat( t.balance_auxiliary_id ) balanceAuxiliaryIds
+        from
+        (
+        select
+        wbs.period_year_num,
+        wbs.account_book_id,
+        wbs.account_book_entity_id,
+        wbs.account_subject_id,
+        wbs.balance_auxiliary_id,
+        group_concat( wbs.source_table order by field(source_table,
+        <if test="auxiliaryItemQueryDto.sourceTableAndIdList != null and auxiliaryItemQueryDto.sourceTableAndIdList.size() > 0">
+            <foreach collection="auxiliaryItemQueryDto.sourceTableAndIdList" item="item" index="index"
+                     separator=",">
+                #{item.sourceTable}
+            </foreach>
+        </if>
+        <if test="auxiliaryItemQueryDto.sourceTableAndIdList == null or auxiliaryItemQueryDto.sourceTableAndIdList.size() == 0">
+            ''
+        </if>
+        ) ) source_table,
+        group_concat( wbs.item_value_id order by field(source_table,
+        <if test="auxiliaryItemQueryDto.sourceTableAndIdList != null and auxiliaryItemQueryDto.sourceTableAndIdList.size() > 0">
+            <foreach collection="auxiliaryItemQueryDto.sourceTableAndIdList" item="item" index="index"
+                     separator=",">
+                #{item.sourceTable}
+            </foreach>
+        </if>
+        <if test="auxiliaryItemQueryDto.sourceTableAndIdList == null or auxiliaryItemQueryDto.sourceTableAndIdList.size() == 0">
+            ''
+        </if>
+        ) ) item_value_id
+        from
+        wd_balance_subject_auxiliary_item wbs
+        where 1=1
+        <if test="auxiliaryItemQueryDto.accountBookIds !=null and auxiliaryItemQueryDto.accountBookIds.size() != 0">
+            and wbs.account_book_id in
+            <foreach collection="auxiliaryItemQueryDto.accountBookIds" item="accountBookId" index="index" open="("
+                     separator="," close=")">
+                #{accountBookId}
+            </foreach>
+        </if>
+        <if test="auxiliaryItemQueryDto.sourceTableAndIdList != null and auxiliaryItemQueryDto.sourceTableAndIdList.size() > 0">
+            and (
+            <foreach collection="auxiliaryItemQueryDto.sourceTableAndIdList" item="item" index="index"
+                     separator="or">
+                (wbs.source_table = #{item.sourceTable} and wbs.item_value_id = #{item.itemValueId})
+            </foreach>
+            )
+        </if>
+        and wbs.period_year_num = (select min(wabp1.period_year_num) from wd_account_book_period wabp1 where
+        wabp1.root_enterprise_id = #{auxiliaryItemQueryDto.rootEnterpriseId}
+        and wbs.account_book_id = wabp1.account_book_id and wabp1.system_sign = 'ledger')
+        group by
+        wbs.balance_auxiliary_id
+        ) t
+        group by
+        t.account_book_id,
+        t.account_book_entity_id,
+        t.account_subject_id,
+        t.period_year_num,
+        t.source_table,
+        t.item_value_id
+    </select>
+
+    <select id="findListByAuxiliariesAndPeriod" resultMap="BaseResultMap">
+        select
+        t.account_book_id,
+        t.account_book_entity_id,
+        t.account_subject_id,
+        t.period_year_num,
+        t.source_table sourceTables,
+        t.item_value_id itemValueIds,
+        group_concat( t.balance_auxiliary_id ) balanceAuxiliaryIds
+        from
+        (
+        select
+        wbs.period_year_num,
+        wbs.account_book_id,
+        wbs.account_book_entity_id,
+        wbs.account_subject_id,
+        wbs.balance_auxiliary_id,
+        group_concat( wbs.source_table order by field(source_table,
+        <if test="auxiliaryItemQueryDto.sourceTableAndIdList != null and auxiliaryItemQueryDto.sourceTableAndIdList.size() > 0">
+            <foreach collection="auxiliaryItemQueryDto.sourceTableAndIdList" item="item" index="index"
+                     separator=",">
+                #{item.sourceTable}
+            </foreach>
+        </if>
+        <if test="auxiliaryItemQueryDto.sourceTableAndIdList == null or auxiliaryItemQueryDto.sourceTableAndIdList.size() == 0">
+            ''
+        </if>
+        ) ) source_table,
+        group_concat( wbs.item_value_id order by field(source_table,
+        <if test="auxiliaryItemQueryDto.sourceTableAndIdList != null and auxiliaryItemQueryDto.sourceTableAndIdList.size() > 0">
+            <foreach collection="auxiliaryItemQueryDto.sourceTableAndIdList" item="item" index="index"
+                     separator=",">
+                #{item.sourceTable}
+            </foreach>
+        </if>
+        <if test="auxiliaryItemQueryDto.sourceTableAndIdList == null or auxiliaryItemQueryDto.sourceTableAndIdList.size() == 0">
+            ''
+        </if>
+        ) ) item_value_id
+        from
+        wd_balance_subject_auxiliary_item wbs
+        where 1=1
+        <if test="auxiliaryItemQueryDto.accountBookIds !=null and auxiliaryItemQueryDto.accountBookIds.size() != 0">
+            and wbs.account_book_id in
+            <foreach collection="auxiliaryItemQueryDto.accountBookIds" item="accountBookId" index="index" open="("
+                     separator="," close=")">
+                #{accountBookId}
+            </foreach>
+        </if>
+        <if test="auxiliaryItemQueryDto.sourceTableAndIdList != null and auxiliaryItemQueryDto.sourceTableAndIdList.size() > 0">
+            and (
+            <foreach collection="auxiliaryItemQueryDto.sourceTableAndIdList" item="item" index="index"
+                     separator="or">
+                (wbs.source_table = #{item.sourceTable} and wbs.item_value_id = #{item.itemValueId})
+            </foreach>
+            )
+        </if>
+        group by
+        wbs.balance_auxiliary_id
+        ) t
+        group by
+        t.account_book_id,
+        t.account_book_entity_id,
+        t.account_subject_id,
+        t.period_year_num,
+        t.source_table,
+        t.item_value_id
+    </select>
+
+
+    <select id="selectAuxiliaryIteamList" resultType="com.njwd.entity.ledger.BalanceSubjectAuxiliaryItem">
+        select
+        <include refid="Base_Column_List"/>
+        from wd_balance_subject_auxiliary_item
+        where true
+        and period_year = #{accountBookPeriod.periodYear,jdbcType=INTEGER}
+        and period_num = #{accountBookPeriod.periodNum,jdbcType=TINYINT}
+        and account_book_id = #{accountBookPeriod.accountBookId,jdbcType=BIGINT}
+        <if test="accountBookPeriod.profitLossList != null and accountBookPeriod.profitLossList.size() != 0">
+            and account_subject_id in
+            <foreach collection="accountBookPeriod.profitLossList" item="profitLoss" open="(" separator="," close=")">
+                #{profitLoss,jdbcType=BIGINT}
+            </foreach>
+        </if>
+    </select>
+
+    <select id="selectAuxiliaryBalanceAsList" resultType="com.njwd.entity.ledger.vo.BalanceSubjectAuxiliaryItemVo">
+        select
+            wbsa.account_subject_id,
+            wbsa.credit_amount,
+            wbsa.debit_amount,
+            wbsai.source_table,
+            wbsai.item_value_id,
+            wbsai.balance_auxiliary_id
+        from wd_balance_subject_auxiliary_item wbsai
+        left join wd_balance_subject_auxiliary wbsa on wbsai.balance_auxiliary_id = wbsa.id
+        where
+        wbsai.period_year_num = #{balanceSubjectAuxiliaryDto.periodYearNum,jdbcType=INTEGER}
+        and wbsai.account_book_id = #{balanceSubjectAuxiliaryDto.accountBookId,jdbcType=BIGINT}
+        and wbsai.account_book_entity_id = #{balanceSubjectAuxiliaryDto.accountBookEntityId,jdbcType=BIGINT}
+    </select>
+
+    <select id="selectSubjctAuxiliaryItemList" resultType="com.njwd.entity.ledger.BalanceSubjectAuxiliaryItem">
+        select
+        wbsai.source_table,
+        wbsai.item_value_id,
+        wbsai.balance_auxiliary_id
+        from wd_balance_subject_auxiliary_item wbsai
+        where
+        wbsai.account_book_id = #{accountBookPeriod.accountBookId,jdbcType=BIGINT}
+        and wbsai.period_year_num in (
+        <foreach collection="accountBookPeriod.periodYears" item="periodYearNum" separator=",">
+            #{periodYearNum}
+        </foreach>
+        )
+        order by wbsai.period_year_num desc
+    </select>
+
+    <!--查询辅助核算项明细-->
+    <select id="findAuxItemForPostPeriod" resultType="com.njwd.entity.ledger.vo.PostPeriodBalanceVo">
+        select a.balance_auxiliary_id,a.account_subject_id,a.source_table,a.item_value_id
+        from wd_balance_subject_auxiliary_item a
+        <where>
+            <if test="balance.accountBookId!=null">
+                and a.account_book_id = #{balance.accountBookId,jdbcType=BIGINT}
+
+            </if>
+            <if test="balance.accountBookEntityId != null">
+                and a.account_book_entity_id = #{balance.accountBookEntityId,jdbcType=BIGINT}
+            </if>
+            <if test="balance.periodYearNum!=null">
+                and a.period_year_num = #{balance.periodYearNum,jdbcType=INTEGER}
+            </if>
+        </where>
+        order by a.balance_auxiliary_id, a.source_table,a.item_value_id
+    </select>
+
+</mapper>

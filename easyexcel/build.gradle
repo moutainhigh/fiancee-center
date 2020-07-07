@@ -1,0 +1,13 @@
+bootJar {
+    enabled = true
+}
+jar{
+    enabled = true
+}
+
+dependencies {
+    compile rootProject.ext.dependencies['poi-ooxml']
+    compile rootProject.ext.dependencies['cglib-nodep']
+    compile rootProject.ext.dependencies['junit']
+//    compile group: 'cglib', name: 'cglib', version:'3.1'
+}

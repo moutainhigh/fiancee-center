@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.njwd.basedata.mapper.StaffMapper">
+  <resultMap id="BaseResultMap" type="com.njwd.entity.basedata.Staff">
+    <!--@mbg.generated-->
+    <id column="id" jdbcType="BIGINT" property="id" />
+    <result column="code_type" jdbcType="TINYINT" property="codeType" />
+    <result column="code" jdbcType="VARCHAR" property="code" />
+    <result column="name" jdbcType="VARCHAR" property="name" />
+    <result column="company_id" jdbcType="BIGINT" property="companyId" />
+    <result column="dept_id" jdbcType="BIGINT" property="deptId" />
+    <result column="email" jdbcType="VARCHAR" property="email" />
+    <result column="bank_account" jdbcType="VARCHAR" property="bankAccount" />
+    <result column="remark" jdbcType="VARCHAR" property="remark" />
+    <result column="id_card_num" jdbcType="VARCHAR" property="idCardNum" />
+    <result column="contact_number" jdbcType="VARCHAR" property="contactNumber" />
+    <result column="is_enable" jdbcType="TINYINT" property="isEnable" />
+    <result column="is_del" jdbcType="TINYINT" property="isDel" />
+    <result column="create_time" jdbcType="TIMESTAMP" property="createTime" />
+    <result column="creator_id" jdbcType="BIGINT" property="creatorId" />
+    <result column="creator_name" jdbcType="VARCHAR" property="creatorName" />
+    <result column="update_time" jdbcType="TIMESTAMP" property="updateTime" />
+    <result column="updator_id" jdbcType="BIGINT" property="updatorId" />
+    <result column="updator_name" jdbcType="VARCHAR" property="updatorName" />
+    <result column="root_enterprise_id" jdbcType="BIGINT" property="rootEnterpriseId" />
+    <result column="create_company_id" jdbcType="BIGINT" property="createCompanyId" />
+      <result column="attr_business_unit_id" jdbcType="BIGINT" property="attrBusinessUnitId" />
+      <result column="use_company_id" jdbcType="BIGINT" property="useCompanyId" />
+      <result column="business_unit_id" jdbcType="BIGINT" property="businessUnitId" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    <!--@mbg.generated-->
+    id, code_type, code, `name`, company_id, dept_id, email, bank_account, remark, id_card_num,
+    contact_number, is_enable, is_del, create_time, creator_id, creator_name, update_time,
+    updator_id, updator_name,root_enterprise_id,create_company_id,attr_business_unit_id,use_company_id,business_unit_id,version
+  </sql>
+    <!--新增员工-->
+  <insert id="insertStaff" useGeneratedKeys="true" keyProperty="id" parameterType="com.njwd.entity.basedata.Staff">
+    insert into
+     wd_staff
+     (code_type,
+      code,
+      name,
+      company_id,
+      dept_id,
+      email,
+      bank_account,
+      id_card_num,
+      contact_number,
+      remark,
+      creator_id,
+      creator_name,
+      create_time,
+      is_del,
+      root_enterprise_id,
+      create_company_id,
+      attr_business_unit_id,
+      use_company_id,
+      business_unit_id)
+     values
+      (#{staff.codeType},
+       #{staff.code},
+       #{staff.name},
+       #{staff.companyId},
+       #{staff.deptId},
+       #{staff.email},
+       #{staff.bankAccount},
+       #{staff.idCardNum},
+       #{staff.contactNumber},
+       #{staff.remark},
+       #{staff.creatorId},
+       #{staff.creatorName},
+       #{staff.createTime},
+       #{staff.isDel},
+       #{staff.rootEnterpriseId},
+       #{staff.createCompanyId},
+       #{staff.attrBusinessUnitId},
+       #{staff.useCompanyId},
+       #{staff.businessUnitId})
+  </insert>
+    <!--批量新增-->
+  <insert id="addBatchStaff"  useGeneratedKeys="true" keyProperty="id" parameterType="com.njwd.entity.basedata.dto.StaffDto">
+        insert into wd_staff
+            (
+            code_type,
+            code,
+            name,
+            company_id,
+            dept_id,
+            email,
+            bank_account,
+            id_card_num,
+            contact_number,
+            remark,
+            creator_id,
+            creator_name,
+            create_time,
+            is_del,
+            root_enterprise_id,
+            create_company_id,
+              attr_business_unit_id,
+              use_company_id,
+              business_unit_id)
+        values
+        <foreach collection="list" item="staff" separator=",">
+            (
+            #{staff.codeType},
+            #{staff.code},
+            #{staff.name},
+            #{staff.companyId},
+            #{staff.deptId},
+            #{staff.email},
+            #{staff.bankAccount},
+            #{staff.idCardNum},
+            #{staff.contactNumber},
+            #{staff.remark},
+            #{staff.creatorId},
+            #{staff.creatorName},
+            #{staff.createTime},
+            #{staff.isDel},
+            #{staff.rootEnterpriseId},
+            #{staff.createCompanyId},
+            #{staff.attrBusinessUnitId},
+            #{staff.useCompanyId},
+            #{staff.businessUnitId}
+            )
+        </foreach>
+  </insert>
+    <!--校验员工编码唯一性-->
+  <select id="findStaffByCode" resultType="int">
+    select
+     count(1)
+    from wd_staff ws
+    where  ws.code = #{staffDto.code}
+     and ws.root_enterprise_id = #{staffDto.rootEnterpriseId}
+     and ws.dept_id = #{staffDto.deptId}
+     and ws.is_del = 0
+  </select>
+    <!--校验员工编码唯一性-->
+    <select id="findStaffInfoByCode" resultType="int">
+    select
+     id
+    from wd_staff ws
+    where  ws.code = #{staffDto.code}
+     and ws.root_enterprise_id = #{staffDto.rootEnterpriseId}
+     and ws.dept_id = #{staffDto.deptId}
+     and ws.is_del = 0
+  </select>
+
+  <!--校验员工是否重复-->
+  <select id="findStaffByInfo" resultType="int">
+    select
+     count(1)
+    from wd_staff ws
+    where  ws.code = #{staffDto.code}
+     and ws.root_enterprise_id = #{staffDto.rootEnterpriseId}
+     and ws.is_del = 0
+     and ws.id != #{staffDto.id}
+  </select>
+  <!-- 查询员工列表 -->
+  <select id="findPage" parameterType="com.njwd.entity.basedata.dto.StaffDto"
+          resultType="com.njwd.entity.basedata.vo.StaffVo">
+    select
+       ws.id,
+       ws.code_type,
+       ws.code,
+       ws.name,
+       ws.name as userName,
+       ws.company_id,
+       ws.dept_id,
+       ws.email,
+       ws.bank_account,
+       ws.remark,
+       ws.id_card_num,
+       ws.contact_number,
+       ws.is_enable,
+       ws.is_del,
+       ws.create_time,
+       ws.creator_id,
+       ws.creator_name,
+       ws.update_time,
+       ws.updator_id,
+       ws.updator_name,
+       ws.root_enterprise_id,
+       wd.name as dept,
+       wc.name as company,
+       wc2.name as userCompany,
+       ws.attr_business_unit_id,
+       ws.use_company_id,
+       ws.business_unit_id,
+       ws.version
+    from wd_staff ws
+        left join wd_dept wd on ws.dept_id = wd.id
+        left join wd_company wc on ws.company_id = wc.id
+        left join wd_company wc2 on wd.use_company_id = wc2.id
+    where
+    ws.is_del = 0
+    <if test="staffDto.companyIdList != null and staffDto.companyIdList.size() != 0">
+      and ws.company_id in
+      <foreach collection="staffDto.companyIdList" item="companyId" separator="," open="(" close=")">
+        #{companyId}
+      </foreach>
+    </if>
+    <if test = "staffDto.deptId != null">
+      and ws.dept_id = #{staffDto.deptId}
+    </if>
+    <if test = "staffDto.codeOrName != null">
+      and (ws.code like concat('%',#{staffDto.codeOrName},'%')
+      or ws.name like concat('%',#{staffDto.codeOrName},'%'))
+    </if>
+    <if test = "staffDto.isEnable != null">
+      and ws.is_enable = #{staffDto.isEnable}
+    </if>
+    <if test = "staffDto.rootEnterpriseId != null">
+      and ws.root_enterprise_id = #{staffDto.rootEnterpriseId}
+    </if>
+      <if test = "staffDto.contactNumber != null">
+          and ws.contact_number like concat('%',#{staffDto.contactNumber},'%')
+      </if>
+    order by ws.code
+  </select>
+  <!-- 根据ID查询员工 -->
+  <select id="findStaffById" parameterType="com.njwd.entity.basedata.dto.StaffDto"
+          resultType="com.njwd.entity.basedata.vo.StaffVo">
+    select
+          ws.id,
+          ws.code_type,
+          ws.code,
+          ws.name,
+          ws.name as userName,
+          ws.company_id,
+          ws.dept_id,
+          ws.email,
+          ws.bank_account,
+          ws.remark,
+          ws.id_card_num,
+          ws.contact_number,
+          ws.is_enable,
+          ws.is_del,
+          ws.create_time,
+          ws.creator_id,
+          ws.creator_name,
+          ws.update_time,
+          ws.updator_id,
+          ws.updator_name,
+          ws.root_enterprise_id,
+          wd.name as dept,
+          wc.name as company,
+          wc2.name as userCompany,
+          ws.attr_business_unit_id,
+          ws.use_company_id,
+          ws.business_unit_id,
+          ws.version
+     from wd_staff ws
+         left join wd_dept wd on ws.dept_id = wd.id
+         left join wd_company wc on ws.company_id = wc.id
+         left join wd_company wc2 on wd.use_company_id = wc2.id
+     where
+       ws.id = #{staffDto.id}
+  </select>
+
+    <!-- 根据ID查询员工列表 -->
+    <select id="findStaffListById" parameterType="com.njwd.entity.basedata.dto.StaffDto"
+            resultType="com.njwd.entity.basedata.vo.StaffVo">
+    select
+          ws.id,
+          ws.code_type,
+          ws.code,
+          ws.name,
+          ws.name as userName,
+          ws.company_id,
+          ws.dept_id,
+          ws.email,
+          ws.bank_account,
+          ws.remark,
+          ws.id_card_num,
+          ws.contact_number,
+          ws.is_enable,
+          ws.is_del,
+          ws.create_time,
+          ws.creator_id,
+          ws.creator_name,
+          ws.update_time,
+          ws.updator_id,
+          ws.updator_name,
+          ws.root_enterprise_id,
+          wd.name as dept,
+          wc.name as company,
+          wc2.name as userCompany,
+          ws.attr_business_unit_id,
+          ws.use_company_id,
+          ws.business_unit_id,
+          ws.version
+     from wd_staff ws
+         left join wd_dept wd on ws.dept_id = wd.id
+         left join wd_company wc on ws.company_id = wc.id
+         left join wd_company wc2 on wd.use_company_id = wc2.id
+     where 1=1
+        <if test="staffDto.ids != null and staffDto.ids.size() != 0">
+            and ws.id in
+            <foreach collection="staffDto.ids" item="id" separator="," open="(" close=")">
+                #{id}
+            </foreach>
+        </if>
+  </select>
+
+    <!--查询部门关联的员工-->
+    <select id="findStaffByDeptId" parameterType="com.njwd.entity.basedata.dto.StaffDto"
+            resultType="Long">
+        select id from wd_staff where dept_id= #{staffDto.deptId} and is_del=0
+    </select>
+
+  <!--查询已被删除/禁用/反禁用的员工-->
+  <select id="findDeletedIds" parameterType="com.njwd.entity.basedata.dto.StaffDto"
+          resultType="com.njwd.entity.basedata.vo.StaffVo">
+      select
+        <include refid="Base_Column_List"/>
+      from wd_staff
+      where
+      (is_del = 1
+      <if test="staffDto.isEnable != null">
+          or is_enable = #{staffDto.isEnable}
+      </if>
+      )
+      <if test="staffDto.ids != null and staffDto.ids.size() != 0">
+          and id in
+          <foreach collection="staffDto.ids" item="id" separator="," open="(" close=")">
+              #{id}
+          </foreach>
+      </if>
+  </select>
+
+    <select id="findStaffInfoByNumberOrCard" resultType="int">
+        select
+           count(1)
+        from wd_staff ws
+        where
+           ws.is_del = 0
+        <if test="staffDto.contactNumber != null">
+            and ws.contact_number = #{staffDto.contactNumber}
+        </if>
+        <if test="staffDto.bankAccount != null">
+            and ws.bank_account = #{staffDto.bankAccount}
+        </if>
+        <if test="staffDto.id != null">
+            and ws.id != #{staffDto.id}
+        </if>
+    </select>
+
+    <update id="deleteStaffByIds">
+        update wd_staff
+        set
+            is_del = 1,
+            version = version + 1,
+            updator_id = #{staffDto.updatorId},
+            updator_name = #{staffDto.updatorName},
+            update_time = #{staffDto.updateTime}
+        where
+         is_del = 0
+        and id in
+        <foreach collection="staffDto.ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+    </update>
+</mapper>
